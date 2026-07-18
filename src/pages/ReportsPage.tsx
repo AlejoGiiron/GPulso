@@ -498,7 +498,7 @@ export default function ReportsPage() {
       { header: 'Producto',          key: 'product',      width: 30 },
       { header: 'Marca',             key: 'brand',        width: 18 },
       { header: 'Categoría',         key: 'category',     width: 18 },
-      { header: 'Talla',             key: 'size',         width: 10 },
+      { header: 'Variante',             key: 'size',         width: 10 },
       { header: 'Color',             key: 'color',        width: 14 },
       { header: 'SKU',               key: 'sku',          width: 16 },
       { header: 'Unidades vendidas', key: 'units_sold',   width: 18 },
@@ -520,7 +520,7 @@ export default function ReportsPage() {
     const ws3 = wb.addWorksheet('Inventario')
     ws3.columns = [
       { header: 'Producto',         key: 'product',     width: 30 },
-      { header: 'Talla',            key: 'size',        width: 10 },
+      { header: 'Variante',            key: 'size',        width: 10 },
       { header: 'Color',            key: 'color',       width: 14 },
       { header: 'SKU',              key: 'sku',         width: 16 },
       { header: 'Stock',            key: 'stock_qty',   width: 10 },
@@ -903,7 +903,7 @@ export default function ReportsPage() {
                       {([
                         { label: 'Producto',      key: null                        },
                         { label: 'Marca',         key: null                        },
-                        { label: 'Talla',         key: null                        },
+                        { label: 'Variante',         key: null                        },
                         { label: 'Color',         key: null                        },
                         { label: 'Uds. vendidas', key: 'units_sold'   as SortKey   },
                         { label: 'Revenue neto',  key: 'net_revenue'  as SortKey   },
@@ -1446,7 +1446,7 @@ export default function ReportsPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-[#ebe9e6] bg-[#fafaf9]">
-                      {['Producto', 'Talla', 'Color', 'Stock', 'Costo unitario', 'Valor total'].map((h) => (
+                      {['Producto', 'Variante', 'Color', 'Stock', 'Costo unitario', 'Valor total'].map((h) => (
                         <th key={h} className={thCls}>{h}</th>
                       ))}
                     </tr>

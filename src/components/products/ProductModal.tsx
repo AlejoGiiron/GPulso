@@ -124,7 +124,7 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
         </div>
         {!isEdit && (
           <p className="mb-5 text-sm text-slate-400">
-            Las variantes (talla y color) se agregan después.
+            Las variantes (capacidad/color) se agregan después.
           </p>
         )}
 
@@ -221,7 +221,7 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
           {/* Size type */}
           <div>
             <label className="mb-1.5 block text-xs font-medium text-slate-600">
-              Tipo de talla
+              Tipo de variante
             </label>
             <select
               value={sizeType}
@@ -235,7 +235,7 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
               ))}
             </select>
             <p className="mt-1 text-[11px] text-slate-400">
-              Define qué tallas estarán disponibles al agregar variantes.
+              Define qué valores de variante estarán disponibles al agregar variantes.
             </p>
           </div>
 

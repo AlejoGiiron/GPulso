@@ -107,7 +107,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
 
   async function handleSubmit() {
     if (!form.color.trim() && !form.size) {
-      toast.error('Ingresa al menos talla o color')
+      toast.error('Ingresa al menos variante o color')
       return
     }
     setSubmitting(true)
@@ -224,13 +224,13 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                        Talla
+                        Variante
                       </label>
                       {isCustomSizes ? (
                         <input
                           value={form.size}
                           onChange={(e) => setField('size', e.target.value)}
-                          placeholder="Talla libre"
+                          placeholder="Variante libre"
                           className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm outline-none focus:border-cyan-400"
                         />
                       ) : (
@@ -402,7 +402,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                     <tr className="border-b border-slate-100">
                       <th className="w-8 pb-2.5 text-left" />
                       {[
-                        { label: 'Talla', align: 'left' },
+                        { label: 'Variante', align: 'left' },
                         { label: 'Color', align: 'left' },
                         { label: 'SKU', align: 'left' },
                         { label: 'Precio', align: 'right' },

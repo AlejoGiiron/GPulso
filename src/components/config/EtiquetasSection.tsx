@@ -406,7 +406,7 @@ export default function EtiquetasSection() {
             {(
               [
                 { key: 'name', label: 'Nombre del producto' },
-                { key: 'size_color', label: 'Talla y color' },
+                { key: 'size_color', label: 'Variante y color' },
                 { key: 'sku', label: 'SKU' },
                 { key: 'price', label: 'Precio' },
               ] as { key: keyof LabelFields; label: string }[]

@@ -146,7 +146,7 @@ function VariantPickerModal({ product, onAdd, onClose }: VariantPickerProps) {
         {sizes.length > 0 && (
           <div className="mb-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Talla
+              Variante
             </p>
             <div className="flex flex-wrap gap-2">
               {sizes.map((s) => {
@@ -1840,7 +1840,7 @@ export default function POSPage() {
       })
 
       const detail = [
-        match.variant.size && `talla ${match.variant.size}`,
+        match.variant.size,
         match.variant.color,
       ]
         .filter(Boolean)

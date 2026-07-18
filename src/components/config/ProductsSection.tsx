@@ -34,7 +34,7 @@ function SizeTypesManager({
     const v = (newSizeInputs[t.id] ?? '').trim()
     if (!v) return
     if (t.sizes.includes(v)) {
-      toast.error(`La talla "${v}" ya existe en "${t.label}"`)
+      toast.error(`El valor "${v}" ya existe en "${t.label}"`)
       return
     }
     onChange(types.map((x, i) => (i === idx ? { ...x, sizes: [...x.sizes, v] } : x)))
@@ -68,7 +68,7 @@ function SizeTypesManager({
       onChange(types.filter((_, i) => i !== idx))
       toast.success(`Tipo "${t.label}" eliminado`)
     } catch {
-      toast.error('No se pudo verificar el uso del tipo de talla')
+      toast.error('No se pudo verificar el uso del tipo de variante')
     } finally {
       setDeletingId(null)
     }
@@ -95,11 +95,11 @@ function SizeTypesManager({
   return (
     <div>
       <p className="mb-2 text-[11px] font-semibold uppercase tracking-[.05em] text-[#737373]">
-        Tipos de talla
+        Tipos de variante
       </p>
       <p className="mb-3 text-[11px] text-[#a8a29e]">
-        Define los conjuntos de tallas disponibles al crear productos (ej. Pantalón
-        Mujer). Arrastra para reordenar.
+        Define los conjuntos de valores de variante disponibles al crear productos
+        (ej. Capacidad, RAM). Arrastra para reordenar.
       </p>
 
       <div className="space-y-2">
@@ -133,7 +133,7 @@ function SizeTypesManager({
               <button
                 onClick={() => void removeType(idx)}
                 disabled={deletingId === t.id}
-                title="Eliminar tipo de talla"
+                title="Eliminar tipo de variante"
                 className="grid h-8 w-8 place-items-center rounded-md text-slate-300 hover:bg-red-50 hover:text-red-400 disabled:opacity-40"
               >
                 <Trash2 size={13} />
@@ -144,7 +144,7 @@ function SizeTypesManager({
             <div className="flex flex-wrap items-center gap-1.5 pl-6">
               {t.sizes.length === 0 ? (
                 <span className="text-[11px] text-[#a8a29e]">
-                  Sin tallas. Agrega abajo, o déjalo vacío para tallas libres.
+                  Sin valores. Agrega abajo, o déjalo vacío para variante libre.
                 </span>
               ) : (
                 t.sizes.map((size, sizeIdx) => (
@@ -172,7 +172,7 @@ function SizeTypesManager({
                   setNewSizeInputs((s) => ({ ...s, [t.id]: e.target.value }))
                 }
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSize(idx) } }}
-                placeholder="Nueva talla"
+                placeholder="Nuevo valor"
                 className="h-8 flex-1 rounded-lg border border-[#ebe9e6] px-2.5 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
               />
               <button
@@ -181,7 +181,7 @@ function SizeTypesManager({
                 className="flex h-8 items-center gap-1 rounded-lg border border-[#ebe9e6] bg-white px-2.5 text-xs font-medium text-[#525252] hover:bg-slate-50 disabled:opacity-40"
               >
                 <Plus size={12} />
-                Talla
+                Valor
               </button>
             </div>
           </div>
@@ -193,7 +193,7 @@ function SizeTypesManager({
         className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-dashed border-[#d6d3d1] py-2.5 text-sm font-medium text-cyan-500 hover:border-cyan-300 hover:bg-cyan-50"
       >
         <Plus size={14} />
-        Nuevo tipo de talla
+        Nuevo tipo de variante
       </button>
     </div>
   )
@@ -397,7 +397,7 @@ export default function ProductsSection() {
       .map((t) => ({ ...t, label: t.label.trim() }))
       .filter((t) => t.label.length > 0)
     if (cleaned.length === 0) {
-      toast.error('Debe existir al menos un tipo de talla')
+      toast.error('Debe existir al menos un tipo de variante')
       return
     }
     setSaving(true)
@@ -438,7 +438,7 @@ export default function ProductsSection() {
         </div>
         <div>
           <h2 className="text-sm font-semibold text-[#1a1a1a]">Configuración de productos</h2>
-          <p className="text-xs text-[#737373]">Tallas, colores, marcas y devoluciones</p>
+          <p className="text-xs text-[#737373]">Variantes, colores, marcas y devoluciones</p>
         </div>
       </div>
 

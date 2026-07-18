@@ -543,7 +543,7 @@ function VariantPickerModal({ excludeVariantId, onSelect, onClose }: VariantPick
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Producto, talla, color o SKU…"
+            placeholder="Producto, variante, color o SKU…"
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-[#a8a29e]"
           />
         </div>

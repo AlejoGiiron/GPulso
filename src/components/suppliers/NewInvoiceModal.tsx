@@ -78,7 +78,7 @@ function DuplicateProductWarning({
             </h3>
             <p className="mt-0.5 text-[13px] text-[#737373]">
               Encontramos producto(s) parecidos a &ldquo;{name}&rdquo;. Usa el
-              existente para no duplicar el catálogo; si le falta una talla o
+              existente para no duplicar el catálogo; si le falta una variante o
               color, agrégalos al mismo producto.
             </p>
           </div>

@@ -177,7 +177,7 @@ function VariantPicker({
         {sizes.length > 0 && (
           <div className="mb-3">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Talla
+              Variante
             </p>
             <div className="flex flex-wrap gap-2">
               {sizes.map((s) => {

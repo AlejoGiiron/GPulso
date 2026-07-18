@@ -98,7 +98,7 @@ export default function ConfigPage() {
             {active === 'sucursales' && 'Crea y administra las sucursales de tu negocio'}
             {active === 'usuarios' && 'Gestiona el equipo y sus permisos de acceso'}
             {active === 'roles' && 'Crea roles y define qué puede hacer cada uno'}
-            {active === 'productos' && 'Tallas, colores, marcas y límite de devoluciones'}
+            {active === 'productos' && 'Variantes, colores, marcas y límite de devoluciones'}
             {active === 'caja' && 'Métodos de pago, motivos de ajuste y QR para pagos'}
             {active === 'separados' && 'Condiciones del separado que se imprimen en el recibo'}
             {active === 'etiquetas' && 'Formato y campos para etiquetas de precio'}

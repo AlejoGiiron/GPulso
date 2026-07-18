@@ -349,7 +349,7 @@ function AdjustModal({ open, onClose }: AdjustModalProps) {
                   </p>
                   <p className="text-xs text-[#737373]">
                     {[
-                      selectedVariant.size && `Talla ${selectedVariant.size}`,
+                      selectedVariant.size,
                       selectedVariant.color,
                     ]
                       .filter(Boolean)
@@ -558,7 +558,7 @@ export default function InventoryPage() {
     ws.columns = [
       { header: 'Producto', key: 'product', width: 32 },
       { header: 'Marca', key: 'brand', width: 18 },
-      { header: 'Talla', key: 'size', width: 10 },
+      { header: 'Variante', key: 'size', width: 10 },
       { header: 'Color', key: 'color', width: 16 },
       { header: 'SKU', key: 'sku', width: 18 },
       { header: 'Código de barras', key: 'barcode', width: 22 },

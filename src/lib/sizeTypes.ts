@@ -1,22 +1,22 @@
 import type { SizeTypeConfig } from '@/types/config.types'
 
-// Catálogo por defecto de tipos de talla. A partir de la fase 15.1 los tipos
-// de talla viven en stores.config.size_types y son gestionables desde
-// Configuración. Esta lista solo se usa como fallback/seed cuando la tienda
-// aún no tiene tipos configurados.
+// Catálogo por defecto de "tipos de variante" (heredado de G-Mura como "tipos
+// de talla"; en G-Pulso son los conjuntos de valores de variante de un producto
+// de tecnología: capacidad, RAM, etc.). Los tipos viven en
+// stores.config.size_types y son gestionables desde Configuración. Esta lista
+// solo se usa como fallback/seed cuando la tienda aún no tiene tipos
+// configurados.
+//
+// FASE 2 (próximamente): sobre estas variantes se montará la capa de UNIDADES
+// serializadas (IMEI/serial). Hoy la variante sigue siendo capacidad+color.
 export const DEFAULT_SIZE_TYPES: SizeTypeConfig[] = [
-  { id: 'letter', label: 'Letras (XS-XXL)', sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] },
-  { id: 'pants_men', label: 'Pantalón Hombre', sizes: ['28', '30', '32', '34', '36', '38', '40', '42'] },
-  { id: 'pants_women', label: 'Pantalón Mujer', sizes: ['2', '4', '6', '8', '10', '12', '14', '16'] },
-  { id: 'shoes_men', label: 'Calzado Hombre', sizes: ['38', '39', '40', '41', '42', '43', '44'] },
-  { id: 'shoes_women', label: 'Calzado Mujer', sizes: ['34', '35', '36', '37', '38', '39', '40'] },
-  { id: 'baby', label: 'Bebé', sizes: ['0-3m', '3-6m', '6-9m', '9-12m', '12-18m', '18-24m'] },
-  { id: 'kids', label: 'Niños', sizes: ['2', '4', '6', '8', '10', '12', '14'] },
-  { id: 'unique', label: 'Talla única', sizes: ['Única'] },
+  { id: 'unique', label: 'Única', sizes: ['Única'] },
+  { id: 'capacity', label: 'Capacidad', sizes: ['32GB', '64GB', '128GB', '256GB', '512GB', '1TB'] },
+  { id: 'ram', label: 'RAM', sizes: ['4GB', '6GB', '8GB', '12GB', '16GB', '32GB'] },
   { id: 'custom', label: 'Personalizada', sizes: [] },
 ]
 
-export const DEFAULT_SIZE_TYPE_ID = 'letter'
+export const DEFAULT_SIZE_TYPE_ID = 'unique'
 export const CUSTOM_SIZE_TYPE_ID = 'custom'
 
 // Resuelve el tipo de talla configurado a partir de su id. Devuelve undefined

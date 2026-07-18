@@ -74,7 +74,7 @@ function LabelCard({ variant, productName, brand, size, onBarcodeError }: LabelC
   const brandLabel = brand?.trim()
   const truncName =
     productName.length > 22 ? `${productName.slice(0, 21)}…` : productName
-  const detail = [variant.size && `T.${variant.size}`, variant.color]
+  const detail = [variant.size, variant.color]
     .filter(Boolean)
     .join(' · ')
 
@@ -358,7 +358,7 @@ export default function LabelPrintModal({
                   </div>
                   <div>
                     <p className="text-sm font-medium text-[#1a1a1a]">
-                      {[variant.size && `Talla ${variant.size}`, variant.color]
+                      {[variant.size, variant.color]
                         .filter(Boolean)
                         .join(' · ') || '—'}
                     </p>
