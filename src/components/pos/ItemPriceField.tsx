@@ -19,7 +19,7 @@ interface ItemPriceFieldProps {
  * Bloque "Precio con descuento" por ítem, compartido entre el POS y el wizard
  * de separados. Deja CLARO que el campo rebaja el precio: etiqueta + monto
  * rebajado (−$X = catálogo − final, en verde) + campo editable con el final.
- * En violeta cuando hay descuento real. Con tope 0 queda de solo lectura. Los
+ * En cian cuando hay descuento real. Con tope 0 queda de solo lectura. Los
  * ítems "sin cargo" ($0) NO usan este bloque (el padre muestra el banner ámbar).
  *
  * Usa estado local solo mientras se edita para no clampear en cada tecla;
@@ -53,13 +53,13 @@ export function ItemPriceField({
     <div
       className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 ${
         discounted
-          ? 'border-violet-300/70 bg-violet-50/70'
+          ? 'border-cyan-300/70 bg-cyan-50/70'
           : 'border-slate-200 bg-slate-50'
       }`}
     >
       <span
         className={`flex shrink-0 items-center gap-1.5 text-[12px] font-semibold ${
-          discounted ? 'text-violet-700' : 'text-slate-500'
+          discounted ? 'text-cyan-700' : 'text-slate-500'
         }`}
       >
         <Tag size={13} />
@@ -77,8 +77,8 @@ export function ItemPriceField({
             priceLocked
               ? 'border-slate-200'
               : discounted
-                ? 'border-violet-300 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100'
-                : 'border-slate-300 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100'
+                ? 'border-cyan-300 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100'
+                : 'border-slate-300 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100'
           }`}
         >
           <span className="font-mono text-[12px] text-slate-400">$</span>
@@ -100,7 +100,7 @@ export function ItemPriceField({
                 : `Mínimo ${fmtCOP(minFinalPrice(listPrice, maxItemDiscount))}`
             }
             className={`w-16 bg-transparent text-right font-mono text-[13px] font-semibold tabular-nums outline-none read-only:cursor-default read-only:text-slate-500 ${
-              discounted ? 'text-violet-700' : 'text-slate-900'
+              discounted ? 'text-cyan-700' : 'text-slate-900'
             }`}
           />
         </div>

@@ -74,7 +74,7 @@ function StoreAccessPanel({ user }: { user: Profile }) {
                 <span
                   className={`flex h-5 w-5 items-center justify-center rounded-md border ${
                     checked
-                      ? 'border-violet-500 bg-violet-500 text-white'
+                      ? 'border-cyan-500 bg-cyan-500 text-white'
                       : 'border-[#ebe9e6] bg-white'
                   }`}
                 >
@@ -104,7 +104,7 @@ function Avatar({ name }: { name: string }) {
   return (
     <div
       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-      style={{ background: 'linear-gradient(135deg,#a78bfa,#7c3aed)' }}
+      style={{ background: 'linear-gradient(135deg,#22d3ee,#0891b2)' }}
     >
       {initials}
     </div>
@@ -117,7 +117,7 @@ function RoleBadge({ name, manager }: { name: string; manager: boolean }) {
   return (
     <span
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-        manager ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-600'
+        manager ? 'bg-cyan-100 text-cyan-700' : 'bg-slate-100 text-slate-600'
       }`}
     >
       {name}
@@ -252,7 +252,7 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Ana García"
-              className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             />
           </div>
           <div>
@@ -264,7 +264,7 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="ana@tienda.com"
-              className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             />
           </div>
           <div>
@@ -276,7 +276,7 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Mínimo 8 caracteres"
-              className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             />
           </div>
           <div>
@@ -284,7 +284,7 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
             <select
               value={roleId}
               onChange={(e) => handleRoleChange(e.target.value)}
-              className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             >
               {availableRoles.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -324,7 +324,7 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
                         <Store size={14} className="text-[#a8a29e]" />
                         <span className="text-[#1a1a1a]">{s.store_name}</span>
                         {manager && isBase && (
-                          <span className="rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700">
+                          <span className="rounded-full bg-cyan-100 px-1.5 py-0.5 text-[10px] font-semibold text-cyan-700">
                             principal
                           </span>
                         )}
@@ -334,7 +334,7 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
                           manager ? 'rounded-md' : 'rounded-full'
                         } ${
                           checked
-                            ? 'border-violet-500 bg-violet-500 text-white'
+                            ? 'border-cyan-500 bg-cyan-500 text-white'
                             : 'border-[#ebe9e6] bg-white'
                         }`}
                       >
@@ -365,7 +365,7 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
             <button
               type="submit"
               disabled={createUser.isPending}
-              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-[#8b5cf6] text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:brightness-95 disabled:opacity-60"
+              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-[#06b6d4] text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:brightness-95 disabled:opacity-60"
             >
               {createUser.isPending ? 'Creando…' : 'Crear usuario'}
             </button>
@@ -420,7 +420,7 @@ function UserRow({ user }: { user: Profile }) {
             title="Tiendas con acceso"
             className={`flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors ${
               showStores
-                ? 'border-violet-300 bg-violet-50 text-violet-700'
+                ? 'border-cyan-300 bg-cyan-50 text-cyan-700'
                 : 'border-[#ebe9e6] bg-white text-[#525252] hover:bg-slate-50'
             }`}
           >
@@ -436,7 +436,7 @@ function UserRow({ user }: { user: Profile }) {
             onChange={(e) =>
               void updateUserRole.mutateAsync({ id: user.id, roleId: e.target.value })
             }
-            className="h-8 rounded-lg border border-[#ebe9e6] bg-white px-2 text-xs text-[#525252] outline-none focus:border-violet-400"
+            className="h-8 rounded-lg border border-[#ebe9e6] bg-white px-2 text-xs text-[#525252] outline-none focus:border-cyan-400"
           >
             {/* Si el rol actual no está entre los asignables (p. ej. Dueño y no
                 soy Dueño), se muestra igual para no perder la selección. */}
@@ -459,7 +459,7 @@ function UserRow({ user }: { user: Profile }) {
             }
             title={user.is_active ? 'Desactivar acceso' : 'Activar acceso'}
             className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
-              user.is_active ? 'bg-violet-500' : 'bg-slate-200'
+              user.is_active ? 'bg-cyan-500' : 'bg-slate-200'
             }`}
           >
             <span
@@ -491,7 +491,7 @@ export default function UsersSection() {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#f5f4f1] px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-violet-100 text-violet-600">
+            <div className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-100 text-cyan-600">
               <Users size={15} />
             </div>
             <div>

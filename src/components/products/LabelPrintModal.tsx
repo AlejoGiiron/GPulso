@@ -10,8 +10,8 @@ import { deriveLabelStyle, findLabelSize } from '@/lib/labelSizes'
 import type { LabelSize } from '@/types/config.types'
 import type { Variant } from '@/types/database.types'
 
-const PRINT_STYLE_ID = 'gmura-label-print-style'
-const PRINT_CONTAINER_ID = 'gmura-label-print'
+const PRINT_STYLE_ID = 'gpulso-label-print-style'
+const PRINT_CONTAINER_ID = 'gpulso-label-print'
 
 // JsBarcode (CODE128) acepta ASCII imprimible. Un código vacío o con
 // caracteres fuera de rango lanza excepción al renderizar.
@@ -420,7 +420,7 @@ export default function LabelPrintModal({
             </button>
             <button
               onClick={handlePrint}
-              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-[#8b5cf6] text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:brightness-95"
+              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-[#06b6d4] text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:brightness-95"
             >
               <Printer size={14} />
               Imprimir {totalLabels} etiqueta{totalLabels !== 1 ? 's' : ''}

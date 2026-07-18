@@ -44,7 +44,7 @@ import type {
 
 const PAYMENT_COLORS: Record<PaymentMethod, string> = {
   cash:     '#10b981',
-  card:     '#8b5cf6',
+  card:     '#06b6d4',
   transfer: '#3b82f6',
   addi:     '#ec4899',
   credit:   '#f59e0b',
@@ -59,7 +59,7 @@ const PAYMENT_LABELS: Record<PaymentMethod, string> = {
 }
 
 const LAYAWAY_STATUS_COLORS: Record<LayawayStatus, string> = {
-  active:    '#8b5cf6',
+  active:    '#06b6d4',
   completed: '#16a34a',
   cancelled: '#94a3b8',
   expired:   '#dc2626',
@@ -73,7 +73,7 @@ const LAYAWAY_STATUS_LABELS: Record<LayawayStatus, string> = {
 }
 
 // Paleta para el pie de proveedores (top 5 + "Otros")
-const SUPPLIER_COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ec4899']
+const SUPPLIER_COLORS = ['#06b6d4', '#3b82f6', '#10b981', '#f59e0b', '#ec4899']
 const SUPPLIER_OTHERS_COLOR = '#cbd5e1'
 
 // Reportes usa el set base + 'mes anterior' (comparativa de período).
@@ -213,7 +213,7 @@ function KpiCard({ label, value, icon: Icon, tone = 'normal', mono = false, chan
   change?: number | null
 }) {
   const iconStyles: Record<CardTone, string> = {
-    normal: 'bg-violet-50 text-violet-500',
+    normal: 'bg-cyan-50 text-cyan-500',
     red:    'bg-red-50 text-red-500',
     yellow: 'bg-amber-50 text-amber-500',
     green:  'bg-emerald-50 text-emerald-500',
@@ -458,7 +458,7 @@ export default function ReportsPage() {
   async function exportExcel() {
     const { Workbook } = await import('exceljs')
     const wb = new Workbook()
-    wb.creator = 'G-Mura'
+    wb.creator = 'G-Pulso'
 
     const HEADER_FILL = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FFF5F4F1' } }
     const BOLD = { bold: true, size: 11 }
@@ -682,7 +682,7 @@ export default function ReportsPage() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `gmura_reporte_${format(new Date(), 'yyyy-MM-dd')}.xlsx`
+    a.download = `gpulso_reporte_${format(new Date(), 'yyyy-MM-dd')}.xlsx`
     document.body.appendChild(a); a.click(); document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
@@ -838,7 +838,7 @@ export default function ReportsPage() {
                     formatter={(v) => [Number(v ?? 0), 'Unidades']}
                     contentStyle={{ border: '1px solid #ebe9e6', borderRadius: 12, fontSize: 12 }}
                   />
-                  <Bar dataKey="units" name="Unidades" fill="#8b5cf6" radius={[0,4,4,0]} />
+                  <Bar dataKey="units" name="Unidades" fill="#06b6d4" radius={[0,4,4,0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -917,7 +917,7 @@ export default function ReportsPage() {
                         >
                           {label}
                           {key === sortKey && (
-                            <span className="ml-1 text-[#8b5cf6]">{sortDir === 'desc' ? '↓' : '↑'}</span>
+                            <span className="ml-1 text-[#06b6d4]">{sortDir === 'desc' ? '↓' : '↑'}</span>
                           )}
                         </th>
                       ))}
@@ -983,7 +983,7 @@ export default function ReportsPage() {
             </h2>
             <button
               onClick={() => navigate('/separados')}
-              className="flex items-center gap-1 text-xs font-medium text-[#8b5cf6] hover:underline"
+              className="flex items-center gap-1 text-xs font-medium text-[#06b6d4] hover:underline"
             >
               Ir al módulo <ArrowUpRight size={12} />
             </button>
@@ -1166,7 +1166,7 @@ export default function ReportsPage() {
             </h2>
             <button
               onClick={() => navigate('/proveedores')}
-              className="flex items-center gap-1 text-xs font-medium text-[#8b5cf6] hover:underline"
+              className="flex items-center gap-1 text-xs font-medium text-[#06b6d4] hover:underline"
             >
               Ir al módulo <ArrowUpRight size={12} />
             </button>
@@ -1215,7 +1215,7 @@ export default function ReportsPage() {
                       <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#a8a29e' }} axisLine={false} tickLine={false} />
                       <YAxis tickFormatter={fmtYAxis} tick={{ fontSize: 11, fill: '#a8a29e' }} axisLine={false} tickLine={false} width={68} />
                       <Tooltip content={<CopTooltip />} />
-                      <Bar dataKey="total" name="Compras" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="total" name="Compras" fill="#06b6d4" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -1277,8 +1277,8 @@ export default function ReportsPage() {
                     formatter={(v: string) => <span style={{ fontSize: 11, color: '#737373' }}>{v}</span>} />
                   <Line type="monotone" dataKey="ventas" name="Ventas" stroke="#16a34a" strokeWidth={2}
                     dot={{ r: 3, fill: '#16a34a', strokeWidth: 0 }} activeDot={{ r: 5 }} />
-                  <Line type="monotone" dataKey="compras" name="Compras" stroke="#8b5cf6" strokeWidth={2}
-                    dot={{ r: 3, fill: '#8b5cf6', strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="compras" name="Compras" stroke="#06b6d4" strokeWidth={2}
+                    dot={{ r: 3, fill: '#06b6d4', strokeWidth: 0 }} activeDot={{ r: 5 }} />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -1401,7 +1401,7 @@ export default function ReportsPage() {
                     >
                       {invReport?.outOfStockCount ?? 0}
                     </p>
-                    <button onClick={() => navigate('/inventario')} className="flex items-center gap-1 text-xs font-medium text-[#8b5cf6] hover:underline">
+                    <button onClick={() => navigate('/inventario')} className="flex items-center gap-1 text-xs font-medium text-[#06b6d4] hover:underline">
                       Ver <ArrowUpRight size={12} />
                     </button>
                   </div>
@@ -1422,7 +1422,7 @@ export default function ReportsPage() {
                     >
                       {invReport?.lowStockCount ?? 0}
                     </p>
-                    <button onClick={() => navigate('/inventario')} className="flex items-center gap-1 text-xs font-medium text-[#8b5cf6] hover:underline">
+                    <button onClick={() => navigate('/inventario')} className="flex items-center gap-1 text-xs font-medium text-[#06b6d4] hover:underline">
                       Ver <ArrowUpRight size={12} />
                     </button>
                   </div>

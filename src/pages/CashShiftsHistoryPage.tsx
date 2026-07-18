@@ -100,8 +100,8 @@ function ReprintReceiptModal({
         >
           <div className="flex items-start justify-between border-b border-[#f5f4f1] px-7 py-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100">
-                <Receipt size={18} className="text-violet-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-100">
+                <Receipt size={18} className="text-cyan-600" />
               </div>
               <div>
                 <h2
@@ -170,7 +170,7 @@ function ReprintReceiptModal({
             <button
               onClick={handlePrint}
               disabled={!closing}
-              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-violet-600 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-violet-700 disabled:opacity-50"
+              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-cyan-600 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-cyan-700 disabled:opacity-50"
             >
               <Printer size={14} />
               Imprimir
@@ -292,8 +292,8 @@ export default function CashShiftsHistoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between rounded-2xl border border-[#ebe9e6] bg-[#fdfcfb] px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-100">
-            <Wallet size={17} className="text-violet-600" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-100">
+            <Wallet size={17} className="text-cyan-600" />
           </div>
           <div>
             <p className="text-sm font-semibold text-[#1a1a1a]">
@@ -315,7 +315,7 @@ export default function CashShiftsHistoryPage() {
           onChange={(e) =>
             setFilters((f) => ({ ...f, cashierId: e.target.value, page: 0 }))
           }
-          className="h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 pr-8 text-sm text-[#525252] outline-none focus:border-violet-400"
+          className="h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 pr-8 text-sm text-[#525252] outline-none focus:border-cyan-400"
         >
           <option value="all">Todos los cajeros</option>
           {cashiers.map((c) => (

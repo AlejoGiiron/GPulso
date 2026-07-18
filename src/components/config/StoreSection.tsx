@@ -81,7 +81,7 @@ export default function StoreSection() {
       <div className="rounded-[14px] border border-[#ebe9e6] bg-white">
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-[#f5f4f1] px-5 py-4">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-violet-100 text-violet-600">
+          <div className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-100 text-cyan-600">
             <StoreIcon size={15} />
           </div>
           <div>
@@ -104,7 +104,7 @@ export default function StoreSection() {
               ) : (
                 <div
                   className="flex h-16 w-16 items-center justify-center rounded-full text-lg font-bold text-white"
-                  style={{ background: 'linear-gradient(135deg,#a78bfa,#7c3aed)' }}
+                  style={{ background: 'linear-gradient(135deg,#22d3ee,#0891b2)' }}
                 >
                   {initials || 'G'}
                 </div>
@@ -147,8 +147,8 @@ export default function StoreSection() {
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Ej. Tienda G-Mura"
-                  className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                  placeholder="Ej. Tienda G-Pulso"
+                  className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
                 />
               )}
             </div>
@@ -161,7 +161,7 @@ export default function StoreSection() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="Calle 123 #45-67, Bogotá"
-                  className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                  className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
                 />
               )}
             </div>
@@ -174,7 +174,7 @@ export default function StoreSection() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+57 300 000 0000"
-                  className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                  className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
                 />
               )}
             </div>
@@ -196,7 +196,7 @@ export default function StoreSection() {
                   <select
                     value={timezone}
                     onChange={(e) => setTimezone(e.target.value)}
-                    className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                    className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
                   >
                     {TIMEZONES.map((tz) => (
                       <option key={tz.value} value={tz.value}>
@@ -223,7 +223,7 @@ export default function StoreSection() {
           <button
             onClick={() => void handleSave()}
             disabled={saving || isLoading}
-            className="flex h-9 items-center gap-2 rounded-lg bg-[#8b5cf6] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:brightness-95 disabled:opacity-60"
+            className="flex h-9 items-center gap-2 rounded-lg bg-[#06b6d4] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:brightness-95 disabled:opacity-60"
           >
             {saving ? 'Guardando…' : 'Guardar cambios'}
           </button>

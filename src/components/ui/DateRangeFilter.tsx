@@ -90,7 +90,7 @@ export function DateRangeFilter({
             onChange={(e) =>
               onChange({ preset: 'custom', dateFrom: e.target.value, dateTo })
             }
-            className="h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-violet-400"
+            className="h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-cyan-400"
           />
           <span className="text-xs text-[#737373]">a</span>
           <input
@@ -101,7 +101,7 @@ export function DateRangeFilter({
             onChange={(e) =>
               onChange({ preset: 'custom', dateFrom, dateTo: e.target.value })
             }
-            className="h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-violet-400"
+            className="h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-cyan-400"
           />
           {invalidRange && (
             <span className="text-xs text-red-500">

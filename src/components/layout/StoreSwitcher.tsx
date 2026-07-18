@@ -89,7 +89,7 @@ export function StoreSwitcher() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         disabled={switching}
-        className="flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-sm font-medium text-violet-700 transition-colors hover:bg-violet-100 disabled:opacity-70"
+        className="flex items-center gap-2 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-medium text-cyan-700 transition-colors hover:bg-cyan-100 disabled:opacity-70"
       >
         {switching ? (
           <Loader2 size={14} className="animate-spin" />
@@ -141,7 +141,7 @@ export function StoreSwitcher() {
                 <button
                   onClick={() => performSwitch(pending)}
                   disabled={switching}
-                  className="h-9 flex-1 rounded-lg bg-[#8b5cf6] text-sm font-semibold text-white hover:bg-[#7c3aed] disabled:opacity-60"
+                  className="h-9 flex-1 rounded-lg bg-[#06b6d4] text-sm font-semibold text-white hover:bg-[#0891b2] disabled:opacity-60"
                 >
                   {switching ? 'Cambiando…' : 'Cambiar'}
                 </button>
@@ -167,7 +167,7 @@ export function StoreSwitcher() {
                       <span className="flex items-center gap-2.5">
                         <Store
                           size={14}
-                          className={isActive ? 'text-[#8b5cf6]' : 'text-[#a8a29e]'}
+                          className={isActive ? 'text-[#06b6d4]' : 'text-[#a8a29e]'}
                         />
                         <span
                           className={
@@ -179,7 +179,7 @@ export function StoreSwitcher() {
                           {s.store_name}
                         </span>
                       </span>
-                      {isActive && <Check size={15} className="text-[#8b5cf6]" />}
+                      {isActive && <Check size={15} className="text-[#06b6d4]" />}
                     </button>
                   )
                 })}

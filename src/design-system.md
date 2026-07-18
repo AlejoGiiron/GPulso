@@ -1,4 +1,4 @@
-# G-Mura Design System
+# G-Pulso Design System
 
 Extraído de los archivos `_design/` (pos-v2, products-v2, login, gm-sidebar, pos-shared, prod-shared, tweaks-panel).
 Fuente de verdad visual para todos los módulos del proyecto.
@@ -13,7 +13,7 @@ Fuente de verdad visual para todos los módulos del proyecto.
 4. [Componentes documentados](#4-componentes-documentados)
 5. [Patrones de UX](#5-patrones-de-ux)
 6. [Iconografía](#6-iconografía)
-7. [Patrones específicos de G-Mura](#7-patrones-específicos-de-g-mura)
+7. [Patrones específicos de G-Pulso](#7-patrones-específicos-de-g-pulso)
 
 ---
 
@@ -58,13 +58,13 @@ Fuente de verdad visual para todos los módulos del proyecto.
 
 | Token              | HEX       | Uso                                                              |
 |--------------------|-----------|------------------------------------------------------------------|
-| `accent`           | `#8b5cf6` | Color principal — botones CTA, nav activo, logos, focos          |
-| `accent-dark`      | `#7c3aed` | Hover de accent, gradiente del avatar                            |
-| `accent-light`     | `#a78bfa` | Gradiente del avatar (inicio), tint de iconos en login           |
-| `accent-shadow`    | `#8b5cf640`| Box shadow de botones primarios (`0 4px 12px`)                  |
-| `accent-shadow-lg` | `#8b5cf645`| Box shadow extendido en botón Cobrar (`0 6px 18px`)             |
-| `accent-focus-ring`| `#8b5cf61a`| Ring de foco en inputs (`0 0 0 4px`)                           |
-| `accent-selected`  | `#8b5cf61a`| Ring de selección en lista productos (`0 0 0 3px`)              |
+| `accent`           | `#06b6d4` | Color principal — botones CTA, nav activo, logos, focos          |
+| `accent-dark`      | `#0891b2` | Hover de accent, gradiente del avatar                            |
+| `accent-light`     | `#22d3ee` | Gradiente del avatar (inicio), tint de iconos en login           |
+| `accent-shadow`    | `#06b6d440`| Box shadow de botones primarios (`0 4px 12px`)                  |
+| `accent-shadow-lg` | `#06b6d445`| Box shadow extendido en botón Cobrar (`0 6px 18px`)             |
+| `accent-focus-ring`| `#06b6d41a`| Ring de foco en inputs (`0 0 0 4px`)                           |
+| `accent-selected`  | `#06b6d41a`| Ring de selección en lista productos (`0 0 0 3px`)              |
 
 ### 1.5 Semánticos
 
@@ -104,7 +104,7 @@ Fuente de verdad visual para todos los módulos del proyecto.
 |-------------------|-----------|-------------------------------|
 | `sidebar-bg`      | `#0f172a` | Fondo de sidebar y panel login|
 | `sidebar-divider` | `rgba(148,163,184,0.18)` | Línea divisoria  |
-| `avatar-gradient` | `linear-gradient(135deg,#a78bfa,#7c3aed)` | Avatar usuario |
+| `avatar-gradient` | `linear-gradient(135deg,#22d3ee,#0891b2)` | Avatar usuario |
 | `login-glow`      | `${accent}45` radial | Glow decorativo en login |
 
 ---
@@ -115,7 +115,7 @@ Fuente de verdad visual para todos los módulos del proyecto.
 
 | Familia                      | Uso                                                                  |
 |------------------------------|----------------------------------------------------------------------|
-| `Geist, system-ui, sans-serif` | Todo el texto de interfaz: labels, inputs, tablas, descripción     |
+| `IBM Plex Sans, system-ui, sans-serif` | Todo el texto de interfaz: labels, inputs, tablas, descripción     |
 | `Bricolage Grotesque, serif`  | Títulos de página, wordmark, precios grandes, totales, stats        |
 | `ui-monospace, monospace`     | SKUs en tabla de variantes, precios en contexto de código           |
 
@@ -253,12 +253,12 @@ height: 38px;           /* 42px modal, 50px login */
 padding: 0 16px;
 border: 0;
 border-radius: 8px;     /* 10px en login */
-background: #8b5cf6;
+background: #06b6d4;
 color: #fff;
 font-size: 13.5px;      /* 15px login */
 font-weight: 600;
 cursor: pointer;
-box-shadow: 0 4px 12px #8b5cf640;
+box-shadow: 0 4px 12px #06b6d440;
 display: flex; align-items: center; gap: 7px;
 ```
 
@@ -342,7 +342,7 @@ outline: 0;
 #### Focus
 ```css
 border: 1.5px solid accent;
-box-shadow: 0 0 0 4px #8b5cf61a;
+box-shadow: 0 0 0 4px #06b6d41a;
 transition: border-color .12s, box-shadow .12s;
 ```
 
@@ -375,10 +375,10 @@ gap: 12px;
 background: #f5f4f1; border-radius: 6px; cursor: text;
 
 /* estado editando */
-border: 1.5px solid #8b5cf6;
+border: 1.5px solid #06b6d4;
 border-radius: 6px;
 outline: 0;
-box-shadow: 0 0 0 3px #8b5cf620;
+box-shadow: 0 0 0 3px #06b6d420;
 ```
 
 ### 4.3 Cards de producto (lista lateral)
@@ -392,9 +392,9 @@ padding: 10px;
 cursor: pointer;
 
 /* Seleccionado / active */
-border: 1.5px solid #8b5cf6;
+border: 1.5px solid #06b6d4;
 background: #fff;
-box-shadow: 0 0 0 3px #8b5cf61a;
+box-shadow: 0 0 0 3px #06b6d41a;
 ```
 
 Thumbnail: `width: 44px; height: 44px; border-radius: 7px`
@@ -504,7 +504,7 @@ color: #cbd5e1;
 font-size: 13.5px; font-weight: 500;
 
 /* Activo */
-background: #8b5cf6;
+background: #06b6d4;
 color: #fff;
 ```
 
@@ -514,7 +514,7 @@ Badge de conteo (e.g. carrito):
 background: rgba(255,255,255,0.25);
 
 /* sobre inactivo */
-background: #8b5cf6;
+background: #06b6d4;
 
 /* común */
 min-width: 18px; height: 18px;
@@ -775,7 +775,7 @@ Tamaño: `17×17`
 
 ---
 
-## 7. Patrones específicos de G-Mura
+## 7. Patrones específicos de G-Pulso
 
 ### 7.1 Formato de precios COP
 
@@ -880,14 +880,14 @@ En carrito (línea de descripción):
 
 ```tsx
 {/* Logo block */}
-<div className="flex h-[30px] w-[30px] items-center justify-center rounded-[7px] bg-violet-500
+<div className="flex h-[30px] w-[30px] items-center justify-center rounded-[7px] bg-cyan-500
                 font-bold text-[15px] text-white" style={{ fontFamily: 'Bricolage Grotesque' }}>
   G
 </div>
 
 {/* Wordmark text */}
 <span style={{ fontFamily: 'Bricolage Grotesque', fontSize: 19, fontWeight: 600, letterSpacing: '-0.02em', color: '#fff' }}>
-  G-Mura<span style={{ color: accent }}>.</span>
+  G-Pulso<span style={{ color: accent }}>.</span>
 </span>
 ```
 
@@ -897,7 +897,7 @@ El punto final en accent es obligatorio — es parte de la identidad.
 
 ```tsx
 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-     style={{ background: 'linear-gradient(135deg,#a78bfa,#7c3aed)' }}>
+     style={{ background: 'linear-gradient(135deg,#22d3ee,#0891b2)' }}>
   {initials}
 </div>
 ```

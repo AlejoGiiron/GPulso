@@ -69,7 +69,7 @@ export default function SeparadosSection() {
     <div className="rounded-[14px] border border-[#ebe9e6] bg-white">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-[#f5f4f1] px-5 py-4">
-        <div className="grid h-8 w-8 place-items-center rounded-lg bg-violet-100 text-violet-600">
+        <div className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-100 text-cyan-600">
           <Bookmark size={15} />
         </div>
         <div>
@@ -94,7 +94,7 @@ export default function SeparadosSection() {
           placeholder={
             'Los abonos no se reembolsan al cancelar.\nSi pasa la fecha de vencimiento sin completar, el separado expira.'
           }
-          className="w-full resize-y rounded-lg border border-[#ebe9e6] px-3 py-2 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+          className="w-full resize-y rounded-lg border border-[#ebe9e6] px-3 py-2 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
         />
         <p className="mt-1.5 text-[11px] text-[#a8a29e]">
           Cada renglón aparece como un ítem con guion en el recibo, debajo de
@@ -107,7 +107,7 @@ export default function SeparadosSection() {
         <button
           onClick={() => void handleSave()}
           disabled={saving}
-          className="flex h-9 items-center gap-2 rounded-lg bg-[#8b5cf6] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:brightness-95 disabled:opacity-60"
+          className="flex h-9 items-center gap-2 rounded-lg bg-[#06b6d4] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:brightness-95 disabled:opacity-60"
         >
           {saving ? 'Guardando…' : 'Guardar cambios'}
         </button>

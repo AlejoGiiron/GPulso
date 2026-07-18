@@ -10,7 +10,7 @@ const COLOR_MAP: Record<string, string> = {
   naranja: '#ea580c',
   rosa: '#ec4899',
   gris: '#6b7280',
-  morado: '#7c3aed',
+  morado: '#0891b2',
   café: '#92400e',
   beige: '#d2b48c',
   celeste: '#38bdf8',

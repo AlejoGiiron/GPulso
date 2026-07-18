@@ -23,12 +23,12 @@ const PRESET_COLORS = [
   '#eab308', // amarillo
   '#22c55e', // verde
   '#3b82f6', // azul
-  '#8b5cf6', // violeta
+  '#06b6d4', // cian
   '#ec4899', // rosa
   '#64748b', // slate
 ]
 
-const DEFAULT_COLOR = PRESET_COLORS[5] // violeta por defecto
+const DEFAULT_COLOR = PRESET_COLORS[5] // cian por defecto
 
 // ─── Color Picker ─────────────────────────────────────────────────────────────
 
@@ -105,11 +105,11 @@ function CategoryRow({
       onDrop={onDrop}
       className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${
         isDragging ? 'opacity-40' : ''
-      } ${isDragTarget ? 'bg-violet-50' : 'bg-white hover:bg-slate-50'}`}
+      } ${isDragTarget ? 'bg-cyan-50' : 'bg-white hover:bg-slate-50'}`}
     >
       {/* Drag-over indicator line */}
       {isDragTarget && (
-        <div className="absolute left-3 right-3 top-0 h-0.5 rounded-full bg-violet-400" />
+        <div className="absolute left-3 right-3 top-0 h-0.5 rounded-full bg-cyan-400" />
       )}
 
       {/* Drag handle */}
@@ -129,12 +129,12 @@ function CategoryRow({
               if (e.key === 'Enter') onSaveEdit()
               if (e.key === 'Escape') onCancelEdit()
             }}
-            className="min-w-0 flex-1 rounded-lg border border-violet-300 bg-white px-2.5 py-1 text-sm outline-none focus:ring-2 focus:ring-violet-100"
+            className="min-w-0 flex-1 rounded-lg border border-cyan-300 bg-white px-2.5 py-1 text-sm outline-none focus:ring-2 focus:ring-cyan-100"
           />
           <button
             onClick={onSaveEdit}
             disabled={!editName.trim()}
-            className="grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg bg-violet-500 text-white disabled:opacity-40 hover:bg-violet-600"
+            className="grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg bg-cyan-500 text-white disabled:opacity-40 hover:bg-cyan-600"
           >
             <Check size={13} />
           </button>
@@ -223,7 +223,7 @@ function NewCategoryForm({
   onCancel,
 }: NewCategoryFormProps) {
   return (
-    <div className="mt-2 rounded-xl border border-violet-200 bg-violet-50/60 p-3">
+    <div className="mt-2 rounded-xl border border-cyan-200 bg-cyan-50/60 p-3">
       <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
         Nueva categoría
       </p>
@@ -237,7 +237,7 @@ function NewCategoryForm({
           if (e.key === 'Escape') onCancel()
         }}
         placeholder="Nombre de la categoría"
-        className="mt-3 h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+        className="mt-3 h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
       />
       <div className="mt-3 flex gap-2">
         <button
@@ -251,7 +251,7 @@ function NewCategoryForm({
           type="button"
           onClick={onSubmit}
           disabled={!name.trim() || submitting}
-          className="h-8 flex-[2] rounded-lg bg-violet-500 text-sm font-semibold text-white hover:bg-violet-600 disabled:opacity-50"
+          className="h-8 flex-[2] rounded-lg bg-cyan-500 text-sm font-semibold text-white hover:bg-cyan-600 disabled:opacity-50"
         >
           {submitting ? 'Creando…' : 'Crear categoría'}
         </button>
@@ -413,7 +413,7 @@ export default function CategoriesManager() {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
         <div className="flex items-center gap-2.5">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-violet-100 text-violet-600">
+          <div className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-100 text-cyan-600">
             <Tag size={15} />
           </div>
           <div>
@@ -452,7 +452,7 @@ export default function CategoriesManager() {
               Sin categorías todavía.{' '}
               <button
                 onClick={() => setShowNewForm(true)}
-                className="font-medium text-violet-500 hover:underline"
+                className="font-medium text-cyan-500 hover:underline"
               >
                 Crear la primera
               </button>

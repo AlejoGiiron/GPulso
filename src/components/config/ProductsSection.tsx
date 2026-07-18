@@ -115,7 +115,7 @@ function SizeTypesManager({
               draggedIdx === idx
                 ? 'opacity-40'
                 : dragOverIdx === idx
-                ? 'border-violet-300 bg-violet-50'
+                ? 'border-cyan-300 bg-cyan-50'
                 : 'border-[#ebe9e6] bg-white'
             }`}
           >
@@ -128,7 +128,7 @@ function SizeTypesManager({
                 value={t.label}
                 onChange={(e) => updateLabel(idx, e.target.value)}
                 placeholder="Nombre del tipo"
-                className="h-9 flex-1 rounded-lg border border-[#ebe9e6] px-3 text-sm font-medium outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                className="h-9 flex-1 rounded-lg border border-[#ebe9e6] px-3 text-sm font-medium outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
               />
               <button
                 onClick={() => void removeType(idx)}
@@ -173,7 +173,7 @@ function SizeTypesManager({
                 }
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSize(idx) } }}
                 placeholder="Nueva talla"
-                className="h-8 flex-1 rounded-lg border border-[#ebe9e6] px-2.5 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                className="h-8 flex-1 rounded-lg border border-[#ebe9e6] px-2.5 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
               />
               <button
                 onClick={() => addSize(idx)}
@@ -190,7 +190,7 @@ function SizeTypesManager({
 
       <button
         onClick={addType}
-        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-dashed border-[#d6d3d1] py-2.5 text-sm font-medium text-violet-500 hover:border-violet-300 hover:bg-violet-50"
+        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-dashed border-[#d6d3d1] py-2.5 text-sm font-medium text-cyan-500 hover:border-cyan-300 hover:bg-cyan-50"
       >
         <Plus size={14} />
         Nuevo tipo de talla
@@ -209,14 +209,14 @@ function ColorList({
   onChange: (c: StoreColorConfig[]) => void
 }) {
   const [newName, setNewName] = useState('')
-  const [newHex, setNewHex] = useState('#8b5cf6')
+  const [newHex, setNewHex] = useState('#06b6d4')
 
   function addColor() {
     const name = newName.trim()
     if (!name) return
     onChange([...colors, { name, hex: newHex }])
     setNewName('')
-    setNewHex('#8b5cf6')
+    setNewHex('#06b6d4')
   }
 
   function updateName(idx: number, name: string) {
@@ -282,7 +282,7 @@ function ColorList({
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') addColor() }}
           placeholder="Nombre del color"
-          className="h-9 flex-1 rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+          className="h-9 flex-1 rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
         />
         <button
           onClick={addColor}
@@ -350,7 +350,7 @@ function BrandList({
           onChange={(e) => setNewBrand(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') addBrand() }}
           placeholder="Nombre de la marca"
-          className="h-9 flex-1 rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+          className="h-9 flex-1 rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
         />
         <button
           onClick={addBrand}
@@ -433,7 +433,7 @@ export default function ProductsSection() {
     <div className="rounded-[14px] border border-[#ebe9e6] bg-white">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-[#f5f4f1] px-5 py-4">
-        <div className="grid h-8 w-8 place-items-center rounded-lg bg-violet-100 text-violet-600">
+        <div className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-100 text-cyan-600">
           <Tag size={15} />
         </div>
         <div>
@@ -468,7 +468,7 @@ export default function ProductsSection() {
               max={365}
               value={returnDays}
               onChange={(e) => setReturnDays(Math.max(1, parseInt(e.target.value) || 1))}
-              className="h-10 w-24 rounded-lg border border-[#ebe9e6] px-3 text-sm tabular-nums outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="h-10 w-24 rounded-lg border border-[#ebe9e6] px-3 text-sm tabular-nums outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             />
             <div className="flex items-center gap-1.5 text-xs text-[#737373]">
               <RefreshCw size={12} />
@@ -480,7 +480,7 @@ export default function ProductsSection() {
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-[.05em] text-[#737373]">
             Tope de descuento por ítem
           </p>
-          <div className="flex h-10 w-44 items-center gap-1 rounded-lg border border-[#ebe9e6] bg-white px-3 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+          <div className="flex h-10 w-44 items-center gap-1 rounded-lg border border-[#ebe9e6] bg-white px-3 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
             <span className="text-sm font-medium text-[#a8a29e]">$</span>
             <input
               value={
@@ -509,7 +509,7 @@ export default function ProductsSection() {
         <button
           onClick={() => void handleSave()}
           disabled={saving}
-          className="flex h-9 items-center gap-2 rounded-lg bg-[#8b5cf6] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:brightness-95 disabled:opacity-60"
+          className="flex h-9 items-center gap-2 rounded-lg bg-[#06b6d4] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:brightness-95 disabled:opacity-60"
         >
           {saving ? 'Guardando…' : 'Guardar cambios'}
         </button>

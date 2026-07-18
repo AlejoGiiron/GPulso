@@ -99,7 +99,7 @@ function StoreModal({ store, onClose }: StoreModalProps) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Sucursal Centro"
-              className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             />
           </div>
           <div>
@@ -110,7 +110,7 @@ function StoreModal({ store, onClose }: StoreModalProps) {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Cra 1 #2-3"
-              className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             />
           </div>
           <div>
@@ -121,7 +121,7 @@ function StoreModal({ store, onClose }: StoreModalProps) {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="3001234567"
-              className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             />
           </div>
 
@@ -143,7 +143,7 @@ function StoreModal({ store, onClose }: StoreModalProps) {
             <button
               type="submit"
               disabled={pending}
-              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-[#8b5cf6] text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:brightness-95 disabled:opacity-60"
+              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-[#06b6d4] text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:brightness-95 disabled:opacity-60"
             >
               {pending
                 ? 'Guardando…'
@@ -173,14 +173,14 @@ function StoreRow({
 
   return (
     <div className="flex items-center gap-3 border-b border-[#f5f4f1] px-5 py-3.5 last:border-0">
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-violet-100 text-violet-600">
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-cyan-100 text-cyan-600">
         <Building2 size={16} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-sm font-medium text-[#1a1a1a]">{store.name}</p>
           {isCurrent && (
-            <span className="shrink-0 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-700">
+            <span className="shrink-0 rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-semibold text-cyan-700">
               Tienda actual
             </span>
           )}
@@ -215,7 +215,7 @@ function StoreRow({
         disabled={toggleActive.isPending}
         title={store.is_active ? 'Desactivar sucursal' : 'Activar sucursal'}
         className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:opacity-60 ${
-          store.is_active ? 'bg-violet-500' : 'bg-slate-200'
+          store.is_active ? 'bg-cyan-500' : 'bg-slate-200'
         }`}
       >
         <span
@@ -252,7 +252,7 @@ export default function StoresSection() {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#f5f4f1] px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-violet-100 text-violet-600">
+          <div className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-100 text-cyan-600">
             <Building2 size={15} />
           </div>
           <div>

@@ -102,7 +102,7 @@ export function LayawayNotifications() {
                     }}
                     className="flex w-full items-start gap-3 border-b border-[#f5f4f1] px-4 py-3 text-left transition-colors last:border-0 hover:bg-[#fafaf9]"
                   >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-50 font-mono text-[10px] font-bold text-violet-700">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cyan-50 font-mono text-[10px] font-bold text-cyan-700">
                       #{l.layaway_number}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -132,7 +132,7 @@ export function LayawayNotifications() {
               setOpen(false)
               navigate('/separados')
             }}
-            className="block w-full border-t border-[#f5f4f1] bg-[#fafaf9] px-4 py-2.5 text-center text-xs font-medium text-violet-600 hover:bg-[#f5f4f1]"
+            className="block w-full border-t border-[#f5f4f1] bg-[#fafaf9] px-4 py-2.5 text-center text-xs font-medium text-cyan-600 hover:bg-[#f5f4f1]"
           >
             Ver todos los separados
           </button>

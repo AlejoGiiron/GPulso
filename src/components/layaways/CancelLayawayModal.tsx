@@ -106,7 +106,7 @@ export function CancelLayawayModal({
               onChange={(e) => setReason(e.target.value.slice(0, 300))}
               placeholder="Ej.: el cliente no volvió tras 30 días…"
               rows={3}
-              className="w-full resize-none rounded-lg border border-[#ebe9e6] px-3 py-2 text-sm outline-none placeholder:text-[#a8a29e] focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="w-full resize-none rounded-lg border border-[#ebe9e6] px-3 py-2 text-sm outline-none placeholder:text-[#a8a29e] focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             />
             <p className="mt-1 text-[10px] text-[#a8a29e]">
               Mínimo 5 caracteres · {reason.length}/300

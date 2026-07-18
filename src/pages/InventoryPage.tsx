@@ -78,7 +78,7 @@ function MovTypeBadge({ type }: { type: StockMovementType }) {
     sale:       'bg-red-50 text-red-600 border border-red-200',
     return:     'bg-emerald-50 text-emerald-600 border border-emerald-200',
     adjustment: 'bg-blue-50 text-blue-600 border border-blue-200',
-    purchase:   'bg-violet-50 text-violet-600 border border-violet-200',
+    purchase:   'bg-cyan-50 text-cyan-600 border border-cyan-200',
   }
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${styles[type]}`}>
@@ -101,7 +101,7 @@ interface SummaryCardProps {
 
 function SummaryCard({ label, value, icon: Icon, tone = 'normal', mono }: SummaryCardProps) {
   const iconStyles: Record<CardTone, string> = {
-    normal: 'bg-violet-50 text-violet-500',
+    normal: 'bg-cyan-50 text-cyan-500',
     red:    'bg-red-50 text-red-500',
     yellow: 'bg-amber-50 text-amber-500',
     green:  'bg-emerald-50 text-emerald-500',
@@ -291,11 +291,11 @@ function AdjustModal({ open, onClose }: AdjustModalProps) {
                 Buscar variante
               </label>
               <div className="relative">
-                <ScanLine size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-violet-500" />
+                <ScanLine size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-500" />
                 <input
                   ref={searchInputRef}
                   autoFocus
-                  className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white pl-9 pr-3 text-sm outline-none transition-[border-color,box-shadow] focus:border-[#8b5cf6] focus:shadow-[0_0_0_4px_#8b5cf61a]"
+                  className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white pl-9 pr-3 text-sm outline-none transition-[border-color,box-shadow] focus:border-[#06b6d4] focus:shadow-[0_0_0_4px_#06b6d41a]"
                   placeholder="Escanea o busca por nombre, SKU o código…"
                   value={variantSearch}
                   onChange={(e) => setVariantSearch(e.target.value)}
@@ -385,7 +385,7 @@ function AdjustModal({ open, onClose }: AdjustModalProps) {
               Tipo de ajuste
             </label>
             <select
-              className="h-10 w-full appearance-none rounded-lg border border-[#ebe9e6] bg-white px-3 pr-8 text-sm outline-none transition-[border-color,box-shadow] focus:border-[#8b5cf6] focus:shadow-[0_0_0_4px_#8b5cf61a]"
+              className="h-10 w-full appearance-none rounded-lg border border-[#ebe9e6] bg-white px-3 pr-8 text-sm outline-none transition-[border-color,box-shadow] focus:border-[#06b6d4] focus:shadow-[0_0_0_4px_#06b6d41a]"
               value={tipo}
               onChange={(e) => setTipo(e.target.value)}
             >
@@ -406,7 +406,7 @@ function AdjustModal({ open, onClose }: AdjustModalProps) {
             <input
               ref={qtyInputRef}
               type="number"
-              className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 font-mono text-sm outline-none transition-[border-color,box-shadow] focus:border-[#8b5cf6] focus:shadow-[0_0_0_4px_#8b5cf61a]"
+              className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 font-mono text-sm outline-none transition-[border-color,box-shadow] focus:border-[#06b6d4] focus:shadow-[0_0_0_4px_#06b6d41a]"
               placeholder="Ej: 10 o -5"
               value={qty}
               onChange={(e) => setQty(e.target.value)}
@@ -432,7 +432,7 @@ function AdjustModal({ open, onClose }: AdjustModalProps) {
               Motivo <span className="font-bold text-red-400">*</span>
             </label>
             <textarea
-              className="w-full resize-y rounded-lg border border-[#ebe9e6] bg-white px-3 py-2.5 text-sm outline-none transition-[border-color,box-shadow] focus:border-[#8b5cf6] focus:shadow-[0_0_0_4px_#8b5cf61a]"
+              className="w-full resize-y rounded-lg border border-[#ebe9e6] bg-white px-3 py-2.5 text-sm outline-none transition-[border-color,box-shadow] focus:border-[#06b6d4] focus:shadow-[0_0_0_4px_#06b6d41a]"
               rows={3}
               placeholder="Describe el motivo del ajuste..."
               value={motivo}
@@ -452,7 +452,7 @@ function AdjustModal({ open, onClose }: AdjustModalProps) {
           <button
             onClick={handleSubmit}
             disabled={!canSubmit || adjustStock.isPending}
-            className="h-10 flex-1 rounded-lg bg-[#8b5cf6] text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-10 flex-1 rounded-lg bg-[#06b6d4] text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {adjustStock.isPending ? 'Guardando…' : 'Confirmar ajuste'}
           </button>
@@ -616,7 +616,7 @@ export default function InventoryPage() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `gmura_inventario_${format(new Date(), 'yyyy-MM-dd')}.xlsx`
+    a.download = `gpulso_inventario_${format(new Date(), 'yyyy-MM-dd')}.xlsx`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -629,7 +629,7 @@ export default function InventoryPage() {
   const totalPages = Math.ceil(movTotal / MOV_PAGE_SIZE)
 
   const selectClass =
-    'h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm text-[#525252] outline-none focus:border-[#8b5cf6] focus:shadow-[0_0_0_3px_#8b5cf61a] transition-[border-color,box-shadow]'
+    'h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm text-[#525252] outline-none focus:border-[#06b6d4] focus:shadow-[0_0_0_3px_#06b6d41a] transition-[border-color,box-shadow]'
 
   return (
     <>
@@ -672,7 +672,7 @@ export default function InventoryPage() {
         {can('inventario.gestionar') && (
           <button
             onClick={() => setShowAdjustModal(true)}
-            className="flex h-9 items-center gap-2 rounded-lg bg-[#8b5cf6] px-4 text-[13.5px] font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:brightness-95"
+            className="flex h-9 items-center gap-2 rounded-lg bg-[#06b6d4] px-4 text-[13.5px] font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:brightness-95"
           >
             <Plus size={15} />
             Ajuste manual
@@ -727,7 +727,7 @@ export default function InventoryPage() {
               <div className="relative min-w-[180px] flex-1">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a8a29e]" />
                 <input
-                  className="h-9 w-full rounded-lg border border-[#ebe9e6] bg-white pl-9 pr-3 text-sm outline-none transition-[border-color,box-shadow] focus:border-[#8b5cf6] focus:shadow-[0_0_0_3px_#8b5cf61a] placeholder:text-[#a8a29e]"
+                  className="h-9 w-full rounded-lg border border-[#ebe9e6] bg-white pl-9 pr-3 text-sm outline-none transition-[border-color,box-shadow] focus:border-[#06b6d4] focus:shadow-[0_0_0_3px_#06b6d41a] placeholder:text-[#a8a29e]"
                   placeholder="Nombre, SKU o código de barras…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -890,7 +890,7 @@ export default function InventoryPage() {
                           </td>
                           <td
                             className={`px-4 py-3 text-right font-mono text-sm tabular-nums ${
-                              v.reserved_qty > 0 ? 'text-violet-600' : 'text-[#a8a29e]'
+                              v.reserved_qty > 0 ? 'text-cyan-600' : 'text-[#a8a29e]'
                             }`}
                           >
                             {v.reserved_qty > 0 ? v.reserved_qty : '—'}
@@ -975,7 +975,7 @@ export default function InventoryPage() {
                     setMovFilters({ type: 'all', dateFrom: '', dateTo: '' })
                     setMovPage(0)
                   }}
-                  className="flex items-center gap-1.5 text-xs text-[#8b5cf6] hover:underline"
+                  className="flex items-center gap-1.5 text-xs text-[#06b6d4] hover:underline"
                 >
                   <X size={11} /> Limpiar filtros
                 </button>

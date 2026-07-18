@@ -173,7 +173,7 @@ function LabelSizesManager({
             <div
               key={s.id}
               className={`rounded-xl border p-3 transition-colors ${
-                isDefault ? 'border-violet-300 bg-violet-50' : 'border-[#ebe9e6] bg-white'
+                isDefault ? 'border-cyan-300 bg-cyan-50' : 'border-[#ebe9e6] bg-white'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -183,13 +183,13 @@ function LabelSizesManager({
                   checked={isDefault}
                   onChange={() => onDefaultChange(s.id)}
                   title="Marcar como predeterminado"
-                  className="accent-violet-500"
+                  className="accent-cyan-500"
                 />
                 <input
                   value={s.name}
                   onChange={(e) => update(idx, { name: e.target.value })}
                   placeholder="Nombre del tamaño"
-                  className="h-9 flex-1 rounded-lg border border-[#ebe9e6] px-3 text-sm font-medium outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                  className="h-9 flex-1 rounded-lg border border-[#ebe9e6] px-3 text-sm font-medium outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
                 />
                 <div className="flex items-center gap-1 text-sm text-[#737373]">
                   <input
@@ -199,7 +199,7 @@ function LabelSizesManager({
                     onChange={(e) =>
                       update(idx, { width_mm: parseInt(e.target.value, 10) || 0 })
                     }
-                    className="h-9 w-16 rounded-lg border border-[#ebe9e6] px-2 text-right text-sm tabular-nums outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                    className="h-9 w-16 rounded-lg border border-[#ebe9e6] px-2 text-right text-sm tabular-nums outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
                   />
                   <span>×</span>
                   <input
@@ -209,7 +209,7 @@ function LabelSizesManager({
                     onChange={(e) =>
                       update(idx, { height_mm: parseInt(e.target.value, 10) || 0 })
                     }
-                    className="h-9 w-16 rounded-lg border border-[#ebe9e6] px-2 text-right text-sm tabular-nums outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                    className="h-9 w-16 rounded-lg border border-[#ebe9e6] px-2 text-right text-sm tabular-nums outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
                   />
                   <span className="text-xs text-[#a8a29e]">mm</span>
                 </div>
@@ -269,7 +269,7 @@ function LabelSizesManager({
 
       <button
         onClick={addSize}
-        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-dashed border-[#d6d3d1] py-2.5 text-sm font-medium text-violet-500 hover:border-violet-300 hover:bg-violet-50"
+        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-dashed border-[#d6d3d1] py-2.5 text-sm font-medium text-cyan-500 hover:border-cyan-300 hover:bg-cyan-50"
       >
         <Plus size={14} />
         Agregar tamaño
@@ -371,7 +371,7 @@ export default function EtiquetasSection() {
     <div className="rounded-[14px] border border-[#ebe9e6] bg-white">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-[#f5f4f1] px-5 py-4">
-        <div className="grid h-8 w-8 place-items-center rounded-lg bg-violet-100 text-violet-600">
+        <div className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-100 text-cyan-600">
           <Printer size={15} />
         </div>
         <div>
@@ -399,7 +399,7 @@ export default function EtiquetasSection() {
           <div className="space-y-2">
             {/* Barcode: always active */}
             <label className="flex cursor-not-allowed items-center gap-3 rounded-lg border border-[#ebe9e6] bg-[#f8f7f5] px-4 py-3 opacity-70">
-              <input type="checkbox" checked disabled className="accent-violet-500" />
+              <input type="checkbox" checked disabled className="accent-cyan-500" />
               <span className="text-sm font-medium text-[#1a1a1a]">Código de barras</span>
               <span className="ml-auto text-[11px] text-[#a8a29e]">siempre activo</span>
             </label>
@@ -415,7 +415,7 @@ export default function EtiquetasSection() {
                 key={key}
                 className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
                   fields[key]
-                    ? 'border-violet-300 bg-violet-50'
+                    ? 'border-cyan-300 bg-cyan-50'
                     : 'border-[#ebe9e6] bg-white hover:bg-slate-50'
                 }`}
               >
@@ -423,7 +423,7 @@ export default function EtiquetasSection() {
                   type="checkbox"
                   checked={fields[key]}
                   onChange={() => toggleField(key)}
-                  className="accent-violet-500"
+                  className="accent-cyan-500"
                 />
                 <span className="text-sm font-medium text-[#1a1a1a]">{label}</span>
               </label>
@@ -453,7 +453,7 @@ export default function EtiquetasSection() {
         <button
           onClick={() => void handleSave()}
           disabled={saving}
-          className="flex h-9 items-center gap-2 rounded-lg bg-[#8b5cf6] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:brightness-95 disabled:opacity-60"
+          className="flex h-9 items-center gap-2 rounded-lg bg-[#06b6d4] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:brightness-95 disabled:opacity-60"
         >
           {saving ? 'Guardando…' : 'Guardar cambios'}
         </button>

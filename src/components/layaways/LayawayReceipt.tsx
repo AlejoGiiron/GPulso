@@ -4,8 +4,8 @@ import { useReceiptPrintStyle } from '@/lib/receiptPrint'
 import { DEFAULT_ORG_CONFIG } from '@/hooks/useOrg'
 import type { LayawayDetail } from '@/hooks/useLayaways'
 
-const LAYAWAY_PRINT_CONTAINER_ID = 'gmura-layaway-receipt-print'
-const LAYAWAY_PRINT_STYLE_ID = 'gmura-layaway-receipt-print-style'
+const LAYAWAY_PRINT_CONTAINER_ID = 'gpulso-layaway-receipt-print'
+const LAYAWAY_PRINT_STYLE_ID = 'gpulso-layaway-receipt-print-style'
 
 const DIVIDER = '═══════════════════════════════'
 const SUBDIV = '───────────────────────────────'

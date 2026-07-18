@@ -66,7 +66,7 @@ export default function ConfigPage() {
             onClick={() => setActive(id)}
             className={`mb-0.5 flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
               active === id
-                ? 'bg-violet-500 text-white'
+                ? 'bg-cyan-500 text-white'
                 : 'text-[#525252] hover:bg-slate-50 hover:text-[#1a1a1a]'
             }`}
           >

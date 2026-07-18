@@ -74,7 +74,7 @@ function RoleRow({
 
   return (
     <div className="flex items-center gap-3 border-b border-[#f5f4f1] px-5 py-3.5 last:border-0">
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-violet-100 text-violet-600">
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-cyan-100 text-cyan-600">
         <ShieldCheck size={16} />
       </div>
       <div className="min-w-0 flex-1">
@@ -125,7 +125,7 @@ export default function RolesSection() {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#f5f4f1] px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-violet-100 text-violet-600">
+          <div className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-100 text-cyan-600">
             <ShieldCheck size={15} />
           </div>
           <div>

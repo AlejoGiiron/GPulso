@@ -88,7 +88,7 @@ const TABS: { id: LayawayStatusFilter; label: string }[] = [
 function StatusBadge({ status }: { status: LayawayStatus }) {
   if (status === 'active') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10.5px] font-semibold text-violet-800">
+      <span className="inline-flex items-center gap-1 rounded-full bg-cyan-100 px-2 py-0.5 text-[10.5px] font-semibold text-cyan-800">
         <Clock size={9} /> Activo
       </span>
     )
@@ -150,14 +150,14 @@ function LayawayListCard({
       onClick={onClick}
       className={`w-full rounded-xl border p-3 text-left transition-all ${
         active
-          ? 'border-violet-500 bg-violet-50/40 shadow-[0_0_0_3px_rgba(139,92,246,0.1)]'
-          : 'border-[#ebe9e6] bg-white hover:border-violet-300'
+          ? 'border-cyan-500 bg-cyan-50/40 shadow-[0_0_0_3px_rgba(139,92,246,0.1)]'
+          : 'border-[#ebe9e6] bg-white hover:border-cyan-300'
       }`}
     >
       <div className="flex items-start gap-3">
         <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-mono text-[12px] font-bold text-violet-700"
-          style={{ background: '#ede9fe' }}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-mono text-[12px] font-bold text-cyan-700"
+          style={{ background: '#cffafe' }}
         >
           #{row.layaway_number}
         </div>
@@ -179,7 +179,7 @@ function LayawayListCard({
           </p>
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#f5f4f1]">
             <div
-              className="h-full rounded-full bg-violet-500"
+              className="h-full rounded-full bg-cyan-500"
               style={{ width: `${row.paid_percent}%` }}
             />
           </div>
@@ -242,7 +242,7 @@ function DetailHeader({ layaway }: { layaway: LayawayDetail }) {
             )}
             <button
               onClick={() => navigate('/clientes')}
-              className="ml-1 text-[11px] font-medium text-violet-600 hover:underline"
+              className="ml-1 text-[11px] font-medium text-cyan-600 hover:underline"
             >
               Ver perfil
             </button>
@@ -278,7 +278,7 @@ function ProgressCard({ layaway }: { layaway: LayawayDetail }) {
       </p>
       <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-[#f5f4f1]">
         <div
-          className="h-full rounded-full bg-violet-500"
+          className="h-full rounded-full bg-cyan-500"
           style={{
             width: `${layaway.total > 0 ? Math.min(100, Math.round((layaway.paid_amount / layaway.total) * 100)) : 0}%`,
           }}
@@ -299,11 +299,11 @@ function ProgressCard({ layaway }: { layaway: LayawayDetail }) {
         </div>
       </div>
       {layaway.balance_pending > 0 && (
-        <div className="mt-3 flex items-baseline justify-between rounded-lg bg-violet-50 px-3 py-2">
-          <span className="text-[11.5px] font-medium text-violet-700">
+        <div className="mt-3 flex items-baseline justify-between rounded-lg bg-cyan-50 px-3 py-2">
+          <span className="text-[11.5px] font-medium text-cyan-700">
             Saldo pendiente
           </span>
-          <span className="font-mono text-base font-bold text-violet-800">
+          <span className="font-mono text-base font-bold text-cyan-800">
             {fmtCOP(layaway.balance_pending)}
           </span>
         </div>
@@ -453,7 +453,7 @@ function DetailActions({
       <div className="flex flex-wrap gap-2 border-t border-[#ebe9e6] bg-white px-6 py-4">
         <button
           onClick={onPay}
-          className="flex h-10 items-center gap-2 rounded-lg bg-violet-600 px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-violet-700"
+          className="flex h-10 items-center gap-2 rounded-lg bg-cyan-600 px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-cyan-700"
         >
           <Wallet size={14} /> Registrar abono
         </button>
@@ -492,7 +492,7 @@ function DetailActions({
                 `/ventas/historial?orderId=${layaway.converted_order_id}`,
               )
             }
-            className="flex h-10 items-center gap-2 rounded-lg bg-violet-600 px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-violet-700"
+            className="flex h-10 items-center gap-2 rounded-lg bg-cyan-600 px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-cyan-700"
           >
             <ExternalLink size={14} /> Ver orden generada
           </button>
@@ -637,7 +637,7 @@ export default function LayawaysPage() {
 
   const { data: storeData } = useStoreConfig()
   const storeName =
-    (storeData as unknown as { name?: string } | undefined)?.name ?? 'G-Mura'
+    (storeData as unknown as { name?: string } | undefined)?.name ?? 'G-Pulso'
   const orgConfig = useResolvedOrgConfig()
 
   const { data: list, isLoading } = useLayawayList(filters)
@@ -714,7 +714,7 @@ export default function LayawaysPage() {
             </div>
             <button
               onClick={() => setShowNew(true)}
-              className="flex h-9 items-center gap-1.5 rounded-lg bg-violet-600 px-3 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-violet-700"
+              className="flex h-9 items-center gap-1.5 rounded-lg bg-cyan-600 px-3 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-cyan-700"
             >
               <Plus size={14} /> Nuevo
             </button>
@@ -753,7 +753,7 @@ export default function LayawaysPage() {
           </div>
 
           {/* Search */}
-          <div className="mt-3 flex items-center gap-2 rounded-lg border border-[#ebe9e6] bg-[#f8f7f5] px-3 py-2 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-[#ebe9e6] bg-[#f8f7f5] px-3 py-2 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
             <Search size={15} className="shrink-0 text-[#737373]" />
             <input
               value={filters.search}
@@ -802,7 +802,7 @@ export default function LayawaysPage() {
               </div>
               <button
                 onClick={() => setShowNew(true)}
-                className="mt-1 flex h-9 items-center gap-1.5 rounded-lg bg-violet-600 px-3 text-sm font-semibold text-white hover:bg-violet-700"
+                className="mt-1 flex h-9 items-center gap-1.5 rounded-lg bg-cyan-600 px-3 text-sm font-semibold text-white hover:bg-cyan-700"
               >
                 <Plus size={13} /> Nuevo separado
               </button>

@@ -4,10 +4,10 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#8b5cf6',
+        primary: '#06b6d4',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['IBM Plex Sans', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Courier New', 'monospace'],
       },
     },

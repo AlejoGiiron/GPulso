@@ -190,7 +190,7 @@ function VariantPickerModal({ product, onAdd, onClose }: VariantPickerProps) {
                     style={{
                       background: getColorHex(c),
                       outline:
-                        selectedColor === c ? '2px solid #8b5cf6' : '2px solid transparent',
+                        selectedColor === c ? '2px solid #06b6d4' : '2px solid transparent',
                       outlineOffset: 2,
                       boxShadow: '0 0 0 1px rgba(0,0,0,0.12)',
                     }}
@@ -220,7 +220,7 @@ function VariantPickerModal({ product, onAdd, onClose }: VariantPickerProps) {
             </span>
             {reserved > 0 && (
               <span
-                className="text-[11px] text-violet-600"
+                className="text-[11px] text-cyan-600"
                 title={`Stock físico ${totalStock}, ${reserved} reservados en separados`}
               >
                 {totalStock} total · {reserved} reservados
@@ -242,7 +242,7 @@ function VariantPickerModal({ product, onAdd, onClose }: VariantPickerProps) {
               ? `Sin stock disponible. Hay ${reserved} reservados en separados.`
               : undefined
           }
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 py-3 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40 hover:bg-violet-700"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-600 py-3 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40 hover:bg-cyan-700"
         >
           <Plus size={16} /> Agregar al carrito
         </button>
@@ -418,7 +418,7 @@ function PaymentModal({
                     onClick={() => setMethod(id)}
                     className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${
                       active
-                        ? 'border-violet-600 bg-violet-50 text-violet-700'
+                        ? 'border-cyan-600 bg-cyan-50 text-cyan-700'
                         : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                     }`}
                   >
@@ -434,7 +434,7 @@ function PaymentModal({
               <button
                 type="button"
                 onClick={enterSplit}
-                className="mb-5 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 py-2.5 text-xs font-semibold text-slate-600 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700"
+                className="mb-5 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 py-2.5 text-xs font-semibold text-slate-600 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
               >
                 <Split size={14} /> Dividir en varios métodos
               </button>
@@ -451,7 +451,7 @@ function PaymentModal({
                   value={cashReceived}
                   onChange={(e) => setCashReceived(e.target.value)}
                   placeholder="0"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 font-mono text-lg font-semibold outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 font-mono text-lg font-semibold outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                 />
                 {finalTotal > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -460,8 +460,8 @@ function PaymentModal({
                       onClick={() => setCashReceived(String(finalTotal))}
                       className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition-colors ${
                         cashAmt === finalTotal
-                          ? 'border-violet-600 bg-violet-50 text-violet-700'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-violet-300 hover:bg-violet-50'
+                          ? 'border-cyan-600 bg-cyan-50 text-cyan-700'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50'
                       }`}
                     >
                       Exacto
@@ -473,8 +473,8 @@ function PaymentModal({
                         onClick={() => setCashReceived(String(amt))}
                         className={`rounded-lg border px-2.5 py-1 font-mono text-xs font-semibold transition-colors ${
                           cashAmt === amt
-                            ? 'border-violet-600 bg-violet-50 text-violet-700'
-                            : 'border-slate-200 bg-white text-slate-700 hover:border-violet-300 hover:bg-violet-50'
+                            ? 'border-cyan-600 bg-cyan-50 text-cyan-700'
+                            : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50'
                         }`}
                       >
                         {fmtCOP(amt)}
@@ -557,7 +557,7 @@ function PaymentModal({
             <button
               disabled={!canConfirmSimple || isPending}
               onClick={confirmSimple}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 py-3.5 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40 hover:bg-violet-700"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-600 py-3.5 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40 hover:bg-cyan-700"
             >
               {isPending ? (
                 'Procesando…'
@@ -580,7 +580,7 @@ function PaymentModal({
               type="button"
               onClick={onLayaway}
               disabled={isPending}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 py-3 text-sm font-semibold text-violet-700 hover:bg-violet-100 disabled:opacity-50"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 py-3 text-sm font-semibold text-cyan-700 hover:bg-cyan-100 disabled:opacity-50"
             >
               <Bookmark size={15} /> Crear separado
             </button>
@@ -606,7 +606,7 @@ function PaymentModal({
               <button
                 type="button"
                 onClick={() => setSplitMode(false)}
-                className="text-xs font-semibold text-slate-500 hover:text-violet-700"
+                className="text-xs font-semibold text-slate-500 hover:text-cyan-700"
               >
                 ← Pago simple
               </button>
@@ -654,7 +654,7 @@ function PaymentModal({
                   value={splitCashReceived}
                   onChange={(e) => setSplitCashReceived(e.target.value)}
                   placeholder={String(cashLineAmt)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 font-mono text-sm font-semibold outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 font-mono text-sm font-semibold outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                 />
                 {/* Chips de monto rápido (Exacto + denominaciones), como en el
                     pago simple, pero sobre la PORCIÓN efectivo de la venta. */}
@@ -665,8 +665,8 @@ function PaymentModal({
                       onClick={() => setSplitCashReceived(String(cashLineAmt))}
                       className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition-colors ${
                         splitCashAmt === cashLineAmt
-                          ? 'border-violet-600 bg-violet-50 text-violet-700'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-violet-300 hover:bg-violet-50'
+                          ? 'border-cyan-600 bg-cyan-50 text-cyan-700'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50'
                       }`}
                     >
                       Exacto
@@ -678,8 +678,8 @@ function PaymentModal({
                         onClick={() => setSplitCashReceived(String(amt))}
                         className={`rounded-lg border px-2.5 py-1 font-mono text-xs font-semibold transition-colors ${
                           splitCashAmt === amt
-                            ? 'border-violet-600 bg-violet-50 text-violet-700'
-                            : 'border-slate-200 bg-white text-slate-700 hover:border-violet-300 hover:bg-violet-50'
+                            ? 'border-cyan-600 bg-cyan-50 text-cyan-700'
+                            : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50'
                         }`}
                       >
                         {fmtCOP(amt)}
@@ -717,7 +717,7 @@ function PaymentModal({
             <button
               disabled={!canConfirmSplit || isPending}
               onClick={confirmSplit}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 py-3.5 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40 hover:bg-violet-700"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-600 py-3.5 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40 hover:bg-cyan-700"
             >
               {isPending ? (
                 'Procesando…'
@@ -876,7 +876,7 @@ function CreditCheckoutModal({
                       setLines([{ method, amount: String(paid) }])
                       setSplitMode(true)
                     }}
-                    className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-violet-700"
+                    className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-cyan-700"
                   >
                     <Split size={12} /> Dividir
                   </button>
@@ -893,7 +893,7 @@ function CreditCheckoutModal({
                       onClick={() => setMethod(id)}
                       className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
                         active
-                          ? 'border-violet-600 bg-violet-50 text-violet-700'
+                          ? 'border-cyan-600 bg-cyan-50 text-cyan-700'
                           : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                       }`}
                     >
@@ -913,7 +913,7 @@ function CreditCheckoutModal({
                 <button
                   type="button"
                   onClick={() => setSplitMode(false)}
-                  className="text-[11px] font-semibold text-slate-500 hover:text-violet-700"
+                  className="text-[11px] font-semibold text-slate-500 hover:text-cyan-700"
                 >
                   ← Un solo método
                 </button>
@@ -1088,7 +1088,7 @@ function TicketModal({
             </button>
             <button
               onClick={onClose}
-              className="flex-1 rounded-xl bg-violet-600 py-2.5 text-sm font-semibold text-white hover:bg-violet-700"
+              className="flex-1 rounded-xl bg-cyan-600 py-2.5 text-sm font-semibold text-white hover:bg-cyan-700"
             >
               Nueva venta
             </button>
@@ -1114,10 +1114,10 @@ interface ProductCardProps {
 
 // Paleta estable para el ancla de color de cada producto (las cards del POS no
 // llevan imagen). Tints suaves + texto oscuro del mismo tono → buen contraste y
-// coherente con el lenguaje visual del design-system (violeta de marca +
+// coherente con el lenguaje visual del design-system (cian de marca +
 // semánticos). El color es un ancla para escanear la grilla, no una foto.
 const CARD_ACCENTS: ReadonlyArray<{ bg: string; fg: string }> = [
-  { bg: '#ede9fe', fg: '#6d28d9' }, // violeta (marca)
+  { bg: '#cffafe', fg: '#0e7490' }, // cian (marca)
   { bg: '#dbeafe', fg: '#1d4ed8' }, // azul
   { bg: '#dcfce7', fg: '#15803d' }, // verde
   { bg: '#fef3c7', fg: '#b45309' }, // ámbar
@@ -1197,7 +1197,7 @@ function ProductCard({ product, onClick }: ProductCardProps) {
                 </span>
               ))}
               {extraSizes > 0 && (
-                <span className="rounded-[5px] bg-violet-50 px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums text-violet-600">
+                <span className="rounded-[5px] bg-cyan-50 px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums text-cyan-600">
                   +{extraSizes}
                 </span>
               )}
@@ -1290,7 +1290,7 @@ function QuickCreateModal({ prefillName, onCreated, onClose }: QuickCreateModalP
               value={name}
               onChange={(e) => { setName(e.target.value); setNameErr('') }}
               placeholder="Nombre completo *"
-              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
             />
             {nameErr && <p className="mt-1 text-[11px] text-red-500">{nameErr}</p>}
           </div>
@@ -1299,7 +1299,7 @@ function QuickCreateModal({ prefillName, onCreated, onClose }: QuickCreateModalP
               value={phone}
               onChange={(e) => { setPhone(e.target.value); setPhoneErr('') }}
               placeholder="Teléfono *"
-              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
             />
             {phoneErr && <p className="mt-1 text-[11px] text-red-500">{phoneErr}</p>}
           </div>
@@ -1315,7 +1315,7 @@ function QuickCreateModal({ prefillName, onCreated, onClose }: QuickCreateModalP
           <button
             onClick={handleSave}
             disabled={createCustomer.isPending}
-            className="flex-1 rounded-xl bg-violet-600 py-2.5 text-sm font-semibold text-white disabled:opacity-50 hover:bg-violet-700"
+            className="flex-1 rounded-xl bg-cyan-600 py-2.5 text-sm font-semibold text-white disabled:opacity-50 hover:bg-cyan-700"
           >
             {createCustomer.isPending ? 'Guardando…' : 'Crear'}
           </button>
@@ -1360,7 +1360,7 @@ function CustomerSearchInput({ selected, onSelect }: CustomerSearchInputProps) {
       <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
         <div
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-          style={{ background: 'linear-gradient(135deg,#a78bfa,#7c3aed)' }}
+          style={{ background: 'linear-gradient(135deg,#22d3ee,#0891b2)' }}
         >
           {customerInitials(selected.full_name)}
         </div>
@@ -1409,7 +1409,7 @@ function CustomerSearchInput({ selected, onSelect }: CustomerSearchInputProps) {
               >
                 <div
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                  style={{ background: 'linear-gradient(135deg,#a78bfa,#7c3aed)' }}
+                  style={{ background: 'linear-gradient(135deg,#22d3ee,#0891b2)' }}
                 >
                   {customerInitials(c.full_name)}
                 </div>
@@ -1426,7 +1426,7 @@ function CustomerSearchInput({ selected, onSelect }: CustomerSearchInputProps) {
             {showNoResults && (
               <button
                 onClick={() => { setOpen(false); setShowQuickCreate(true) }}
-                className="flex w-full items-center gap-2.5 border-t border-slate-100 px-3 py-2.5 text-left text-sm font-medium text-violet-600 hover:bg-violet-50"
+                className="flex w-full items-center gap-2.5 border-t border-slate-100 px-3 py-2.5 text-left text-sm font-medium text-cyan-600 hover:bg-cyan-50"
               >
                 <Plus size={14} className="shrink-0" />
                 Crear cliente rápido &ldquo;{dq}&rdquo;
@@ -1740,7 +1740,7 @@ function CartPanel({
         <button
           disabled={items.length === 0}
           onClick={onCheckout}
-          className="w-full rounded-xl bg-violet-600 py-4 text-base font-semibold text-white shadow-[0_6px_18px_rgba(139,92,246,0.35)] transition-all disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none hover:bg-violet-700"
+          className="w-full rounded-xl bg-cyan-600 py-4 text-base font-semibold text-white shadow-[0_6px_18px_rgba(139,92,246,0.35)] transition-all disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none hover:bg-cyan-700"
         >
           Cobrar · {fmtCOP(total)}
         </button>
@@ -2037,8 +2037,8 @@ export default function POSPage() {
       <>
         <div className="flex h-full items-center justify-center p-4">
           <div className="w-full max-w-sm rounded-2xl border border-[#ebe9e6] bg-white p-8 text-center shadow-sm">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-violet-100">
-              <Wallet size={28} className="text-violet-600" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cyan-100">
+              <Wallet size={28} className="text-cyan-600" />
             </div>
             <p className="mb-1 text-base font-semibold text-[#1a1a1a]">
               Debes abrir turno para vender
@@ -2049,7 +2049,7 @@ export default function POSPage() {
             </p>
             <button
               onClick={() => setShowOpenShift(true)}
-              className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-violet-600 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-violet-700"
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-cyan-600 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-cyan-700"
             >
               <Wallet size={14} /> Abrir turno ahora
             </button>
@@ -2068,7 +2068,7 @@ export default function POSPage() {
       <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white">
         {/* Search bar */}
         <div className="px-6 pt-5">
-          <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100 transition-all">
+          <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100 transition-all">
             <Search size={18} className="shrink-0 text-slate-400" />
             <input
               ref={searchRef}
@@ -2091,8 +2091,8 @@ export default function POSPage() {
               title="Escanear con cámara"
               className={`flex h-7 w-7 items-center justify-center rounded-lg border transition-colors ${
                 isCameraActive
-                  ? 'border-violet-300 bg-violet-50 text-violet-500'
-                  : 'border-slate-200 bg-white text-slate-400 hover:text-violet-500'
+                  ? 'border-cyan-300 bg-cyan-50 text-cyan-500'
+                  : 'border-slate-200 bg-white text-slate-400 hover:text-cyan-500'
               }`}
             >
               <Camera size={14} />
@@ -2215,7 +2215,7 @@ export default function POSPage() {
           order={completedSale.order}
           items={completedSale.items}
           customer={completedSale.customer}
-          storeName={storeData?.name ?? 'G-Mura'}
+          storeName={storeData?.name ?? 'G-Pulso'}
           payments={completedSale.payments}
           credit={completedSale.credit}
           onClose={handleTicketClose}

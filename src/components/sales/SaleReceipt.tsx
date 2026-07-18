@@ -3,8 +3,8 @@ import { PAYMENT_METHODS } from '@/lib/paymentMethods'
 import { useReceiptPrintStyle } from '@/lib/receiptPrint'
 import type { PaymentMethod } from '@/types/database.types'
 
-const SALE_PRINT_CONTAINER_ID = 'gmura-sale-receipt-print'
-const SALE_PRINT_STYLE_ID = 'gmura-sale-receipt-print-style'
+const SALE_PRINT_CONTAINER_ID = 'gpulso-sale-receipt-print'
+const SALE_PRINT_STYLE_ID = 'gpulso-sale-receipt-print-style'
 
 const DIVIDER = '═══════════════════════════════'
 const SUBDIV = '───────────────────────────────'

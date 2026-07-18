@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import type { PaymentMethod } from '@/types/database.types'
 
-export type PaymentColorToken = 'emerald' | 'violet' | 'blue' | 'pink' | 'amber'
+export type PaymentColorToken = 'emerald' | 'cyan' | 'blue' | 'pink' | 'amber'
 
 export interface PaymentMethodMeta {
   label: string
@@ -26,8 +26,8 @@ export const PAYMENT_METHODS: Record<PaymentMethod, PaymentMethodMeta> = {
   },
   card: {
     label: 'Tarjeta',
-    color: 'violet',
-    hex: '#8b5cf6',
+    color: 'cyan',
+    hex: '#06b6d4',
     icon: CreditCard,
   },
   transfer: {

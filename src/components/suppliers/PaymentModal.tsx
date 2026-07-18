@@ -18,7 +18,7 @@ interface PaymentModalProps {
 const LABEL =
   'mb-1.5 block text-[12px] font-semibold uppercase tracking-[.05em] text-[#737373]'
 const INPUT =
-  'h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none transition focus:border-[#8b5cf6] focus:shadow-[0_0_0_4px_#8b5cf61a]'
+  'h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none transition focus:border-[#06b6d4] focus:shadow-[0_0_0_4px_#06b6d41a]'
 
 export default function PaymentModal({
   invoiceId,
@@ -144,7 +144,7 @@ export default function PaymentModal({
                     onClick={() => setMethod(key)}
                     className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
                       active
-                        ? 'border-[#8b5cf6] bg-[#8b5cf61a] text-[#1a1a1a]'
+                        ? 'border-[#06b6d4] bg-[#06b6d41a] text-[#1a1a1a]'
                         : 'border-[#ebe9e6] bg-white text-[#525252] hover:bg-[#f8f7f5]'
                     }`}
                   >
@@ -200,7 +200,7 @@ export default function PaymentModal({
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
               placeholder="Opcional"
-              className="w-full resize-none rounded-lg border border-[#ebe9e6] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#8b5cf6] focus:shadow-[0_0_0_4px_#8b5cf61a]"
+              className="w-full resize-none rounded-lg border border-[#ebe9e6] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#06b6d4] focus:shadow-[0_0_0_4px_#06b6d41a]"
             />
           </div>
         </div>
@@ -220,7 +220,7 @@ export default function PaymentModal({
               numericAmount <= 0 ||
               numericAmount > Math.round(pendingAmount)
             }
-            className="h-[42px] flex-1 rounded-lg bg-[#8b5cf6] text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] transition hover:bg-[#7c3aed] disabled:opacity-50"
+            className="h-[42px] flex-1 rounded-lg bg-[#06b6d4] text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] transition hover:bg-[#0891b2] disabled:opacity-50"
           >
             {registerPayment.isPending ? 'Registrando…' : 'Confirmar pago'}
           </button>
