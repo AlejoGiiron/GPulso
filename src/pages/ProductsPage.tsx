@@ -7,6 +7,7 @@ import ProductModal from '@/components/products/ProductModal'
 import VariantsPanel from '@/components/products/VariantsPanel'
 import { fmtCOP } from '@/lib/formatters'
 import { getColorHex, sortSizes, stockState, priceRange } from '@/lib/products'
+import { isUniqueSizeType } from '@/lib/sizeTypes'
 import type { ProductWithDetails } from '@/hooks/useProducts'
 import type { Product, Variant } from '@/types/database.types'
 
@@ -450,8 +451,9 @@ export default function ProductsPage() {
   function handleProductSaved(product: Product) {
     setShowNewProduct(false)
     setEditingProduct(null)
-    // Open variants panel after creating a new product
-    if (!editingProduct) {
+    // Al crear un producto con variantes reales, abrir el panel para agregarlas.
+    // Los de variante Única ya nacen con su variante (flujo de un paso) → no.
+    if (!editingProduct && !isUniqueSizeType(product.size_type)) {
       setVariantsPanelProduct(product)
     }
     setSelectedId(product.id)
