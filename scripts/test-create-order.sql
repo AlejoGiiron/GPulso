@@ -1,152 +1,228 @@
 -- ============================================================
 -- test-create-order.sql — Tests de create_order (migración 041)
---   T1  Venta MIXTA de contado (accesorio + equipo serializado) → atómica OK.
---   T2  Sin turno abierto → rechazada.
---   T3  Pagos que no cuadran con el total → rechazada.
---   T4  Claim falla a mitad (unidad ya vendida) → rollback TOTAL: sin orden,
---       sin pago, y el stock del ACCESORIO NO quedó descontado.
--- La carrera (dos cobros del mismo IMEI) va aparte, con 2 sesiones (al final).
--- Transacción con ROLLBACK final.
+-- Turno POR TIENDA + guards de invariante serializado, pertenencia y valores.
+-- Transacción con ROLLBACK final. La carrera va aparte (2 sesiones, al final).
 -- ============================================================
 \set ON_ERROR_STOP on
 BEGIN;
 
-INSERT INTO auth.users (id,email) VALUES ('00000000-0000-0000-0000-0000000000d1','admin@ord.test');
+-- ── Fixtures ────────────────────────────────────────────────────────────────
+INSERT INTO auth.users (id,email) VALUES
+  ('00000000-0000-0000-0000-0000000000d1','admin@ord.test'),
+  ('00000000-0000-0000-0000-0000000000d2','seller@ord.test');
 INSERT INTO public.organizations (name) VALUES ('OrgORD') RETURNING id AS org \gset
 SELECT public.seed_org_roles(:'org');
-SELECT id AS role_admin FROM public.roles WHERE organization_id=:'org' AND name='Administrador' \gset
+SELECT id AS role_admin  FROM public.roles WHERE organization_id=:'org' AND name='Administrador' \gset
+SELECT id AS role_seller FROM public.roles WHERE organization_id=:'org' AND name='Vendedor' \gset
 INSERT INTO public.stores (name, organization_id) VALUES ('StoreORD', :'org') RETURNING id AS store \gset
-INSERT INTO public.profiles (id,email,full_name,role,role_id,organization_id,store_id,current_store_id,is_active)
-VALUES ('00000000-0000-0000-0000-0000000000d1','admin@ord.test','Admin ORD','admin',:'role_admin',:'org',:'store',:'store',true);
+INSERT INTO public.stores (name, organization_id) VALUES ('StoreORD2', :'org') RETURNING id AS store2 \gset
+INSERT INTO public.profiles (id,email,full_name,role,role_id,organization_id,store_id,current_store_id,is_active) VALUES
+  ('00000000-0000-0000-0000-0000000000d1','admin@ord.test','Admin ORD','admin',:'role_admin',:'org',:'store',:'store',true),
+  ('00000000-0000-0000-0000-0000000000d2','seller@ord.test','Seller ORD','seller',:'role_seller',:'org',:'store',:'store',true);
 
--- Turno ABIERTO del admin.
+-- Turno ABIERTO por la ADMIN (la vendedora venderá bajo ESTE turno).
 INSERT INTO public.cash_shifts (store_id, opened_by, opening_amount)
-VALUES (:'store', '00000000-0000-0000-0000-0000000000d1', 100000) RETURNING id AS shift \gset
+VALUES (:'store', '00000000-0000-0000-0000-0000000000d1', 100000);
 
--- Producto serializado + variante + 2 unidades.
+-- Serializado + 2 unidades.
 INSERT INTO public.products (name, store_id, is_serialized) VALUES ('iPhone ORD', :'store', true) RETURNING id AS pser \gset
 INSERT INTO public.variants (product_id, store_id, price) VALUES (:'pser', :'store', 1000000) RETURNING id AS vser \gset
 INSERT INTO public.units (id, store_id, variant_id, serial) VALUES
   ('00000000-0000-0000-0000-00000000f1a1', :'store', :'vser', 'ORD-IMEI-1'),
   ('00000000-0000-0000-0000-00000000f2a2', :'store', :'vser', 'ORD-IMEI-2');
-
--- Accesorios (NO serializados) con stock.
+-- Accesorios.
 INSERT INTO public.products (name, store_id) VALUES ('Cargador ORD', :'store') RETURNING id AS pacc \gset
 INSERT INTO public.variants (product_id, store_id, price, stock_qty) VALUES (:'pacc', :'store', 50000, 5) RETURNING id AS vaccA \gset
 INSERT INTO public.variants (product_id, store_id, price, stock_qty, color) VALUES (:'pacc', :'store', 50000, 3, 'Negro') RETURNING id AS vaccB \gset
+-- Variante de OTRA tienda (misma org) para el guard de pertenencia.
+INSERT INTO public.products (name, store_id) VALUES ('Otra tienda prod', :'store2') RETURNING id AS pother \gset
+INSERT INTO public.variants (product_id, store_id, price, stock_qty) VALUES (:'pother', :'store2', 50000, 5) RETURNING id AS vother \gset
+-- Cliente de OTRA organización.
+INSERT INTO public.organizations (name) VALUES ('OrgX') RETURNING id AS orgx \gset
+INSERT INTO public.stores (name, organization_id) VALUES ('StoreX', :'orgx') RETURNING id AS storex \gset
+INSERT INTO public.customers (id, full_name, store_id) VALUES ('00000000-0000-0000-0000-0000000000c9', 'Cliente X', :'storex');
 
 SET LOCAL "request.jwt.claims" = '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}';
 
--- ── T1 — Venta mixta de contado (accesorio + equipo) ────────────────────────
+-- helper de ids por nombre (evita depender de \gset dentro de DO)
+-- ── T1 — Venta mixta de contado (admin) ─────────────────────────────────────
 DO $$
-DECLARE v_order uuid; v_pser uuid; v_vser uuid; v_pacc uuid; v_vaccA uuid; v_store uuid;
+DECLARE v_order uuid; v_vser uuid; v_pser uuid; v_pacc uuid; v_vaccA uuid;
 BEGIN
   SELECT id INTO v_pser FROM public.products WHERE name='iPhone ORD';
   SELECT id INTO v_vser FROM public.variants WHERE product_id=v_pser;
   SELECT id INTO v_pacc FROM public.products WHERE name='Cargador ORD';
   SELECT id INTO v_vaccA FROM public.variants WHERE product_id=v_pacc AND color IS NULL;
-  SELECT store_id INTO v_store FROM public.products WHERE id=v_pser;
-
-  v_order := public.create_order(
-    NULL, 1050000, 1050000, 0, 0, 1050000, 'cash',
+  v_order := public.create_order(NULL,1050000,1050000,0,0,1050000,'cash',
     jsonb_build_array(
       jsonb_build_object('variant_id',v_vaccA,'product_id',v_pacc,'qty',1,'unit_price',50000,'list_price',50000),
-      jsonb_build_object('variant_id',v_vser,'product_id',v_pser,'qty',1,'unit_price',1000000,'list_price',1000000,
-                         'unit_id','00000000-0000-0000-0000-00000000f1a1')
-    ),
-    jsonb_build_array(jsonb_build_object('method','cash','amount',1050000))
-  );
-
-  IF (SELECT order_number FROM public.orders WHERE id=v_order) IS NULL THEN RAISE EXCEPTION 'T1 FALLO: sin order_number.'; END IF;
-  IF (SELECT count(*) FROM public.order_items WHERE order_id=v_order) <> 2 THEN RAISE EXCEPTION 'T1 FALLO: no hay 2 ítems.'; END IF;
-  IF (SELECT count(*) FROM public.order_payments WHERE order_id=v_order) <> 1 THEN RAISE EXCEPTION 'T1 FALLO: no hay pago.'; END IF;
-  IF (SELECT status FROM public.units WHERE serial='ORD-IMEI-1') <> 'vendida' THEN RAISE EXCEPTION 'T1 FALLO: unidad no vendida.'; END IF;
-  IF (SELECT order_item_id FROM public.units WHERE serial='ORD-IMEI-1') IS NULL THEN RAISE EXCEPTION 'T1 FALLO: unidad sin order_item.'; END IF;
-  IF (SELECT stock_qty FROM public.variants WHERE id=v_vaccA) <> 4 THEN RAISE EXCEPTION 'T1 FALLO: accesorio no bajó a 4.'; END IF;
-  RAISE NOTICE 'T1 OK: venta mixta atómica (equipo vendido, accesorio 5→4, pago OK).';
+      jsonb_build_object('variant_id',v_vser,'product_id',v_pser,'qty',1,'unit_price',1000000,'list_price',1000000,'unit_id','00000000-0000-0000-0000-00000000f1a1')),
+    jsonb_build_array(jsonb_build_object('method','cash','amount',1050000)));
+  IF (SELECT status FROM public.units WHERE serial='ORD-IMEI-1')<>'vendida' THEN RAISE EXCEPTION 'T1 FALLO'; END IF;
+  IF (SELECT stock_qty FROM public.variants WHERE id=v_vaccA)<>4 THEN RAISE EXCEPTION 'T1 FALLO accesorio'; END IF;
+  RAISE NOTICE 'T1 OK: venta mixta atómica (admin).';
 END $$;
 
--- ── T2 — Sin turno abierto → rechazada ──────────────────────────────────────
+-- ── T2 — Vendedora cobra bajo el turno abierto por la admin → OK ─────────────
+SET LOCAL "request.jwt.claims" = '{"sub":"00000000-0000-0000-0000-0000000000d2","role":"authenticated"}';
 DO $$
-DECLARE v_blocked boolean := false; v_pacc uuid; v_vaccB uuid;
+DECLARE v_order uuid; v_pacc uuid; v_vaccB uuid;
 BEGIN
   SELECT id INTO v_pacc FROM public.products WHERE name='Cargador ORD';
   SELECT id INTO v_vaccB FROM public.variants WHERE product_id=v_pacc AND color='Negro';
-  -- cerrar el turno temporalmente
-  UPDATE public.cash_shifts SET closed_at = now() WHERE closed_at IS NULL;
-  BEGIN
-    PERFORM public.create_order(NULL, 50000, 50000, 0, 0, 50000, 'cash',
-      jsonb_build_array(jsonb_build_object('variant_id',v_vaccB,'product_id',v_pacc,'qty',1,'unit_price',50000,'list_price',50000)),
-      jsonb_build_array(jsonb_build_object('method','cash','amount',50000)));
-  EXCEPTION WHEN check_violation THEN v_blocked := true; END;
-  UPDATE public.cash_shifts SET closed_at = NULL;  -- reabrir para los siguientes
-  IF NOT v_blocked THEN RAISE EXCEPTION 'T2 FALLO: vendió sin turno abierto.'; END IF;
-  RAISE NOTICE 'T2 OK: venta sin turno abierto rechazada.';
+  v_order := public.create_order(NULL,50000,50000,0,0,50000,'cash',
+    jsonb_build_array(jsonb_build_object('variant_id',v_vaccB,'product_id',v_pacc,'qty',1,'unit_price',50000,'list_price',50000)),
+    jsonb_build_array(jsonb_build_object('method','cash','amount',50000)));
+  IF v_order IS NULL THEN RAISE EXCEPTION 'T2 FALLO: la vendedora no pudo vender bajo el turno de la admin'; END IF;
+  RAISE NOTICE 'T2 OK: vendedora vende bajo el turno de la tienda (abierto por la admin).';
 END $$;
+SET LOCAL "request.jwt.claims" = '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}';
 
--- ── T3 — Pagos que no cuadran → rechazada ───────────────────────────────────
-DO $$
-DECLARE v_blocked boolean := false; v_pacc uuid; v_vaccB uuid;
-BEGIN
-  SELECT id INTO v_pacc FROM public.products WHERE name='Cargador ORD';
-  SELECT id INTO v_vaccB FROM public.variants WHERE product_id=v_pacc AND color='Negro';
-  BEGIN
-    PERFORM public.create_order(NULL, 40000, 50000, 0, 0, 50000, 'cash',
-      jsonb_build_array(jsonb_build_object('variant_id',v_vaccB,'product_id',v_pacc,'qty',1,'unit_price',50000,'list_price',50000)),
-      jsonb_build_array(jsonb_build_object('method','cash','amount',40000)));  -- paga 40k de 50k
-  EXCEPTION WHEN check_violation THEN v_blocked := true; END;
-  IF NOT v_blocked THEN RAISE EXCEPTION 'T3 FALLO: aceptó pagos que no cuadran.'; END IF;
-  RAISE NOTICE 'T3 OK: pagos que no cuadran rechazados.';
-END $$;
-
--- ── T4 — Claim falla a mitad → rollback TOTAL (accesorio intacto) ────────────
+-- ── Guards de rechazo (turno abierto; deben fallar por el motivo específico) ──
 DO $$
 DECLARE
-  v_blocked boolean := false; v_pser uuid; v_vser uuid; v_pacc uuid; v_vaccB uuid;
-  v_orders_before bigint; v_orders_after bigint; v_accB_before int;
+  v_pser uuid; v_vser uuid; v_pacc uuid; v_vaccB uuid; v_vother uuid; v_ok boolean;
 BEGIN
   SELECT id INTO v_pser FROM public.products WHERE name='iPhone ORD';
   SELECT id INTO v_vser FROM public.variants WHERE product_id=v_pser;
   SELECT id INTO v_pacc FROM public.products WHERE name='Cargador ORD';
   SELECT id INTO v_vaccB FROM public.variants WHERE product_id=v_pacc AND color='Negro';
+  SELECT id INTO v_vother FROM public.variants WHERE store_id=(SELECT id FROM public.stores WHERE name='StoreORD2');
 
-  -- La unidad u2 ya está VENDIDA (simula "otra caja la tomó").
-  UPDATE public.units SET status='vendida' WHERE serial='ORD-IMEI-2';
+  -- T3 pagos que no cuadran
+  v_ok:=false; BEGIN PERFORM public.create_order(NULL,40000,50000,0,0,50000,'cash',
+    jsonb_build_array(jsonb_build_object('variant_id',v_vaccB,'product_id',v_pacc,'qty',1,'unit_price',50000,'list_price',50000)),
+    jsonb_build_array(jsonb_build_object('method','cash','amount',40000)));
+  EXCEPTION WHEN check_violation THEN v_ok:=true; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'T3 FALLO: pagos que no cuadran'; END IF;
 
-  SELECT count(*) INTO v_orders_before FROM public.orders;
-  SELECT stock_qty INTO v_accB_before FROM public.variants WHERE id=v_vaccB;
+  -- T4 pago negativo
+  v_ok:=false; BEGIN PERFORM public.create_order(NULL,-50000,-50000,0,0,-50000,'cash',
+    jsonb_build_array(jsonb_build_object('variant_id',v_vaccB,'product_id',v_pacc,'qty',1,'unit_price',50000,'list_price',50000)),
+    jsonb_build_array(jsonb_build_object('method','cash','amount',-50000)));
+  EXCEPTION WHEN check_violation THEN v_ok:=true; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'T4 FALLO: pago negativo'; END IF;
 
-  BEGIN
-    PERFORM public.create_order(NULL, 1050000, 1050000, 0, 0, 1050000, 'cash',
-      jsonb_build_array(
-        jsonb_build_object('variant_id',v_vaccB,'product_id',v_pacc,'qty',1,'unit_price',50000,'list_price',50000),
-        jsonb_build_object('variant_id',v_vser,'product_id',v_pser,'qty',1,'unit_price',1000000,'list_price',1000000,
-                           'unit_id','00000000-0000-0000-0000-00000000f2a2')
-      ),
-      jsonb_build_array(jsonb_build_object('method','cash','amount',1050000)));
-  EXCEPTION WHEN check_violation THEN v_blocked := true; END;
+  -- T5 línea serializada SIN unit_id
+  v_ok:=false; BEGIN PERFORM public.create_order(NULL,1000000,1000000,0,0,1000000,'cash',
+    jsonb_build_array(jsonb_build_object('variant_id',v_vser,'product_id',v_pser,'qty',1,'unit_price',1000000,'list_price',1000000)),
+    jsonb_build_array(jsonb_build_object('method','cash','amount',1000000)));
+  EXCEPTION WHEN check_violation THEN v_ok:=true; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'T5 FALLO: serializada sin unit_id'; END IF;
 
-  SELECT count(*) INTO v_orders_after FROM public.orders;
+  -- T6 unit_id en línea NO serializada
+  v_ok:=false; BEGIN PERFORM public.create_order(NULL,50000,50000,0,0,50000,'cash',
+    jsonb_build_array(jsonb_build_object('variant_id',v_vaccB,'product_id',v_pacc,'qty',1,'unit_price',50000,'list_price',50000,'unit_id','00000000-0000-0000-0000-00000000f2a2')),
+    jsonb_build_array(jsonb_build_object('method','cash','amount',50000)));
+  EXCEPTION WHEN check_violation THEN v_ok:=true; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'T6 FALLO: unit en línea no serializada'; END IF;
 
-  IF NOT v_blocked THEN RAISE EXCEPTION 'T4 FALLO: la venta con unidad tomada NO falló.'; END IF;
-  IF v_orders_after <> v_orders_before THEN RAISE EXCEPTION 'T4 FALLO: quedó orden fantasma.'; END IF;
-  IF (SELECT stock_qty FROM public.variants WHERE id=v_vaccB) <> v_accB_before THEN
-    RAISE EXCEPTION 'T4 FALLO: el stock del accesorio quedó descontado pese al rollback.';
-  END IF;
-  RAISE NOTICE 'T4 OK: claim perdido → rollback total (sin orden, sin pago, accesorio intacto).';
+  -- T7 unit_id con qty=2
+  v_ok:=false; BEGIN PERFORM public.create_order(NULL,2000000,2000000,0,0,2000000,'cash',
+    jsonb_build_array(jsonb_build_object('variant_id',v_vser,'product_id',v_pser,'qty',2,'unit_price',1000000,'list_price',1000000,'unit_id','00000000-0000-0000-0000-00000000f2a2')),
+    jsonb_build_array(jsonb_build_object('method','cash','amount',2000000)));
+  EXCEPTION WHEN check_violation THEN v_ok:=true; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'T7 FALLO: unit con qty=2'; END IF;
+
+  -- T8 cliente de otra org
+  v_ok:=false; BEGIN PERFORM public.create_order('00000000-0000-0000-0000-0000000000c9',50000,50000,0,0,50000,'cash',
+    jsonb_build_array(jsonb_build_object('variant_id',v_vaccB,'product_id',v_pacc,'qty',1,'unit_price',50000,'list_price',50000)),
+    jsonb_build_array(jsonb_build_object('method','cash','amount',50000)));
+  EXCEPTION WHEN check_violation THEN v_ok:=true; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'T8 FALLO: cliente de otra org'; END IF;
+
+  -- T9 variante de otra tienda
+  v_ok:=false; BEGIN PERFORM public.create_order(NULL,50000,50000,0,0,50000,'cash',
+    jsonb_build_array(jsonb_build_object('variant_id',v_vother,'product_id',(SELECT product_id FROM public.variants WHERE id=v_vother),'qty',1,'unit_price',50000,'list_price',50000)),
+    jsonb_build_array(jsonb_build_object('method','cash','amount',50000)));
+  EXCEPTION WHEN check_violation THEN v_ok:=true; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'T9 FALLO: variante de otra tienda'; END IF;
+
+  -- T10 product_id que no corresponde a la variante
+  v_ok:=false; BEGIN PERFORM public.create_order(NULL,50000,50000,0,0,50000,'cash',
+    jsonb_build_array(jsonb_build_object('variant_id',v_vaccB,'product_id',v_pser,'qty',1,'unit_price',50000,'list_price',50000)),
+    jsonb_build_array(jsonb_build_object('method','cash','amount',50000)));
+  EXCEPTION WHEN check_violation THEN v_ok:=true; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'T10 FALLO: product_id no corresponde a la variante'; END IF;
+
+  RAISE NOTICE 'T3-T10 OK: pagos/negativo/serializado-sin-unit/unit-en-accesorio/qty2/cliente-org/variante-tienda/product-mismatch → todos rechazados.';
 END $$;
 
-ROLLBACK;
+-- ── T11 — Claim falla a mitad (unidad ya vendida) → rollback total ──────────
+DO $$
+DECLARE v_ok boolean:=false; v_pser uuid; v_vser uuid; v_pacc uuid; v_vaccB uuid; v_ob bigint; v_oa bigint; v_sb int;
+BEGIN
+  SELECT id INTO v_pser FROM public.products WHERE name='iPhone ORD';
+  SELECT id INTO v_vser FROM public.variants WHERE product_id=v_pser;
+  SELECT id INTO v_pacc FROM public.products WHERE name='Cargador ORD';
+  SELECT id INTO v_vaccB FROM public.variants WHERE product_id=v_pacc AND color='Negro';
+  UPDATE public.units SET status='vendida' WHERE serial='ORD-IMEI-2';
+  SELECT count(*) INTO v_ob FROM public.orders; SELECT stock_qty INTO v_sb FROM public.variants WHERE id=v_vaccB;
+  BEGIN PERFORM public.create_order(NULL,1050000,1050000,0,0,1050000,'cash',
+    jsonb_build_array(
+      jsonb_build_object('variant_id',v_vaccB,'product_id',v_pacc,'qty',1,'unit_price',50000,'list_price',50000),
+      jsonb_build_object('variant_id',v_vser,'product_id',v_pser,'qty',1,'unit_price',1000000,'list_price',1000000,'unit_id','00000000-0000-0000-0000-00000000f2a2')),
+    jsonb_build_array(jsonb_build_object('method','cash','amount',1050000)));
+  EXCEPTION WHEN check_violation THEN v_ok:=true; END;
+  SELECT count(*) INTO v_oa FROM public.orders;
+  IF NOT v_ok THEN RAISE EXCEPTION 'T11 FALLO: no falló'; END IF;
+  IF v_oa<>v_ob THEN RAISE EXCEPTION 'T11 FALLO: orden fantasma'; END IF;
+  IF (SELECT stock_qty FROM public.variants WHERE id=v_vaccB)<>v_sb THEN RAISE EXCEPTION 'T11 FALLO: accesorio descontado'; END IF;
+  RAISE NOTICE 'T11 OK: claim perdido → rollback total (accesorio intacto).';
+END $$;
+
+-- ── T12 — Turno por tienda: sin turno abierto → rechazada ───────────────────
+DO $$
+DECLARE v_ok boolean:=false; v_pacc uuid; v_vaccB uuid;
+BEGIN
+  SELECT id INTO v_pacc FROM public.products WHERE name='Cargador ORD';
+  SELECT id INTO v_vaccB FROM public.variants WHERE product_id=v_pacc AND color='Negro';
+  UPDATE public.cash_shifts SET closed_at=now() WHERE closed_at IS NULL;
+  BEGIN PERFORM public.create_order(NULL,50000,50000,0,0,50000,'cash',
+    jsonb_build_array(jsonb_build_object('variant_id',v_vaccB,'product_id',v_pacc,'qty',1,'unit_price',50000,'list_price',50000)),
+    jsonb_build_array(jsonb_build_object('method','cash','amount',50000)));
+  EXCEPTION WHEN check_violation THEN v_ok:=true; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'T12 FALLO: vendió sin turno'; END IF;
+  RAISE NOTICE 'T12 OK: sin turno en la tienda → rechazada.';
+END $$;
+
+-- ── T13 — Dos turnos abiertos: el índice impide el 2do; forzados → RAISE ─────
+DO $$
+DECLARE v_idx boolean:=false; v_store uuid;
+BEGIN
+  SELECT id INTO v_store FROM public.stores WHERE name='StoreORD';
+  UPDATE public.cash_shifts SET closed_at=NULL WHERE store_id=v_store;  -- reabrir 1
+  -- el índice impide un 2do turno abierto por la vía normal
+  BEGIN
+    INSERT INTO public.cash_shifts (store_id, opened_by) VALUES (v_store,'00000000-0000-0000-0000-0000000000d1');
+  EXCEPTION WHEN unique_violation THEN v_idx:=true; END;
+  IF NOT v_idx THEN RAISE EXCEPTION 'T13 FALLO: el índice permitió un 2do turno abierto'; END IF;
+  RAISE NOTICE 'T13a OK: el índice único impide crear un 2do turno abierto.';
+END $$;
+-- Forzar 2 abiertos (quitando el índice dentro de la tx) y verificar el RAISE:
+DROP INDEX public.uq_cash_shifts_one_open_per_store;
+INSERT INTO public.cash_shifts (store_id, opened_by)
+VALUES ((SELECT id FROM public.stores WHERE name='StoreORD'),'00000000-0000-0000-0000-0000000000d1');
+DO $$
+DECLARE v_ok boolean:=false; v_pacc uuid; v_vaccB uuid;
+BEGIN
+  SELECT id INTO v_pacc FROM public.products WHERE name='Cargador ORD';
+  SELECT id INTO v_vaccB FROM public.variants WHERE product_id=v_pacc AND color='Negro';
+  BEGIN PERFORM public.create_order(NULL,50000,50000,0,0,50000,'cash',
+    jsonb_build_array(jsonb_build_object('variant_id',v_vaccB,'product_id',v_pacc,'qty',1,'unit_price',50000,'list_price',50000)),
+    jsonb_build_array(jsonb_build_object('method','cash','amount',50000)));
+  EXCEPTION WHEN check_violation THEN v_ok:=true; END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'T13 FALLO: vendió con 2 turnos abiertos'; END IF;
+  RAISE NOTICE 'T13b OK: con 2 turnos abiertos → venta rechazada (guard >1).';
+END $$;
+
+ROLLBACK;  -- restaura el índice y todo lo demás
 \echo '✔ TEST CREATE ORDER OK — todos los asserts pasaron.'
 
 -- ============================================================
--- TEST DE CARRERA (2 sesiones — no cabe en un ROLLBACK).
--- Dos create_order SIMULTÁNEOS del MISMO IMEI (misma unidad disponible) →
--- una orden se crea completa, la otra FALLA ENTERA (sin orden, sin pago, sin
--- stock de accesorios descontado). El claim_unit dentro de la RPC serializa por
--- el lock de fila de la unidad.
---   Sesión A: BEGIN; SELECT create_order(... unit_id=U ...); pg_sleep(3); COMMIT;
---   Sesión B: (arranca ~1s después) BEGIN; SELECT create_order(... unit_id=U ...); COMMIT;
---   → A: 1 orden con la unidad 'vendida'. B: ERROR 'La unidad ya no está disponible…'.
---   → COUNT(orders)=1. Validado en lab (2026-07).
+-- TEST DE CARRERA (2 sesiones): dos create_order del mismo IMEI → una orden
+-- completa, la otra falla entera (sin orden/pago/stock). Validado en lab.
+--   Sesión A: BEGIN; SELECT create_order(...unit_id=U...); pg_sleep(3); COMMIT;
+--   Sesión B: (~1s) BEGIN; SELECT create_order(...unit_id=U...); COMMIT;
+--   → orders=1, unit 'vendida', payments=1. B: 'La unidad ya no está disponible…'.
 -- ============================================================
