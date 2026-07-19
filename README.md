@@ -101,8 +101,12 @@ docker exec -i supabase_db_<project> psql -U postgres -d postgres \
 
    > En Supabase gestionado los GRANT de tabla a `anon`/`authenticated` ya existen
    > por plataforma → **no** usar `--with-grants` contra prod. Si se aplican los
-   > `.sql` a mano desde el SQL Editor: correrlos 001→037 en orden, ejecutando
+   > `.sql` a mano desde el SQL Editor: correrlos 001→038 en orden, ejecutando
    > `DROP VIEW IF EXISTS public.daily_sales_summary CASCADE;` **antes** de la 006.
+
+   > La migración `038` elimina la org bootstrap heredada `La Bodega del Jeans`
+   > (cascarón vacío que crea la 020) para que la BD nazca limpia. Es específica
+   > de G-Pulso y tiene guardas (solo borra si no tiene tiendas ni usuarios).
 
 3. **Configurar Auth** con el mismo esquema que G-Mura (email + password; sin
    signups públicos si así está en G-Mura). El PRIMER usuario (Dueño de la org)

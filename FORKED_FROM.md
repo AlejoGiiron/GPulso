@@ -49,6 +49,38 @@ atacan en este proyecto.
    qué ventas/abonos/gastos caen en la ventana de un turno.
    **Pendiente:** unificar en una sola fuente (idealmente una vista o RPC).
 
+## Migraciones específicas de G-Pulso (NO portables a G-Mura)
+
+Migraciones nuevas que solo tienen sentido en G-Pulso y **jamás** deben aplicarse
+en G-Mura.
+
+| Migración | Por qué NO es portable |
+|-----------|------------------------|
+| `038_drop_inherited_bootstrap_org.sql` | Elimina la org `La Bodega del Jeans`, que en una BD virgen de G-Pulso queda como cascarón vacío (la crea la heredada 020). **En G-Mura esa org es el tenant REAL en producción** → aplicarla allá borraría datos del cliente. Exclusiva de G-Pulso. Tiene guardas (solo borra si no hay tiendas ni profiles), pero el aislamiento es por diseño. |
+
+> Contraste: la migración `037_active_user_enforcement.sql` SÍ es portable (ver
+> "Deudas heredadas" #1) — es candidata a portear en sentido inverso a G-Mura.
+
+## Hallazgos a reportar a G-Mura (porteo de conocimiento inverso)
+
+Cosas descubiertas trabajando en G-Pulso que le sirven a G-Mura.
+
+- **El set de migraciones NO se reconstruye desde cero sin un workaround.** Al
+  replayar 001…036 en una BD virgen aparecen dos fricciones que el dump de prod
+  de G-Mura oculta (su lab se restaura de dump, no replaya migraciones):
+  1. **Conflicto de orden en la 006:** la 003 crea la vista
+     `daily_sales_summary` que depende de `orders.payment_method`, y la 006 hace
+     un swap del tipo de esa columna → Postgres rechaza el `ALTER` mientras la
+     vista exista. Se resuelve con `DROP VIEW IF EXISTS public.daily_sales_summary
+     CASCADE;` **justo antes** de la 006 (la 033 la recrea; estado final idéntico).
+  2. **`check_function_bodies = false`:** la 001 define funciones SQL que
+     referencian `public.profiles` antes de crear la tabla → hay que aplicar con
+     ese flag en off (como hace pg_restore / el runner de Supabase).
+  En G-Pulso ambos se encapsulan en `scripts/apply-migrations-fresh.sh` sin tocar
+  migraciones. **Recomendación para G-Mura:** si alguna vez necesita bootstrap
+  limpio (nuevo entorno sin dump), usar el mismo workaround; o considerar squashear
+  el baseline. Es porteo de conocimiento, no de código.
+
 ## Fixes porteados
 
 Registro de fixes movidos A MANO entre G-Mura y G-Pulso (en cualquier sentido).
