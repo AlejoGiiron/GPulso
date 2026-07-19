@@ -158,7 +158,7 @@ export function LayawayReceipt({
             <div>{it.product_name}</div>
             <div style={monoLight}>
               {[
-                it.size ? `T:${it.size}` : null,
+                it.size ? `V:${it.size}` : null,
                 it.color ? `C:${it.color}` : null,
               ]
                 .filter(Boolean)

@@ -179,7 +179,7 @@ export default function InvoiceDetailModal({
                             )}
                             <p className="font-medium text-[#1a1a1a]">{it.product_name}</p>
                             <p className="text-[11px] text-[#a8a29e]">
-                              {it.size ? `T.${it.size}` : ''}
+                              {it.size ? `V.${it.size}` : ''}
                               {it.color ? ` · ${it.color}` : ''}
                               {it.sku ? ` · ${it.sku}` : ''}
                               {it.update_cost ? ' · costo actualizado' : ''}

@@ -168,7 +168,7 @@ export function SaleReceipt({ sale, storeName, printedAt }: SaleReceiptProps) {
             <div>{it.product_name}</div>
             {(it.size || it.color) && (
               <div style={monoLight}>
-                {[it.size ? `T:${it.size}` : null, it.color ? `C:${it.color}` : null]
+                {[it.size ? `V:${it.size}` : null, it.color ? `C:${it.color}` : null]
                   .filter(Boolean)
                   .join(' ')}
               </div>

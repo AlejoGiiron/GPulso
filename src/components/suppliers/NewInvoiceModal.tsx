@@ -557,7 +557,7 @@ export default function NewInvoiceModal({
                               {r.product_name}
                             </p>
                             <p className="mt-0.5 text-[11px] text-[#a8a29e]">
-                              {r.size ? `T.${r.size}` : ''}
+                              {r.size ? `V.${r.size}` : ''}
                               {r.color ? ` · ${r.color}` : ''}
                               {r.sku ? ` · ${r.sku}` : ''} · disp. {available}
                             </p>
@@ -608,7 +608,7 @@ export default function NewInvoiceModal({
                             )}
                             <p className="font-medium text-[#1a1a1a]">{it.product_name}</p>
                             <p className="text-[11px] text-[#a8a29e]">
-                              {it.size ? `T.${it.size}` : ''}
+                              {it.size ? `V.${it.size}` : ''}
                               {it.color ? ` · ${it.color}` : ''}
                               {it.sku ? ` · ${it.sku}` : ''}
                             </p>
