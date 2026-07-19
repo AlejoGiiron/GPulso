@@ -240,7 +240,7 @@ export default function CajaSection() {
     <div className="rounded-[14px] border border-[#ebe9e6] bg-white">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-[#f5f4f1] px-5 py-4">
-        <div className="grid h-8 w-8 place-items-center rounded-lg bg-violet-100 text-violet-600">
+        <div className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-100 text-cyan-600">
           <CreditCard size={15} />
         </div>
         <div>
@@ -277,7 +277,7 @@ export default function CajaSection() {
               onChange={(e) => setNewReason(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') addReason() }}
               placeholder="Nuevo motivo"
-              className="h-9 flex-1 rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="h-9 flex-1 rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             />
             <button
               onClick={addReason}
@@ -305,7 +305,7 @@ export default function CajaSection() {
                   key={value}
                   className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
                     checked
-                      ? 'border-violet-300 bg-violet-50'
+                      ? 'border-cyan-300 bg-cyan-50'
                       : 'border-[#ebe9e6] bg-white hover:bg-slate-50'
                   }`}
                 >
@@ -313,7 +313,7 @@ export default function CajaSection() {
                     type="checkbox"
                     checked={checked}
                     onChange={() => togglePayment(value)}
-                    className="h-4 w-4 accent-violet-500"
+                    className="h-4 w-4 accent-cyan-500"
                   />
                   <Icon size={14} style={{ color: meta.hex }} />
                   <span className="text-sm font-medium text-[#1a1a1a]">{meta.label}</span>
@@ -354,7 +354,7 @@ export default function CajaSection() {
               onChange={(e) => setNewExpenseReason(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') addExpenseReason() }}
               placeholder="Nuevo motivo de egreso"
-              className="h-9 flex-1 rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="h-9 flex-1 rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             />
             <button
               onClick={addExpenseReason}
@@ -397,8 +397,8 @@ export default function CajaSection() {
                     onClick={() => setLayawayInitialMode(mode)}
                     className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                       active
-                        ? 'border-violet-600 bg-violet-600 text-white'
-                        : 'border-[#ebe9e6] bg-white text-[#525252] hover:border-violet-300 hover:bg-violet-50'
+                        ? 'border-cyan-600 bg-cyan-600 text-white'
+                        : 'border-[#ebe9e6] bg-white text-[#525252] hover:border-cyan-300 hover:bg-cyan-50'
                     }`}
                   >
                     {label}
@@ -407,7 +407,7 @@ export default function CajaSection() {
               })}
             </div>
             {layawayInitialMode !== 'none' && (
-              <div className="mt-2 flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+              <div className="mt-2 flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
                 <input
                   value={layawayInitialValue}
                   onChange={(e) =>
@@ -432,7 +432,7 @@ export default function CajaSection() {
             <label className="mb-1.5 block text-xs font-medium text-[#525252]">
               Días de vencimiento por defecto
             </label>
-            <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+            <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
               <input
                 value={layawayDefaultDays}
                 onChange={(e) =>
@@ -499,7 +499,7 @@ export default function CajaSection() {
         <button
           onClick={() => void handleSave()}
           disabled={saving}
-          className="flex h-9 items-center gap-2 rounded-lg bg-[#8b5cf6] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:brightness-95 disabled:opacity-60"
+          className="flex h-9 items-center gap-2 rounded-lg bg-[#06b6d4] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:brightness-95 disabled:opacity-60"
         >
           {saving ? 'Guardando…' : 'Guardar cambios'}
         </button>

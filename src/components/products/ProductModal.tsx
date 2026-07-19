@@ -124,7 +124,7 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
         </div>
         {!isEdit && (
           <p className="mb-5 text-sm text-slate-400">
-            Las variantes (talla y color) se agregan después.
+            Las variantes (capacidad/color) se agregan después.
           </p>
         )}
 
@@ -135,7 +135,7 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="relative flex h-28 w-full cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 transition-colors hover:border-violet-400 hover:text-violet-500"
+              className="relative flex h-28 w-full cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 transition-colors hover:border-cyan-400 hover:text-cyan-500"
             >
               {imagePreview ? (
                 <img
@@ -170,7 +170,7 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ej: Camiseta Básica Algodón"
-              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             />
           </div>
 
@@ -183,7 +183,7 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
                 onChange={(e) => setBrand(e.target.value)}
                 list="product-brand-options"
                 placeholder="Marca"
-                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
               />
               <datalist id="product-brand-options">
                 {brands.map((b) => (
@@ -195,7 +195,7 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
                   type="button"
                   onClick={() => void handleAddBrandToConfig()}
                   disabled={updateStoreConfig.isPending}
-                  className="mt-1 text-[11px] font-medium text-violet-500 hover:text-violet-600 disabled:opacity-50"
+                  className="mt-1 text-[11px] font-medium text-cyan-500 hover:text-cyan-600 disabled:opacity-50"
                 >
                   + Agregar “{trimmedBrand}” a marcas frecuentes
                 </button>
@@ -206,7 +206,7 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
               <select
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
               >
                 <option value="">Sin categoría</option>
                 {categories.map((c) => (
@@ -221,12 +221,12 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
           {/* Size type */}
           <div>
             <label className="mb-1.5 block text-xs font-medium text-slate-600">
-              Tipo de talla
+              Tipo de variante
             </label>
             <select
               value={sizeType}
               onChange={(e) => setSizeType(e.target.value)}
-              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             >
               {sizeTypeOptions.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -235,7 +235,7 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
               ))}
             </select>
             <p className="mt-1 text-[11px] text-slate-400">
-              Define qué tallas estarán disponibles al agregar variantes.
+              Define qué valores de variante estarán disponibles al agregar variantes.
             </p>
           </div>
 
@@ -247,7 +247,7 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               placeholder="Material, corte, detalles…"
-              className="w-full resize-y rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="w-full resize-y rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             />
           </div>
 
@@ -263,7 +263,7 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
             <button
               type="submit"
               disabled={submitting || !name.trim()}
-              className="h-11 flex-[2] rounded-lg bg-violet-500 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(139,92,246,0.35)] hover:bg-violet-600 disabled:opacity-50"
+              className="h-11 flex-[2] rounded-lg bg-cyan-500 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(139,92,246,0.35)] hover:bg-cyan-600 disabled:opacity-50"
             >
               {submitting
                 ? 'Guardando…'

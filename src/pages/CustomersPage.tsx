@@ -158,7 +158,7 @@ function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' | 'lg'
   return (
     <div
       className={`shrink-0 flex items-center justify-center rounded-full font-semibold text-white ${dims[size]}`}
-      style={{ background: 'linear-gradient(135deg,#a78bfa,#7c3aed)' }}
+      style={{ background: 'linear-gradient(135deg,#22d3ee,#0891b2)' }}
     >
       {initials(name)}
     </div>
@@ -274,7 +274,7 @@ function CustomerFormModal({ mode, onClose }: CustomerFormModalProps) {
               value={form.full_name}
               onChange={(e) => setField('full_name', e.target.value)}
               placeholder="Ej. María González"
-              className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none transition focus:border-[#8b5cf6] focus:shadow-[0_0_0_4px_#8b5cf61a]"
+              className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none transition focus:border-[#06b6d4] focus:shadow-[0_0_0_4px_#06b6d41a]"
             />
             {errors.full_name && (
               <p className="mt-1 text-[11px] text-red-500">{errors.full_name}</p>
@@ -290,7 +290,7 @@ function CustomerFormModal({ mode, onClose }: CustomerFormModalProps) {
               value={form.phone}
               onChange={(e) => setField('phone', e.target.value)}
               placeholder="Ej. 3001234567"
-              className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none transition focus:border-[#8b5cf6] focus:shadow-[0_0_0_4px_#8b5cf61a]"
+              className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none transition focus:border-[#06b6d4] focus:shadow-[0_0_0_4px_#06b6d41a]"
             />
             {errors.phone && (
               <p className="mt-1 text-[11px] text-red-500">{errors.phone}</p>
@@ -307,7 +307,7 @@ function CustomerFormModal({ mode, onClose }: CustomerFormModalProps) {
                 value={form.email}
                 onChange={(e) => setField('email', e.target.value)}
                 placeholder="correo@ejemplo.com"
-                className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none transition focus:border-[#8b5cf6] focus:shadow-[0_0_0_4px_#8b5cf61a]"
+                className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none transition focus:border-[#06b6d4] focus:shadow-[0_0_0_4px_#06b6d41a]"
               />
               {errors.email && (
                 <p className="mt-1 text-[11px] text-red-500">{errors.email}</p>
@@ -321,7 +321,7 @@ function CustomerFormModal({ mode, onClose }: CustomerFormModalProps) {
                 value={form.document_id}
                 onChange={(e) => setField('document_id', e.target.value)}
                 placeholder="Cédula o pasaporte"
-                className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none transition focus:border-[#8b5cf6] focus:shadow-[0_0_0_4px_#8b5cf61a]"
+                className="h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none transition focus:border-[#06b6d4] focus:shadow-[0_0_0_4px_#06b6d41a]"
               />
             </div>
           </div>
@@ -336,7 +336,7 @@ function CustomerFormModal({ mode, onClose }: CustomerFormModalProps) {
               onChange={(e) => setField('notes', e.target.value)}
               placeholder="Información interna sobre este cliente…"
               rows={3}
-              className="w-full rounded-lg border border-[#ebe9e6] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#8b5cf6] focus:shadow-[0_0_0_4px_#8b5cf61a] resize-none"
+              className="w-full rounded-lg border border-[#ebe9e6] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#06b6d4] focus:shadow-[0_0_0_4px_#06b6d41a] resize-none"
             />
           </div>
         </div>
@@ -352,7 +352,7 @@ function CustomerFormModal({ mode, onClose }: CustomerFormModalProps) {
           <button
             onClick={handleSubmit}
             disabled={isPending}
-            className="h-[42px] flex-1 rounded-lg bg-[#8b5cf6] text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] transition hover:bg-[#7c3aed] disabled:opacity-50"
+            className="h-[42px] flex-1 rounded-lg bg-[#06b6d4] text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] transition hover:bg-[#0891b2] disabled:opacity-50"
           >
             {isPending
               ? 'Guardando…'
@@ -417,7 +417,7 @@ function NotesEditor({
           onKeyDown={handleKeyDown}
           rows={3}
           placeholder="Escribe una nota sobre este cliente…"
-          className="w-full rounded-lg border border-[#8b5cf6] bg-white px-3 py-2.5 text-sm outline-none shadow-[0_0_0_3px_#8b5cf61a] resize-none placeholder:text-[#a8a29e]"
+          className="w-full rounded-lg border border-[#06b6d4] bg-white px-3 py-2.5 text-sm outline-none shadow-[0_0_0_3px_#06b6d41a] resize-none placeholder:text-[#a8a29e]"
         />
       ) : (
         <div
@@ -536,7 +536,7 @@ const LAYAWAY_STATUS_META: Record<
   LayawayStatus,
   { label: string; classes: string; icon: React.ElementType }
 > = {
-  active:    { label: 'Activo',     classes: 'bg-violet-50 border border-violet-200 text-violet-700',   icon: Clock },
+  active:    { label: 'Activo',     classes: 'bg-cyan-50 border border-cyan-200 text-cyan-700',   icon: Clock },
   completed: { label: 'Completado', classes: 'bg-emerald-50 border border-emerald-200 text-emerald-700', icon: CheckCircle },
   cancelled: { label: 'Cancelado',  classes: 'bg-stone-50 border border-stone-200 text-stone-600',      icon: Ban },
   expired:   { label: 'Vencido',    classes: 'bg-red-50 border border-red-200 text-red-700',            icon: AlertTriangle },
@@ -554,7 +554,7 @@ function LayawayRow({ row }: { row: CustomerLayawayRow }) {
       onClick={() => navigate(`/separados?id=${row.id}`)}
       className="flex w-full items-center gap-3 border-b border-[#f5f4f1] px-6 py-3 text-left transition-colors last:border-0 hover:bg-[#fafaf9]"
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-50 font-mono text-[11px] font-bold text-violet-700">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-50 font-mono text-[11px] font-bold text-cyan-700">
         #{row.layaway_number}
       </div>
       <div className="min-w-0 flex-1">
@@ -576,7 +576,7 @@ function LayawayRow({ row }: { row: CustomerLayawayRow }) {
         <div className="mt-1 flex items-center gap-2">
           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#f5f4f1]">
             <div
-              className="h-full rounded-full bg-violet-500"
+              className="h-full rounded-full bg-cyan-500"
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -724,7 +724,7 @@ function ProfileView({
             onClick={() => setTab(id)}
             className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
               tab === id
-                ? 'border-[#8b5cf6] text-[#8b5cf6]'
+                ? 'border-[#06b6d4] text-[#06b6d4]'
                 : 'border-transparent text-[#737373] hover:text-[#1a1a1a]'
             }`}
           >
@@ -733,7 +733,7 @@ function ProfileView({
             {count !== null && (
               <span
                 className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
-                  tab === id ? 'bg-[#8b5cf61a] text-[#8b5cf6]' : 'bg-[#f5f4f1] text-[#a8a29e]'
+                  tab === id ? 'bg-[#06b6d41a] text-[#06b6d4]' : 'bg-[#f5f4f1] text-[#a8a29e]'
                 }`}
               >
                 {count}
@@ -842,13 +842,13 @@ function CustomerListItemRow({
     <button
       onClick={onClick}
       className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#f8f7f5] ${
-        selected ? 'bg-[#8b5cf61a]' : ''
+        selected ? 'bg-[#06b6d41a]' : ''
       }`}
     >
       <Avatar name={customer.full_name} size="md" />
       <div className="min-w-0 flex-1">
         <p
-          className={`truncate text-sm font-medium ${selected ? 'text-[#8b5cf6]' : 'text-[#1a1a1a]'}`}
+          className={`truncate text-sm font-medium ${selected ? 'text-[#06b6d4]' : 'text-[#1a1a1a]'}`}
         >
           {customer.full_name}
         </p>
@@ -903,7 +903,7 @@ export default function CustomersPage() {
         </h1>
         <button
           onClick={() => setModal({ type: 'new' })}
-          className="flex h-9 items-center gap-2 rounded-lg bg-[#8b5cf6] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-[#7c3aed]"
+          className="flex h-9 items-center gap-2 rounded-lg bg-[#06b6d4] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-[#0891b2]"
         >
           <Plus size={15} /> Nuevo cliente
         </button>
@@ -915,7 +915,7 @@ export default function CustomersPage() {
         <aside className="flex w-[35%] shrink-0 flex-col overflow-hidden border-r border-[#ebe9e6] bg-white">
           {/* Search */}
           <div className="border-b border-[#ebe9e6] px-4 py-3">
-            <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] bg-[#f8f7f5] px-3 py-2 focus-within:border-[#8b5cf6] focus-within:shadow-[0_0_0_3px_#8b5cf61a]">
+            <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] bg-[#f8f7f5] px-3 py-2 focus-within:border-[#06b6d4] focus-within:shadow-[0_0_0_3px_#06b6d41a]">
               <Search size={14} className="shrink-0 text-[#a8a29e]" />
               <input
                 value={listQuery}
@@ -985,7 +985,7 @@ export default function CustomersPage() {
         <main className="min-h-0 flex-1 overflow-hidden bg-white">
           {profileLoading && selectedId ? (
             <div className="flex h-full items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#8b5cf6] border-t-transparent" />
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#06b6d4] border-t-transparent" />
             </div>
           ) : profile ? (
             <ProfileView key={profile.id} profile={profile} onEdit={handleEdit} />

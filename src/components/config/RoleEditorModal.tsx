@@ -100,7 +100,7 @@ export function RoleEditorModal({ role, onClose }: RoleEditorModalProps) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ej. Encargado de tienda"
-              className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             />
           </div>
 
@@ -125,7 +125,7 @@ export function RoleEditorModal({ role, onClose }: RoleEditorModalProps) {
                         <span
                           className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
                             checked
-                              ? 'border-violet-500 bg-violet-500 text-white'
+                              ? 'border-cyan-500 bg-cyan-500 text-white'
                               : 'border-[#ebe9e6] bg-white'
                           }`}
                         >
@@ -171,7 +171,7 @@ export function RoleEditorModal({ role, onClose }: RoleEditorModalProps) {
               type="submit"
               form="role-editor-form"
               disabled={pending}
-              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-[#8b5cf6] text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:brightness-95 disabled:opacity-60"
+              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-[#06b6d4] text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:brightness-95 disabled:opacity-60"
             >
               {pending ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear rol'}
             </button>

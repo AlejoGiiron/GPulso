@@ -60,7 +60,7 @@ export function PaymentSplitLines({
             <select
               value={line.method}
               onChange={(e) => setMethod(i, e.target.value as PaymentMethod)}
-              className="rounded-xl border border-slate-200 px-2.5 py-2.5 text-sm font-medium text-slate-700 outline-none focus:border-violet-500"
+              className="rounded-xl border border-slate-200 px-2.5 py-2.5 text-sm font-medium text-slate-700 outline-none focus:border-cyan-500"
             >
               {visibleMethods
                 .filter((m) => m === line.method || !usedMethods.has(m))
@@ -80,14 +80,14 @@ export function PaymentSplitLines({
                 value={line.amount}
                 onChange={(e) => setAmount(i, e.target.value)}
                 placeholder="0"
-                className="w-full rounded-xl border border-slate-200 py-2.5 pl-7 pr-3 font-mono text-sm font-semibold outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                className="w-full rounded-xl border border-slate-200 py-2.5 pl-7 pr-3 font-mono text-sm font-semibold outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
               />
             </div>
             {Math.abs(remaining) >= 0.5 && (
               <button
                 type="button"
                 onClick={() => fillRest(i)}
-                className="shrink-0 rounded-lg border border-slate-200 px-2 py-2 text-[11px] font-semibold text-slate-600 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700"
+                className="shrink-0 rounded-lg border border-slate-200 px-2 py-2 text-[11px] font-semibold text-slate-600 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
                 title="Completar con lo que falta"
               >
                 Resto
@@ -111,7 +111,7 @@ export function PaymentSplitLines({
         <button
           type="button"
           onClick={addLine}
-          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 py-2 text-xs font-semibold text-slate-600 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 py-2 text-xs font-semibold text-slate-600 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
         >
           <Plus size={14} /> Agregar método
         </button>

@@ -89,7 +89,7 @@ export default function ExpenseHistoryPage() {
     try {
       const { Workbook } = await import('exceljs')
       const wb = new Workbook()
-      wb.creator = 'G-Mura'
+      wb.creator = 'G-Pulso'
 
       const HEADER_FILL = {
         type: 'pattern' as const,
@@ -180,8 +180,8 @@ export default function ExpenseHistoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between rounded-2xl border border-[#ebe9e6] bg-[#fdfcfb] px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-100">
-            <Receipt size={17} className="text-violet-600" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-100">
+            <Receipt size={17} className="text-cyan-600" />
           </div>
           <div>
             <p className="text-sm font-semibold text-[#1a1a1a]">
@@ -196,7 +196,7 @@ export default function ExpenseHistoryPage() {
         </div>
         <button
           onClick={() => void exportExcel()}
-          className="flex h-9 items-center gap-2 rounded-lg bg-violet-600 px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-violet-700"
+          className="flex h-9 items-center gap-2 rounded-lg bg-cyan-600 px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-cyan-700"
         >
           <Download size={14} /> Exportar a Excel
         </button>
@@ -208,19 +208,19 @@ export default function ExpenseHistoryPage() {
           type="date"
           value={filters.dateFrom}
           onChange={(e) => setFilters((f) => ({ ...f, dateFrom: e.target.value }))}
-          className="h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-violet-400"
+          className="h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-cyan-400"
         />
         <span className="text-xs text-[#737373]">a</span>
         <input
           type="date"
           value={filters.dateTo}
           onChange={(e) => setFilters((f) => ({ ...f, dateTo: e.target.value }))}
-          className="h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-violet-400"
+          className="h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-cyan-400"
         />
         <select
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          className="h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 pr-8 text-sm text-[#525252] outline-none focus:border-violet-400"
+          className="h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 pr-8 text-sm text-[#525252] outline-none focus:border-cyan-400"
         >
           <option value="all">Todos los motivos</option>
           {reasonOptions.map((r) => (

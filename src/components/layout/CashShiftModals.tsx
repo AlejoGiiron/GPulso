@@ -53,8 +53,8 @@ export function OpenShiftModal({ onClose }: OpenShiftModalProps) {
       >
         <div className="mb-5 flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100">
-              <Wallet size={18} className="text-violet-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-100">
+              <Wallet size={18} className="text-cyan-600" />
             </div>
             <div>
               <h2
@@ -86,7 +86,7 @@ export function OpenShiftModal({ onClose }: OpenShiftModalProps) {
           <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[.05em] text-[#737373]">
             Monto inicial en caja
           </label>
-          <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+          <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
             <span className="text-sm text-[#737373]">$</span>
             <input
               autoFocus
@@ -115,7 +115,7 @@ export function OpenShiftModal({ onClose }: OpenShiftModalProps) {
           <button
             onClick={handleSubmit}
             disabled={openShift.isPending}
-            className="h-10 flex-1 rounded-lg bg-violet-600 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-violet-700 disabled:cursor-wait disabled:opacity-70"
+            className="h-10 flex-1 rounded-lg bg-cyan-600 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-cyan-700 disabled:cursor-wait disabled:opacity-70"
           >
             {openShift.isPending ? 'Abriendo…' : 'Abrir turno'}
           </button>
@@ -181,8 +181,8 @@ export function ExpenseModal({ onClose }: ExpenseModalProps) {
       >
         <div className="mb-5 flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100">
-              <Receipt size={18} className="text-violet-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-100">
+              <Receipt size={18} className="text-cyan-600" />
             </div>
             <div>
               <h2
@@ -215,7 +215,7 @@ export function ExpenseModal({ onClose }: ExpenseModalProps) {
           <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[.05em] text-[#737373]">
             Monto
           </label>
-          <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+          <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
             <span className="text-sm text-[#737373]">$</span>
             <input
               autoFocus
@@ -248,8 +248,8 @@ export function ExpenseModal({ onClose }: ExpenseModalProps) {
                   onClick={() => setReason(r)}
                   className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                     active
-                      ? 'border-violet-600 bg-violet-600 text-white'
-                      : 'border-[#ebe9e6] bg-white text-[#525252] hover:border-violet-300 hover:bg-violet-50'
+                      ? 'border-cyan-600 bg-cyan-600 text-white'
+                      : 'border-[#ebe9e6] bg-white text-[#525252] hover:border-cyan-300 hover:bg-cyan-50'
                   }`}
                 >
                   {r}
@@ -269,7 +269,7 @@ export function ExpenseModal({ onClose }: ExpenseModalProps) {
             onChange={(e) => setNotes(e.target.value.slice(0, 200))}
             rows={2}
             placeholder="Detalles adicionales…"
-            className="w-full resize-none rounded-lg border border-[#ebe9e6] px-3 py-2 text-sm outline-none placeholder:text-[#a8a29e] focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+            className="w-full resize-none rounded-lg border border-[#ebe9e6] px-3 py-2 text-sm outline-none placeholder:text-[#a8a29e] focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
           />
           <p className="mt-1 text-[10px] text-[#a8a29e]">
             {notes.length}/200
@@ -287,7 +287,7 @@ export function ExpenseModal({ onClose }: ExpenseModalProps) {
           <button
             onClick={handleSubmit}
             disabled={!canSubmit || registerExpense.isPending}
-            className="h-10 flex-1 rounded-lg bg-violet-600 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-10 flex-1 rounded-lg bg-cyan-600 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {registerExpense.isPending ? 'Registrando…' : 'Registrar gasto'}
           </button>
@@ -407,7 +407,7 @@ export function CloseShiftModal({ shift, onClose }: CloseShiftModalProps) {
             <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[.05em] text-[#737373]">
               Monto real contado
             </label>
-            <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+            <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
               <span className="text-sm text-[#737373]">$</span>
               <input
                 autoFocus
@@ -425,7 +425,7 @@ export function CloseShiftModal({ shift, onClose }: CloseShiftModalProps) {
                   diff === 0
                     ? 'border-green-200 bg-green-50 text-green-800'
                     : diff > 0
-                      ? 'border-violet-200 bg-violet-50 text-violet-800'
+                      ? 'border-cyan-200 bg-cyan-50 text-cyan-800'
                       : 'border-red-200 bg-red-50 text-red-800'
                 }`}
               >
@@ -487,7 +487,7 @@ export function CloseShiftModal({ shift, onClose }: CloseShiftModalProps) {
             <button
               onClick={handlePrintAndClose}
               disabled={closeShift.isPending || !hasInput}
-              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-violet-600 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-cyan-600 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Printer size={14} />
               Imprimir y cerrar

@@ -145,7 +145,7 @@ export function SupplierNotifications() {
               setOpen(false)
               navigate('/proveedores?tab=payables')
             }}
-            className="block w-full border-t border-[#f5f4f1] bg-[#fafaf9] px-4 py-2.5 text-center text-xs font-medium text-violet-600 hover:bg-[#f5f4f1]"
+            className="block w-full border-t border-[#f5f4f1] bg-[#fafaf9] px-4 py-2.5 text-center text-xs font-medium text-cyan-600 hover:bg-[#f5f4f1]"
           >
             Ver cuentas por pagar
           </button>

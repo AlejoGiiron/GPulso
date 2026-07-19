@@ -177,7 +177,7 @@ function VariantPicker({
         {sizes.length > 0 && (
           <div className="mb-3">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Talla
+              Variante
             </p>
             <div className="flex flex-wrap gap-2">
               {sizes.map((s) => {
@@ -222,7 +222,7 @@ function VariantPicker({
                       background: getColorHex(c),
                       outline:
                         selectedColor === c
-                          ? '2px solid #8b5cf6'
+                          ? '2px solid #06b6d4'
                           : '2px solid transparent',
                       outlineOffset: 2,
                       boxShadow: '0 0 0 1px rgba(0,0,0,0.12)',
@@ -258,7 +258,7 @@ function VariantPicker({
         <button
           disabled={!matched || available === 0}
           onClick={() => matched && onAdd(matched)}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40 hover:bg-violet-700"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-600 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40 hover:bg-cyan-700"
         >
           <Plus size={16} /> Agregar
         </button>
@@ -297,7 +297,7 @@ function CustomerStep({
       <div className="flex items-center gap-3 rounded-xl border border-[#ebe9e6] bg-[#fafaf9] px-4 py-3">
         <div
           className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white"
-          style={{ background: 'linear-gradient(135deg,#a78bfa,#7c3aed)' }}
+          style={{ background: 'linear-gradient(135deg,#22d3ee,#0891b2)' }}
         >
           {customerInitials(selected.full_name)}
         </div>
@@ -323,7 +323,7 @@ function CustomerStep({
 
   return (
     <div ref={containerRef} className="relative">
-      <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] bg-white px-3 py-2 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+      <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] bg-white px-3 py-2 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
         <User size={15} className="shrink-0 text-[#737373]" />
         <input
           autoFocus
@@ -351,7 +351,7 @@ function CustomerStep({
             >
               <div
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                style={{ background: 'linear-gradient(135deg,#a78bfa,#7c3aed)' }}
+                style={{ background: 'linear-gradient(135deg,#22d3ee,#0891b2)' }}
               >
                 {customerInitials(c.full_name)}
               </div>
@@ -371,7 +371,7 @@ function CustomerStep({
                 setOpen(false)
                 setShowQuickCreate(true)
               }}
-              className="flex w-full items-center gap-2.5 border-t border-[#f5f4f1] px-3 py-2.5 text-left text-sm font-medium text-violet-600 hover:bg-violet-50"
+              className="flex w-full items-center gap-2.5 border-t border-[#f5f4f1] px-3 py-2.5 text-left text-sm font-medium text-cyan-600 hover:bg-cyan-50"
             >
               <Plus size={14} /> Crear cliente rápido &ldquo;{dq}&rdquo;
             </button>
@@ -429,7 +429,7 @@ function QuickCreateInline({
               setErr('')
             }}
             placeholder="Nombre completo *"
-            className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+            className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
           />
           <input
             value={phone}
@@ -438,7 +438,7 @@ function QuickCreateInline({
               setErr('')
             }}
             placeholder="Teléfono *"
-            className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+            className="h-10 w-full rounded-lg border border-[#ebe9e6] px-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
           />
           {err && <p className="text-[11px] text-red-500">{err}</p>}
         </div>
@@ -467,7 +467,7 @@ function QuickCreateInline({
                 { onSuccess: (c) => onCreated(c) },
               )
             }}
-            className="flex-1 rounded-xl bg-violet-600 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
+            className="flex-1 rounded-xl bg-cyan-600 py-2.5 text-sm font-semibold text-white hover:bg-cyan-700 disabled:opacity-50"
           >
             {create.isPending ? 'Guardando…' : 'Crear'}
           </button>
@@ -521,7 +521,7 @@ function ItemsStep({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-3 flex items-center gap-2 rounded-lg border border-[#ebe9e6] bg-[#f8f7f5] px-3 py-2 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+      <div className="mb-3 flex items-center gap-2 rounded-lg border border-[#ebe9e6] bg-[#f8f7f5] px-3 py-2 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
         <Search size={15} className="shrink-0 text-[#737373]" />
         <input
           autoFocus
@@ -567,7 +567,7 @@ function ItemsStep({
                     key={p.id}
                     onClick={() => setPickerProduct(p)}
                     disabled={totalStock === 0}
-                    className="group flex flex-col rounded-lg border border-[#ebe9e6] bg-white p-2 text-left hover:border-violet-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="group flex flex-col rounded-lg border border-[#ebe9e6] bg-white p-2 text-left hover:border-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <div className="mb-1 aspect-square overflow-hidden rounded-md bg-slate-100">
                       {p.image_url ? (
@@ -842,17 +842,17 @@ function ConfirmStep({
 
       {/* Card destacado: abono mínimo */}
       {required > 0 && (
-        <div className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3">
+        <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[.05em] text-violet-700">
+              <p className="text-[11px] font-semibold uppercase tracking-[.05em] text-cyan-700">
                 Abono mínimo requerido
               </p>
-              <p className="mt-0.5 text-[12px] text-violet-900">
+              <p className="mt-0.5 text-[12px] text-cyan-900">
                 Para crear este separado debes cobrar al menos esta suma hoy.
               </p>
             </div>
-            <p className="font-mono text-xl font-bold text-violet-900">
+            <p className="font-mono text-xl font-bold text-cyan-900">
               {fmtCOP(required)}
             </p>
           </div>
@@ -870,7 +870,7 @@ function ConfirmStep({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+        <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
           <span className="text-sm text-[#737373]">$</span>
           <input
             value={amount}
@@ -886,7 +886,7 @@ function ConfirmStep({
             <button
               type="button"
               onClick={() => setAmount(String(required))}
-              className="rounded-lg border border-[#ebe9e6] bg-white px-2.5 py-1 text-xs font-semibold text-[#525252] hover:border-violet-300 hover:bg-violet-50"
+              className="rounded-lg border border-[#ebe9e6] bg-white px-2.5 py-1 text-xs font-semibold text-[#525252] hover:border-cyan-300 hover:bg-cyan-50"
             >
               Mínimo ({fmtCOP(required)})
             </button>
@@ -894,7 +894,7 @@ function ConfirmStep({
           <button
             type="button"
             onClick={() => setAmount(String(total))}
-            className="rounded-lg border border-[#ebe9e6] bg-white px-2.5 py-1 text-xs font-semibold text-[#525252] hover:border-violet-300 hover:bg-violet-50"
+            className="rounded-lg border border-[#ebe9e6] bg-white px-2.5 py-1 text-xs font-semibold text-[#525252] hover:border-cyan-300 hover:bg-cyan-50"
           >
             Total ({fmtCOP(total)})
           </button>
@@ -919,7 +919,7 @@ function ConfirmStep({
             type="checkbox"
             checked={isHistorical}
             onChange={(e) => setIsHistorical(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-violet-600"
+            className="mt-0.5 h-4 w-4 shrink-0 accent-cyan-600"
           />
           <div className="min-w-0">
             <p className="text-[12.5px] font-semibold text-amber-900">
@@ -948,7 +948,7 @@ function ConfirmStep({
                     setLines([{ method, amount: String(parsedAmount) }])
                     setSplitMode(true)
                   }}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-violet-700"
+                  className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-cyan-700"
                 >
                   <Split size={12} /> Dividir
                 </button>
@@ -966,7 +966,7 @@ function ConfirmStep({
                     onClick={() => setMethod(id)}
                     className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
                       active
-                        ? 'border-violet-600 bg-violet-50 text-violet-700'
+                        ? 'border-cyan-600 bg-cyan-50 text-cyan-700'
                         : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                     }`}
                   >
@@ -986,7 +986,7 @@ function ConfirmStep({
               <button
                 type="button"
                 onClick={() => setSplitMode(false)}
-                className="text-[11px] font-semibold text-slate-500 hover:text-violet-700"
+                className="text-[11px] font-semibold text-slate-500 hover:text-cyan-700"
               >
                 ← Un solo método
               </button>
@@ -1025,7 +1025,7 @@ function ConfirmStep({
           onChange={(e) => setNotes(e.target.value.slice(0, 300))}
           rows={2}
           placeholder="Observaciones internas…"
-          className="w-full resize-none rounded-lg border border-[#ebe9e6] px-3 py-2 text-sm outline-none placeholder:text-[#a8a29e] focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+          className="w-full resize-none rounded-lg border border-[#ebe9e6] px-3 py-2 text-sm outline-none placeholder:text-[#a8a29e] focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
         />
       </div>
     </div>
@@ -1047,9 +1047,9 @@ function Stepper({ current }: { current: number }) {
             <div
               className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold ${
                 active
-                  ? 'bg-violet-600 text-white'
+                  ? 'bg-cyan-600 text-white'
                   : done
-                    ? 'bg-violet-100 text-violet-700'
+                    ? 'bg-cyan-100 text-cyan-700'
                     : 'bg-[#f5f4f1] text-[#737373]'
               }`}
             >
@@ -1080,7 +1080,7 @@ export function NewLayawayModal({ prefill, onClose, onCreated }: Props) {
   // Gating legacy (rol enum en develop): el abono histórico es admin-only.
   // Migrar a can(...) cuando RBAC llegue a develop.
   const isAdmin = profile?.role === 'admin'
-  const storeName = storeData?.name ?? 'G-Mura'
+  const storeName = storeData?.name ?? 'G-Pulso'
   const enabledMethods = migrateLegacyPaymentMethods(config.payment_methods)
   const defaultDays =
     typeof config.layaway_default_days === 'number'
@@ -1350,7 +1350,7 @@ export function NewLayawayModal({ prefill, onClose, onCreated }: Props) {
               <button
                 onClick={handlePrintAndFinish}
                 disabled={!createdDetail.data}
-                className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-violet-600 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-violet-700 disabled:opacity-50"
+                className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-cyan-600 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-cyan-700 disabled:opacity-50"
               >
                 <Printer size={14} /> Imprimir y continuar
               </button>
@@ -1384,8 +1384,8 @@ export function NewLayawayModal({ prefill, onClose, onCreated }: Props) {
         {/* Header */}
         <div className="flex items-start justify-between border-b border-[#f5f4f1] px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100">
-              <Bookmark size={18} className="text-violet-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-100">
+              <Bookmark size={18} className="text-cyan-600" />
             </div>
             <div>
               <h2
@@ -1427,7 +1427,7 @@ export function NewLayawayModal({ prefill, onClose, onCreated }: Props) {
                 <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[.05em] text-[#737373]">
                   Fecha de vencimiento
                 </label>
-                <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+                <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
                   <Calendar size={15} className="text-[#737373]" />
                   <input
                     type="date"
@@ -1503,7 +1503,7 @@ export function NewLayawayModal({ prefill, onClose, onCreated }: Props) {
                 setStep((s) => Math.min(2, s + 1) as 0 | 1 | 2)
               }}
               disabled={!canNext}
-              className="flex h-10 items-center gap-1.5 rounded-lg bg-violet-600 px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 items-center gap-1.5 rounded-lg bg-cyan-600 px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Siguiente
               <ChevronRight size={14} />
@@ -1512,7 +1512,7 @@ export function NewLayawayModal({ prefill, onClose, onCreated }: Props) {
             <button
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className="flex h-10 items-center gap-2 rounded-lg bg-violet-600 px-5 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 items-center gap-2 rounded-lg bg-cyan-600 px-5 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Wallet size={14} />
               {create.isPending ? 'Creando…' : 'Crear separado'}

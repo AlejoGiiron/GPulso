@@ -20,7 +20,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error
       // El cliente tipado no infiere la relación embebida (Database hecho a
       // mano, sin metadata de Relationships) → cast explícito al runtime real.
-      setProfile(data as unknown as Profile)
+      const prof = data as unknown as Profile
+      // SEGURIDAD (deuda #1, migración 037): un usuario desactivado no debe
+      // conservar acceso. El servidor ya lo bloquea (get_my_store_id → NULL),
+      // pero acá lo EXPULSAMOS explícitamente para no dejarlo en una sesión
+      // muda sin datos. La política profiles_select (rama id = auth.uid())
+      // permite leer el propio perfil aunque esté inactivo → sí llega is_active.
+      if (prof && prof.is_active === false) {
+        setProfile(null)
+        await supabase.auth.signOut()
+        toast.error('Tu cuenta está desactivada. Contacta al administrador.')
+        return
+      }
+      setProfile(prof)
     } catch {
       // Un fallo de LECTURA del perfil (RLS, red, fila no visible un instante)
       // NO debe cerrar la sesión. Solo cerramos si la SESIÓN ya no es válida
@@ -87,7 +99,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast.error('No se pudo actualizar el perfil')
       return
     }
-    setProfile(data as unknown as Profile)
+    const prof = data as unknown as Profile
+    // Mismo enforcement que en fetchProfile: si el perfil quedó desactivado
+    // (p. ej. un admin lo desactivó mientras la sesión estaba abierta), expulsar.
+    if (prof && prof.is_active === false) {
+      setProfile(null)
+      await supabase.auth.signOut()
+      toast.error('Tu cuenta está desactivada. Contacta al administrador.')
+      return
+    }
+    setProfile(prof)
   }
 
   // Permisos RBAC del usuario, derivados del rol embebido. [] si no hay rol.

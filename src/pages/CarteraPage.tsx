@@ -80,7 +80,7 @@ function CustomerDetail({
           <div className="flex items-center gap-3">
             <div
               className="flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold text-white"
-              style={{ background: 'linear-gradient(135deg,#a78bfa,#7c3aed)' }}
+              style={{ background: 'linear-gradient(135deg,#22d3ee,#0891b2)' }}
             >
               {initials(customer.customer_name)}
             </div>
@@ -149,7 +149,7 @@ function CustomerDetail({
                           paid_amount: c.paid_amount,
                         })
                       }
-                      className="flex h-8 items-center gap-1.5 rounded-lg bg-violet-600 px-3 text-xs font-semibold text-white hover:bg-violet-700"
+                      className="flex h-8 items-center gap-1.5 rounded-lg bg-cyan-600 px-3 text-xs font-semibold text-white hover:bg-cyan-700"
                     >
                       <Wallet size={13} /> Abonar
                     </button>
@@ -177,7 +177,7 @@ function CustomerDetail({
                   </div>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#f5f4f1]">
                     <div
-                      className="h-full rounded-full bg-violet-500"
+                      className="h-full rounded-full bg-cyan-500"
                       style={{ width: `${paidPct}%` }}
                     />
                   </div>
@@ -277,7 +277,7 @@ export default function CarteraPage() {
         {/* Lista */}
         <div className="flex min-h-0 flex-col border-r border-[#ebe9e6] bg-white">
           <div className="border-b border-[#f5f4f1] p-3">
-            <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] bg-[#fafaf9] px-3 py-2 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+            <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] bg-[#fafaf9] px-3 py-2 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
               <Search size={15} className="shrink-0 text-[#737373]" />
               <input
                 value={query}
@@ -319,14 +319,14 @@ export default function CarteraPage() {
                       onClick={() => setSelectedId(b.customer_id)}
                       className={`w-full rounded-xl border p-3 text-left transition-all ${
                         active
-                          ? 'border-violet-500 bg-violet-50/40 shadow-[0_0_0_3px_rgba(139,92,246,0.1)]'
-                          : 'border-[#ebe9e6] bg-white hover:border-violet-300'
+                          ? 'border-cyan-500 bg-cyan-50/40 shadow-[0_0_0_3px_rgba(139,92,246,0.1)]'
+                          : 'border-[#ebe9e6] bg-white hover:border-cyan-300'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div
                           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
-                          style={{ background: 'linear-gradient(135deg,#a78bfa,#7c3aed)' }}
+                          style={{ background: 'linear-gradient(135deg,#22d3ee,#0891b2)' }}
                         >
                           {initials(b.customer_name)}
                         </div>

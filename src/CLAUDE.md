@@ -1,7 +1,7 @@
-# apps/pos — Panel POS (G-Mura)
+# apps/pos — Panel POS (G-Pulso)
 
 ## Propósito
-Panel principal de la tienda de ropa. Lo usan:
+Panel principal de la tienda de tecnología. Lo usan:
 - Administradores: configuración, reportes, inventario
 - Vendedores: ventas, devoluciones, consultas de stock
 

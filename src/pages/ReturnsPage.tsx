@@ -124,7 +124,7 @@ function StepperBar({ current }: { current: number }) {
           <div className="flex items-center gap-2">
             <div
               className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold transition-colors ${
-                current >= s.n ? 'bg-violet-600 text-white' : 'bg-[#f5f4f1] text-[#737373]'
+                current >= s.n ? 'bg-cyan-600 text-white' : 'bg-[#f5f4f1] text-[#737373]'
               }`}
             >
               {current > s.n ? <CheckCircle size={12} /> : s.n}
@@ -201,7 +201,7 @@ function Step1Search({
         </p>
       </div>
 
-      <div className="flex items-center gap-3 rounded-xl border border-[#ebe9e6] bg-[#f8f7f5] px-4 py-3 transition-all focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+      <div className="flex items-center gap-3 rounded-xl border border-[#ebe9e6] bg-[#f8f7f5] px-4 py-3 transition-all focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
         <Search size={16} className="shrink-0 text-[#737373]" />
         <input
           ref={inputRef}
@@ -242,8 +242,8 @@ function Step1Search({
                   disabled={loadingDetail && selectedId === r.id}
                   className="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-[#f8f7f5] disabled:opacity-60"
                 >
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-100">
-                    <span className="font-mono text-xl font-bold text-violet-700">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-cyan-100">
+                    <span className="font-mono text-xl font-bold text-cyan-700">
                       #{r.order_number}
                     </span>
                   </div>
@@ -277,7 +277,7 @@ function Step1Search({
                     </p>
                   </div>
                   {loadingDetail && selectedId === r.id && (
-                    <RefreshCw size={13} className="shrink-0 animate-spin text-violet-500" />
+                    <RefreshCw size={13} className="shrink-0 animate-spin text-cyan-500" />
                   )}
                 </button>
               ))}
@@ -326,15 +326,15 @@ function ScanField({
   }
 
   return (
-    <div className="flex items-center gap-2.5 rounded-xl border-2 border-dashed border-violet-200 bg-violet-50/60 px-4 py-2.5 transition-colors focus-within:border-violet-400">
-      <ScanLine size={16} className="shrink-0 text-violet-500" />
+    <div className="flex items-center gap-2.5 rounded-xl border-2 border-dashed border-cyan-200 bg-cyan-50/60 px-4 py-2.5 transition-colors focus-within:border-cyan-400">
+      <ScanLine size={16} className="shrink-0 text-cyan-500" />
       <input
         ref={inputRef}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="flex-1 bg-transparent text-sm outline-none placeholder:text-violet-400/80"
+        className="flex-1 bg-transparent text-sm outline-none placeholder:text-cyan-400/80"
       />
     </div>
   )
@@ -495,7 +495,7 @@ function Step2Items({ order, returnQtys, onQtyChange, onBack, onNext }: Step2Pro
         <button
           onClick={onNext}
           disabled={totalSelected === 0}
-          className="flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(139,92,246,0.4)] disabled:cursor-not-allowed disabled:opacity-40 hover:bg-violet-700"
+          className="flex items-center gap-2 rounded-lg bg-cyan-600 px-5 py-2 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(139,92,246,0.4)] disabled:cursor-not-allowed disabled:opacity-40 hover:bg-cyan-700"
         >
           Continuar ({totalSelected} ítem{totalSelected !== 1 ? 's' : ''})
           <ChevronRight size={14} />
@@ -543,7 +543,7 @@ function VariantPickerModal({ excludeVariantId, onSelect, onClose }: VariantPick
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Producto, talla, color o SKU…"
+            placeholder="Producto, variante, color o SKU…"
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-[#a8a29e]"
           />
         </div>
@@ -635,7 +635,7 @@ function ExchangeBreakdown({ a }: { a: ExchangeAmounts }) {
         ) : (
           <span
             className={`font-mono text-base font-bold ${
-              a.difference > 0 ? 'text-violet-700' : 'text-[#a8a29e]'
+              a.difference > 0 ? 'text-cyan-700' : 'text-[#a8a29e]'
             }`}
           >
             {a.difference > 0 ? fmtCOP(a.orderTotal) : 'Sin costo'}
@@ -761,15 +761,15 @@ function Step3Type({
                   onClick={() => onTypeChange(opt.id)}
                   className={`rounded-xl border-2 p-4 text-left transition-all ${
                     returnType === opt.id
-                      ? 'border-violet-500 bg-violet-50'
+                      ? 'border-cyan-500 bg-cyan-50'
                       : 'border-[#ebe9e6] bg-white hover:border-[#d6d3d1]'
                   }`}
                 >
-                  <div className={returnType === opt.id ? 'text-violet-600' : 'text-[#737373]'}>
+                  <div className={returnType === opt.id ? 'text-cyan-600' : 'text-[#737373]'}>
                     {opt.icon}
                   </div>
                   <p
-                    className={`mt-2 text-sm font-semibold ${returnType === opt.id ? 'text-violet-700' : 'text-[#1a1a1a]'}`}
+                    className={`mt-2 text-sm font-semibold ${returnType === opt.id ? 'text-cyan-700' : 'text-[#1a1a1a]'}`}
                   >
                     {opt.label}
                   </p>
@@ -819,7 +819,7 @@ function Step3Type({
                       onClick={() => onRefundMethodChange(m.id)}
                       className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                         refundMethod === m.id
-                          ? 'border-violet-500 bg-violet-50 text-violet-700'
+                          ? 'border-cyan-500 bg-cyan-50 text-cyan-700'
                           : 'border-[#ebe9e6] bg-white text-[#525252] hover:border-[#d6d3d1]'
                       }`}
                     >
@@ -862,7 +862,7 @@ function Step3Type({
                   </p>
                   <button
                     onClick={() => setPickerOpen(true)}
-                    className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700"
+                    className="flex items-center gap-1.5 rounded-lg bg-cyan-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-cyan-700"
                   >
                     <Plus size={13} /> Agregar producto
                   </button>
@@ -879,10 +879,10 @@ function Step3Type({
                 {exchangeItems.length === 0 ? (
                   <button
                     onClick={() => setPickerOpen(true)}
-                    className="flex w-full flex-col items-center gap-1.5 rounded-xl border border-dashed border-[#d6d3d1] py-6 text-center hover:border-violet-400 hover:bg-violet-50"
+                    className="flex w-full flex-col items-center gap-1.5 rounded-xl border border-dashed border-[#d6d3d1] py-6 text-center hover:border-cyan-400 hover:bg-cyan-50"
                   >
                     <Package size={20} className="text-[#a8a29e]" />
-                    <span className="text-xs font-medium text-violet-600">
+                    <span className="text-xs font-medium text-cyan-600">
                       Agrega uno o varios productos para el cambio
                     </span>
                   </button>
@@ -963,7 +963,7 @@ function Step3Type({
                         onClick={() => onRefundMethodChange(m.id)}
                         className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                           refundMethod === m.id
-                            ? 'border-violet-500 bg-violet-50 text-violet-700'
+                            ? 'border-cyan-500 bg-cyan-50 text-cyan-700'
                             : 'border-[#ebe9e6] bg-white text-[#525252] hover:border-[#d6d3d1]'
                         }`}
                       >
@@ -986,7 +986,7 @@ function Step3Type({
               onChange={(e) => onNotesChange(e.target.value)}
               rows={2}
               placeholder="Motivo de la devolución…"
-              className="w-full resize-none rounded-xl border border-[#ebe9e6] bg-white px-3 py-2.5 text-sm outline-none placeholder:text-[#a8a29e] focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="w-full resize-none rounded-xl border border-[#ebe9e6] bg-white px-3 py-2.5 text-sm outline-none placeholder:text-[#a8a29e] focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             />
           </div>
         </div>
@@ -1002,7 +1002,7 @@ function Step3Type({
         <button
           onClick={onNext}
           disabled={!canContinue}
-          className="flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(139,92,246,0.4)] disabled:cursor-not-allowed disabled:opacity-40 hover:bg-violet-700"
+          className="flex items-center gap-2 rounded-lg bg-cyan-600 px-5 py-2 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(139,92,246,0.4)] disabled:cursor-not-allowed disabled:opacity-40 hover:bg-cyan-700"
         >
           Ver resumen <ChevronRight size={14} />
         </button>
@@ -1173,7 +1173,7 @@ function Step4Confirm({
             {returnType === 'exchange' && priceDiff > 0 && (
               <div className="flex justify-between text-[#525252]">
                 <span>A cobrar</span>
-                <span className="font-mono font-semibold text-violet-700">
+                <span className="font-mono font-semibold text-cyan-700">
                   {fmtCOP(summary.orderTotal)}
                 </span>
               </div>
@@ -1214,7 +1214,7 @@ function Step4Confirm({
         <button
           onClick={onConfirm}
           disabled={isPending || shiftBlocked}
-          className="flex items-center gap-2 rounded-lg bg-violet-600 px-6 py-2.5 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(139,92,246,0.4)] disabled:cursor-not-allowed disabled:opacity-60 hover:bg-violet-700"
+          className="flex items-center gap-2 rounded-lg bg-cyan-600 px-6 py-2.5 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(139,92,246,0.4)] disabled:cursor-not-allowed disabled:opacity-60 hover:bg-cyan-700"
         >
           {isPending ? (
             <><RefreshCw size={14} className="animate-spin" /> Procesando…</>
@@ -1260,7 +1260,7 @@ function ReturnTicketModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.5)] p-4 backdrop-blur-sm">
       <div className="w-full max-w-xs rounded-2xl bg-white p-6 shadow-[0_20px_60px_rgba(0,0,0,0.3)]">
         <div className="mb-4 text-center">
-          <p className="text-base font-bold text-[#1a1a1a]">G-Mura</p>
+          <p className="text-base font-bold text-[#1a1a1a]">G-Pulso</p>
           <p className="text-xs text-[#737373]">
             {new Date(returnRecord.created_at).toLocaleString('es-CO', {
               timeZone: 'America/Bogota',
@@ -1327,7 +1327,7 @@ function ReturnTicketModal({
           )}
           {returnType === 'exchange' && priceDiff !== 0 && (
             <div
-              className={`flex justify-between font-bold ${priceDiff > 0 ? 'text-violet-700' : 'text-green-700'}`}
+              className={`flex justify-between font-bold ${priceDiff > 0 ? 'text-cyan-700' : 'text-green-700'}`}
             >
               <span>{priceDiff > 0 ? 'Cobra cliente' : 'Devuelve tienda'}</span>
               <span className="font-mono">
@@ -1352,7 +1352,7 @@ function ReturnTicketModal({
           </button>
           <button
             onClick={onClose}
-            className="flex-1 rounded-xl bg-violet-600 py-2.5 text-sm font-semibold text-white hover:bg-violet-700"
+            className="flex-1 rounded-xl bg-cyan-600 py-2.5 text-sm font-semibold text-white hover:bg-cyan-700"
           >
             Nueva devolución
           </button>
@@ -1370,7 +1370,7 @@ function TypeBadge({ type }: { type: ReturnType }) {
       <RotateCcw size={9} /> Devolución
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-800">
+    <span className="inline-flex items-center gap-1 rounded-full bg-cyan-100 px-2 py-0.5 text-[11px] font-semibold text-cyan-800">
       <ArrowLeftRight size={9} /> Cambio
     </span>
   )
@@ -1486,13 +1486,13 @@ function HistoryPanel() {
             type="date"
             value={filters.dateFrom}
             onChange={(e) => setFilters((f) => ({ ...f, dateFrom: e.target.value }))}
-            className="flex-1 rounded-lg border border-[#ebe9e6] px-2 py-1 text-xs outline-none focus:border-violet-400"
+            className="flex-1 rounded-lg border border-[#ebe9e6] px-2 py-1 text-xs outline-none focus:border-cyan-400"
           />
           <input
             type="date"
             value={filters.dateTo}
             onChange={(e) => setFilters((f) => ({ ...f, dateTo: e.target.value }))}
-            className="flex-1 rounded-lg border border-[#ebe9e6] px-2 py-1 text-xs outline-none focus:border-violet-400"
+            className="flex-1 rounded-lg border border-[#ebe9e6] px-2 py-1 text-xs outline-none focus:border-cyan-400"
           />
         </div>
       </div>
@@ -1712,8 +1712,8 @@ export default function ReturnsPage() {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#ebe9e6] bg-[#fdfcfb] px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100">
-              <RotateCcw size={16} className="text-violet-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-100">
+              <RotateCcw size={16} className="text-cyan-600" />
             </div>
             <div>
               <p className="text-sm font-semibold text-[#1a1a1a]">Devoluciones y cambios</p>

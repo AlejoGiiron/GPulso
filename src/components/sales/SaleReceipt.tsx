@@ -3,8 +3,8 @@ import { PAYMENT_METHODS } from '@/lib/paymentMethods'
 import { useReceiptPrintStyle } from '@/lib/receiptPrint'
 import type { PaymentMethod } from '@/types/database.types'
 
-const SALE_PRINT_CONTAINER_ID = 'gmura-sale-receipt-print'
-const SALE_PRINT_STYLE_ID = 'gmura-sale-receipt-print-style'
+const SALE_PRINT_CONTAINER_ID = 'gpulso-sale-receipt-print'
+const SALE_PRINT_STYLE_ID = 'gpulso-sale-receipt-print-style'
 
 const DIVIDER = '═══════════════════════════════'
 const SUBDIV = '───────────────────────────────'
@@ -168,7 +168,7 @@ export function SaleReceipt({ sale, storeName, printedAt }: SaleReceiptProps) {
             <div>{it.product_name}</div>
             {(it.size || it.color) && (
               <div style={monoLight}>
-                {[it.size ? `T:${it.size}` : null, it.color ? `C:${it.color}` : null]
+                {[it.size ? `V:${it.size}` : null, it.color ? `C:${it.color}` : null]
                   .filter(Boolean)
                   .join(' ')}
               </div>

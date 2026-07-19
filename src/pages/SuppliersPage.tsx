@@ -55,7 +55,7 @@ function Avatar({ name, size = 'md' }: { name: string; size?: 'md' | 'lg' }) {
   return (
     <div
       className={`flex shrink-0 items-center justify-center rounded-full font-semibold text-white ${dims[size]}`}
-      style={{ background: 'linear-gradient(135deg,#a78bfa,#7c3aed)' }}
+      style={{ background: 'linear-gradient(135deg,#22d3ee,#0891b2)' }}
     >
       {initials(name) || <Building2 size={size === 'lg' ? 24 : 16} />}
     </div>
@@ -116,7 +116,7 @@ export default function SuppliersPage() {
             className="flex items-center gap-2 tracking-[-0.02em]"
             style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontSize: 20, fontWeight: 600 }}
           >
-            <Truck size={20} className="text-[#8b5cf6]" /> Compras
+            <Truck size={20} className="text-[#06b6d4]" /> Compras
           </h1>
           <nav className="flex items-center gap-1">
             {(
@@ -131,7 +131,7 @@ export default function SuppliersPage() {
                 onClick={() => setTab(t.id)}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                   tab === t.id
-                    ? 'bg-[#8b5cf61a] text-[#8b5cf6]'
+                    ? 'bg-[#06b6d41a] text-[#06b6d4]'
                     : 'text-[#737373] hover:bg-[#f5f4f1] hover:text-[#1a1a1a]'
                 }`}
               >
@@ -144,7 +144,7 @@ export default function SuppliersPage() {
         {tab === 'suppliers' && (
           <button
             onClick={() => setSupplierModal({ mode: 'new' })}
-            className="flex h-9 items-center gap-2 rounded-lg bg-[#8b5cf6] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-[#7c3aed]"
+            className="flex h-9 items-center gap-2 rounded-lg bg-[#06b6d4] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-[#0891b2]"
           >
             <Plus size={15} /> Nuevo proveedor
           </button>
@@ -152,7 +152,7 @@ export default function SuppliersPage() {
         {(tab === 'invoices' || tab === 'payables') && (
           <button
             onClick={() => setShowInvoiceModal(true)}
-            className="flex h-9 items-center gap-2 rounded-lg bg-[#8b5cf6] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-[#7c3aed]"
+            className="flex h-9 items-center gap-2 rounded-lg bg-[#06b6d4] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-[#0891b2]"
           >
             <Plus size={15} /> Nueva factura
           </button>
@@ -239,7 +239,7 @@ function SuppliersTab({
       {/* Lista */}
       <aside className="flex w-[35%] shrink-0 flex-col overflow-hidden border-r border-[#ebe9e6] bg-white">
         <div className="space-y-2 border-b border-[#ebe9e6] px-4 py-3">
-          <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] bg-[#f8f7f5] px-3 py-2 focus-within:border-[#8b5cf6] focus-within:shadow-[0_0_0_3px_#8b5cf61a]">
+          <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] bg-[#f8f7f5] px-3 py-2 focus-within:border-[#06b6d4] focus-within:shadow-[0_0_0_3px_#06b6d41a]">
             <Search size={14} className="shrink-0 text-[#a8a29e]" />
             <input
               value={search}
@@ -258,7 +258,7 @@ function SuppliersTab({
               type="checkbox"
               checked={showInactive}
               onChange={(e) => setShowInactive(e.target.checked)}
-              className="h-3.5 w-3.5 cursor-pointer rounded accent-violet-500"
+              className="h-3.5 w-3.5 cursor-pointer rounded accent-cyan-500"
             />
             Mostrar inactivos
           </label>
@@ -293,7 +293,7 @@ function SuppliersTab({
               {!search && (
                 <button
                   onClick={onNew}
-                  className="mt-1 flex items-center gap-1.5 rounded-lg bg-[#8b5cf6] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#7c3aed]"
+                  className="mt-1 flex items-center gap-1.5 rounded-lg bg-[#06b6d4] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0891b2]"
                 >
                   <Plus size={13} /> Nuevo proveedor
                 </button>
@@ -318,7 +318,7 @@ function SuppliersTab({
       <main className="min-h-0 flex-1 overflow-hidden bg-white">
         {detailLoading && selectedId ? (
           <div className="flex h-full items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#8b5cf6] border-t-transparent" />
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#06b6d4] border-t-transparent" />
           </div>
         ) : detail ? (
           <SupplierDetailView
@@ -358,13 +358,13 @@ function SupplierRow({
     <button
       onClick={onClick}
       className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#f8f7f5] ${
-        selected ? 'bg-[#8b5cf61a]' : ''
+        selected ? 'bg-[#06b6d41a]' : ''
       }`}
     >
       <Avatar name={supplier.name} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className={`truncate text-sm font-medium ${selected ? 'text-[#8b5cf6]' : 'text-[#1a1a1a]'}`}>
+          <p className={`truncate text-sm font-medium ${selected ? 'text-[#06b6d4]' : 'text-[#1a1a1a]'}`}>
             {supplier.name}
           </p>
           {!supplier.is_active && (
@@ -567,7 +567,7 @@ function InvoicesTab({
     <div className="flex h-full flex-col overflow-hidden">
       {/* Filtros */}
       <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[#ebe9e6] bg-white px-6 py-3">
-        <div className="flex min-w-[200px] flex-1 items-center gap-2 rounded-lg border border-[#ebe9e6] bg-[#f8f7f5] px-3 py-2 focus-within:border-[#8b5cf6]">
+        <div className="flex min-w-[200px] flex-1 items-center gap-2 rounded-lg border border-[#ebe9e6] bg-[#f8f7f5] px-3 py-2 focus-within:border-[#06b6d4]">
           <Search size={14} className="shrink-0 text-[#a8a29e]" />
           <input
             value={search}
@@ -585,7 +585,7 @@ function InvoicesTab({
             setSupplierId(e.target.value)
             setPage(1)
           }}
-          className="h-10 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-[#8b5cf6]"
+          className="h-10 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-[#06b6d4]"
         >
           <option value="">Todos los proveedores</option>
           {allSuppliers.map((s) => (
@@ -600,7 +600,7 @@ function InvoicesTab({
             setStatus(e.target.value as InvoiceStatus | 'all')
             setPage(1)
           }}
-          className="h-10 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-[#8b5cf6]"
+          className="h-10 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-[#06b6d4]"
         >
           <option value="all">Todas</option>
           <option value="pending">Pendientes</option>
@@ -615,7 +615,7 @@ function InvoicesTab({
             setDateFrom(e.target.value)
             setPage(1)
           }}
-          className="h-10 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-[#8b5cf6]"
+          className="h-10 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-[#06b6d4]"
         />
         <input
           type="date"
@@ -624,7 +624,7 @@ function InvoicesTab({
             setDateTo(e.target.value)
             setPage(1)
           }}
-          className="h-10 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-[#8b5cf6]"
+          className="h-10 rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none focus:border-[#06b6d4]"
         />
       </div>
 
@@ -760,7 +760,7 @@ function InvoiceTableRow({
               e.stopPropagation()
               onPay()
             }}
-            className="rounded-md border border-[#ebe9e6] bg-white px-2.5 py-1 text-[11px] font-medium text-[#8b5cf6] hover:bg-[#f5f4f1]"
+            className="rounded-md border border-[#ebe9e6] bg-white px-2.5 py-1 text-[11px] font-medium text-[#06b6d4] hover:bg-[#f5f4f1]"
           >
             Pagar
           </button>
@@ -824,7 +824,7 @@ function PayablesTab({
 
       {/* Cards resumen */}
       <div className="grid shrink-0 grid-cols-4 gap-3 border-b border-[#ebe9e6] bg-white px-6 py-4">
-        <SummaryCard label="Total adeudado" value={fmtCOP(totalDue)} tone="#8b5cf6" big />
+        <SummaryCard label="Total adeudado" value={fmtCOP(totalDue)} tone="#06b6d4" big />
         <SummaryCard label="Facturas vencidas" value={String(invoiceStats.overdueCount)} tone="#dc2626" />
         <SummaryCard label="Por vencer (7 días)" value={String(invoiceStats.dueSoonCount)} tone="#d97706" />
         <SummaryCard label="Proveedores con saldo" value={String(supplierCount)} tone="#1a1a1a" />
@@ -912,7 +912,7 @@ function PayablesTab({
                               pending: inv.pending_amount,
                             })
                           }}
-                          className="rounded-md border border-[#ebe9e6] bg-white px-2.5 py-1 text-[11px] font-medium text-[#8b5cf6] hover:bg-[#f5f4f1]"
+                          className="rounded-md border border-[#ebe9e6] bg-white px-2.5 py-1 text-[11px] font-medium text-[#06b6d4] hover:bg-[#f5f4f1]"
                         >
                           Pagar
                         </button>

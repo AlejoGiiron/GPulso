@@ -194,7 +194,7 @@ function SaleDetailRow({ detail }: { detail: SaleDetail }) {
   const canReturn = detail.status !== 'cancelled'
   const { data: storeData } = useStoreConfig()
   const storeName =
-    (storeData as unknown as { name?: string } | undefined)?.name ?? 'G-Mura'
+    (storeData as unknown as { name?: string } | undefined)?.name ?? 'G-Pulso'
   const printedAtRef = useRef(new Date())
 
   const receiptData: SaleReceiptData = useMemo(
@@ -297,7 +297,7 @@ function SaleDetailRow({ detail }: { detail: SaleDetail }) {
                       {r.type === 'return' ? (
                         <RotateCcw size={13} className="text-amber-700" />
                       ) : (
-                        <ArrowLeftRight size={13} className="text-violet-600" />
+                        <ArrowLeftRight size={13} className="text-cyan-600" />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -428,7 +428,7 @@ function SaleDetailRow({ detail }: { detail: SaleDetail }) {
             {canReturn && (
               <button
                 onClick={() => navigate(`/devoluciones?orderId=${detail.id}`)}
-                className="flex h-9 items-center justify-center gap-2 rounded-lg bg-violet-600 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-violet-700"
+                className="flex h-9 items-center justify-center gap-2 rounded-lg bg-cyan-600 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-cyan-700"
               >
                 <RotateCcw size={13} /> Iniciar devolución
               </button>
@@ -580,7 +580,7 @@ function SalesRow({
               que sin este chip la fila parecería una venta directa. */}
           {row.kind === 'layaway' && (
             <span
-              className="inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-700"
+              className="inline-flex items-center rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-semibold text-cyan-700"
               title={
                 row.layaway_number != null
                   ? `Separado #${row.layaway_number}`
@@ -629,7 +629,7 @@ function FiltersBar({ filters, setFilters, preset, onDateChange }: FiltersProps)
   return (
     <div className="rounded-2xl border border-[#ebe9e6] bg-white p-4">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex min-w-[260px] flex-1 items-center gap-2 rounded-lg border border-[#ebe9e6] bg-[#f8f7f5] px-3 py-2 transition-all focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+        <div className="flex min-w-[260px] flex-1 items-center gap-2 rounded-lg border border-[#ebe9e6] bg-[#f8f7f5] px-3 py-2 transition-all focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
           <Search size={15} className="shrink-0 text-[#737373]" />
           <input
             value={filters.query}
@@ -667,7 +667,7 @@ function FiltersBar({ filters, setFilters, preset, onDateChange }: FiltersProps)
               page: 0,
             }))
           }
-          className="h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 pr-8 text-sm text-[#525252] outline-none focus:border-violet-400"
+          className="h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 pr-8 text-sm text-[#525252] outline-none focus:border-cyan-400"
         >
           {PAYMENT_OPTIONS.map((o) => (
             <option key={o.id} value={o.id}>
@@ -685,7 +685,7 @@ function FiltersBar({ filters, setFilters, preset, onDateChange }: FiltersProps)
               page: 0,
             }))
           }
-          className="h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 pr-8 text-sm text-[#525252] outline-none focus:border-violet-400"
+          className="h-9 rounded-lg border border-[#ebe9e6] bg-white px-3 pr-8 text-sm text-[#525252] outline-none focus:border-cyan-400"
         >
           {STATUS_OPTIONS.map((o) => (
             <option key={o.id} value={o.id}>
@@ -741,8 +741,8 @@ export default function SalesHistoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between rounded-2xl border border-[#ebe9e6] bg-[#fdfcfb] px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-100">
-            <Receipt size={17} className="text-violet-600" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-100">
+            <Receipt size={17} className="text-cyan-600" />
           </div>
           <div>
             <p className="text-sm font-semibold text-[#1a1a1a]">
@@ -833,7 +833,7 @@ export default function SalesHistoryPage() {
               </div>
               <Link
                 to="/ventas"
-                className="mt-2 flex h-9 items-center gap-2 rounded-lg bg-violet-600 px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-violet-700"
+                className="mt-2 flex h-9 items-center gap-2 rounded-lg bg-cyan-600 px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-cyan-700"
               >
                 <ShoppingBag size={13} /> Ir al POS
               </Link>

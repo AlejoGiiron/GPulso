@@ -179,7 +179,7 @@ export default function InvoiceDetailModal({
                             )}
                             <p className="font-medium text-[#1a1a1a]">{it.product_name}</p>
                             <p className="text-[11px] text-[#a8a29e]">
-                              {it.size ? `T.${it.size}` : ''}
+                              {it.size ? `V.${it.size}` : ''}
                               {it.color ? ` · ${it.color}` : ''}
                               {it.sku ? ` · ${it.sku}` : ''}
                               {it.update_cost ? ' · costo actualizado' : ''}
@@ -318,7 +318,7 @@ export default function InvoiceDetailModal({
               {canPay && (
                 <button
                   onClick={() => setShowPayment(true)}
-                  className="ml-auto flex h-10 items-center gap-2 rounded-lg bg-[#8b5cf6] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-[#7c3aed]"
+                  className="ml-auto flex h-10 items-center gap-2 rounded-lg bg-[#06b6d4] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-[#0891b2]"
                 >
                   <CreditCard size={15} /> Registrar pago
                 </button>
@@ -358,7 +358,7 @@ export default function InvoiceDetailModal({
               onChange={(e) => setCancelReason(e.target.value)}
               rows={3}
               placeholder="Motivo de la cancelación…"
-              className="mt-4 w-full resize-none rounded-lg border border-[#ebe9e6] px-3 py-2.5 text-sm outline-none focus:border-[#8b5cf6] focus:shadow-[0_0_0_4px_#8b5cf61a]"
+              className="mt-4 w-full resize-none rounded-lg border border-[#ebe9e6] px-3 py-2.5 text-sm outline-none focus:border-[#06b6d4] focus:shadow-[0_0_0_4px_#06b6d41a]"
             />
             <div className="mt-4 flex gap-3">
               <button

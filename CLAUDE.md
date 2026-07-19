@@ -1,9 +1,16 @@
-# G-Mura — contexto del proyecto
+# G-Pulso — contexto del proyecto
 
 ## Descripción
-G-Mura es un sistema POS para tiendas de ropa física.
-Maneja inventario por variantes (talla + color),
+G-Pulso es un sistema POS para tiendas de tecnología (celulares, cómputo,
+accesorios) **con taller de reparaciones**. Maneja inventario por variantes,
 códigos de barras, devoluciones y CRM de clientes.
+
+> **Fork de G-Mura.** G-Pulso nace como fork del POS de ropa G-Mura (en
+> producción). La trazabilidad del fork (commit de origen, última migración
+> heredada, deudas heredadas y fixes porteados A MANO) vive en
+> [`FORKED_FROM.md`](FORKED_FROM.md) en la raíz. Aislamiento total: repo,
+> proyecto Supabase y proyecto Vercel PROPIOS; nada compartido con G-Mura en
+> runtime.
 
 ## Stack tecnológico
 - Frontend: React 18, TypeScript (strict), Tailwind CSS, Vite
@@ -15,13 +22,24 @@ códigos de barras, devoluciones y CRM de clientes.
 - Fechas: date-fns
 - Códigos de barras: quagga2 (lectura), JsBarcode (generación)
 
-## Diferencias clave vs un POS de restaurante
-- Los productos tienen variantes (talla + color)
-- El stock se maneja por variante, no por producto
-- No hay mesas, cocina ni delivery
-- Los clientes son registrados para historial y CRM
-- Las devoluciones y cambios son flujos críticos
-- Los códigos de barras son fundamentales para ventas rápidas
+## Diferencias clave (tienda de tecnología)
+- Los productos tienen variantes (ej. capacidad + color: "128GB · Azul").
+  Estructuralmente la variante sigue siendo `talla + color` en BD (heredado de
+  G-Mura); la UI la etiqueta genéricamente como "Variante".
+- **Unidades serializadas (IMEI/serial) sobre las variantes — PRÓXIMAMENTE en
+  fase 2.** Un celular no se vende "por cantidad" sino como una unidad única con
+  su IMEI. La capa de unidades se montará ENCIMA del esquema de variantes actual;
+  en Fase 1 no existe todavía.
+- **Taller de reparaciones — PRÓXIMAMENTE en fase 3** (órdenes de reparación,
+  estados tipo kanban, rol Técnico).
+- **Accesorios por cantidad**: cargadores, forros, etc. se manejan por stock de
+  cantidad como hoy (sin serial).
+- El stock se maneja por variante, no por producto.
+- Los clientes son registrados para historial y CRM.
+- Las devoluciones y cambios son flujos críticos.
+- Los códigos de barras son fundamentales para ventas rápidas.
+- Los separados (layaways) se CONSERVAN: son práctica común para equipos
+  costosos.
 
 ## Convenciones de código
 - Componentes: PascalCase en archivos .tsx
@@ -60,10 +78,14 @@ códigos de barras, devoluciones y CRM de clientes.
 
 ## Design system
 - Sidebar: slate-900 (#0f172a)
-- Acento primario: violeta #8b5cf6
+- Acento primario: **cian #06b6d4** (hover/activos #0891b2, fondos suaves
+  #ecfeff, borde suave #a5f3fc). En Tailwind: `cyan-500/600` y familia `cyan-*`.
 - Fondo principal: blanco / gris muy claro
-- Tipografía: Inter
-- Precios: JetBrains Mono
+- Tipografía de UI: **IBM Plex Sans**
+- IMEI/seriales y precios: **JetBrains Mono**
+- Logo: componente inline `src/components/layout/Logo.tsx` (cuadro cian con
+  trazo de electrocardiograma en slate-900). Es placeholder hasta el asset
+  final; se reemplaza cambiando solo ese SVG.
 
 ## Archivos de diseño
 - Los diseños de referencia están en _design/
@@ -72,8 +94,8 @@ códigos de barras, devoluciones y CRM de clientes.
 - Convertir siempre a TypeScript estricto y convenciones del proyecto
 
 ## Variables de entorno
-VITE_GMURA_SUPABASE_URL=
-VITE_GMURA_SUPABASE_ANON_KEY=
+VITE_GPULSO_SUPABASE_URL=
+VITE_GPULSO_SUPABASE_ANON_KEY=
 
 ## Git
 - Rama de desarrollo: develop

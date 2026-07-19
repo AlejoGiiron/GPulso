@@ -121,7 +121,7 @@ export function useShiftClosing(shiftId: string | null) {
       }
       const shiftJoin = shiftRaw as unknown as RawShift
       const userName = shiftJoin.profiles?.full_name ?? 'Cajero'
-      const storeName = shiftJoin.stores?.name ?? 'G-Mura'
+      const storeName = shiftJoin.stores?.name ?? 'G-Pulso'
 
       const shift: CashShift = {
         id: shiftJoin.id,

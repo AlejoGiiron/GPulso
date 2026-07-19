@@ -54,7 +54,7 @@ export default function Header() {
     <>
       <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6">
         <div className="flex items-center gap-3">
-          <div className="grid h-8 w-8 place-items-center rounded-full bg-violet-100 text-sm font-semibold text-violet-700">
+          <div className="grid h-8 w-8 place-items-center rounded-full bg-cyan-100 text-sm font-semibold text-cyan-700">
             {initial}
           </div>
           <div>
@@ -111,7 +111,7 @@ export default function Header() {
           ) : (
             <button
               onClick={() => setShowOpen(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-violet-700"
+              className="flex items-center gap-1.5 rounded-lg bg-cyan-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-cyan-700"
             >
               <Wallet size={12} />
               Abrir turno

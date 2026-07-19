@@ -39,7 +39,7 @@ interface ItemForm {
 const LABEL =
   'mb-1.5 block text-[12px] font-semibold uppercase tracking-[.05em] text-[#737373]'
 const INPUT =
-  'h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none transition focus:border-[#8b5cf6] focus:shadow-[0_0_0_4px_#8b5cf61a]'
+  'h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none transition focus:border-[#06b6d4] focus:shadow-[0_0_0_4px_#06b6d41a]'
 
 // ── Aviso de producto duplicado ───────────────────────────────────────────────
 
@@ -78,7 +78,7 @@ function DuplicateProductWarning({
             </h3>
             <p className="mt-0.5 text-[13px] text-[#737373]">
               Encontramos producto(s) parecidos a &ldquo;{name}&rdquo;. Usa el
-              existente para no duplicar el catálogo; si le falta una talla o
+              existente para no duplicar el catálogo; si le falta una variante o
               color, agrégalos al mismo producto.
             </p>
           </div>
@@ -103,7 +103,7 @@ function DuplicateProductWarning({
               <button
                 type="button"
                 onClick={() => onUseExisting(p)}
-                className="shrink-0 rounded-md border border-[#ebe9e6] bg-white px-2.5 py-1 text-[11px] font-medium text-[#8b5cf6] hover:bg-[#f5f4f1]"
+                className="shrink-0 rounded-md border border-[#ebe9e6] bg-white px-2.5 py-1 text-[11px] font-medium text-[#06b6d4] hover:bg-[#f5f4f1]"
               >
                 Usar este
               </button>
@@ -122,7 +122,7 @@ function DuplicateProductWarning({
           <button
             type="button"
             onClick={onCreateAnyway}
-            className="h-9 flex-1 rounded-lg bg-[#8b5cf6] text-sm font-semibold text-white hover:bg-[#7c3aed]"
+            className="h-9 flex-1 rounded-lg bg-[#06b6d4] text-sm font-semibold text-white hover:bg-[#0891b2]"
           >
             Crear de todas formas
           </button>
@@ -497,7 +497,7 @@ export default function NewInvoiceModal({
 
               {/* Buscador */}
               <div className="relative">
-                <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] bg-[#f8f7f5] px-3 py-2 focus-within:border-[#8b5cf6] focus-within:shadow-[0_0_0_3px_#8b5cf61a]">
+                <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] bg-[#f8f7f5] px-3 py-2 focus-within:border-[#06b6d4] focus-within:shadow-[0_0_0_3px_#06b6d41a]">
                   <Search size={15} className="shrink-0 text-[#a8a29e]" />
                   <input
                     value={search}
@@ -509,7 +509,7 @@ export default function NewInvoiceModal({
                     type="button"
                     onClick={() => void handleCreateProductClick()}
                     disabled={checkingDup}
-                    className="flex shrink-0 items-center gap-1.5 rounded-md border border-[#ebe9e6] bg-white px-2.5 py-1 text-[11px] font-medium text-[#8b5cf6] hover:bg-[#f5f4f1] disabled:opacity-50"
+                    className="flex shrink-0 items-center gap-1.5 rounded-md border border-[#ebe9e6] bg-white px-2.5 py-1 text-[11px] font-medium text-[#06b6d4] hover:bg-[#f5f4f1] disabled:opacity-50"
                   >
                     <PackagePlus size={13} /> {checkingDup ? 'Verificando…' : 'Crear producto'}
                   </button>
@@ -557,7 +557,7 @@ export default function NewInvoiceModal({
                               {r.product_name}
                             </p>
                             <p className="mt-0.5 text-[11px] text-[#a8a29e]">
-                              {r.size ? `T.${r.size}` : ''}
+                              {r.size ? `V.${r.size}` : ''}
                               {r.color ? ` · ${r.color}` : ''}
                               {r.sku ? ` · ${r.sku}` : ''} · disp. {available}
                             </p>
@@ -608,7 +608,7 @@ export default function NewInvoiceModal({
                             )}
                             <p className="font-medium text-[#1a1a1a]">{it.product_name}</p>
                             <p className="text-[11px] text-[#a8a29e]">
-                              {it.size ? `T.${it.size}` : ''}
+                              {it.size ? `V.${it.size}` : ''}
                               {it.color ? ` · ${it.color}` : ''}
                               {it.sku ? ` · ${it.sku}` : ''}
                             </p>
@@ -623,7 +623,7 @@ export default function NewInvoiceModal({
                                   qty: Math.max(1, Number(e.target.value) || 1),
                                 })
                               }
-                              className="h-8 w-16 rounded-md border border-[#ebe9e6] px-2 text-right font-mono text-sm outline-none focus:border-[#8b5cf6]"
+                              className="h-8 w-16 rounded-md border border-[#ebe9e6] px-2 text-right font-mono text-sm outline-none focus:border-[#06b6d4]"
                             />
                           </td>
                           <td className="px-3 py-2 text-right">
@@ -640,7 +640,7 @@ export default function NewInvoiceModal({
                                     unit_cost: Math.max(0, Number(e.target.value) || 0),
                                   })
                                 }
-                                className="h-8 w-28 rounded-md border border-[#ebe9e6] pl-5 pr-2 text-right font-mono text-sm outline-none focus:border-[#8b5cf6]"
+                                className="h-8 w-28 rounded-md border border-[#ebe9e6] pl-5 pr-2 text-right font-mono text-sm outline-none focus:border-[#06b6d4]"
                               />
                             </div>
                           </td>
@@ -655,7 +655,7 @@ export default function NewInvoiceModal({
                                 updateItem(it.key, { update_cost: e.target.checked })
                               }
                               title="Actualiza el costo de la variante en el catálogo al guardar"
-                              className="h-4 w-4 cursor-pointer rounded accent-violet-500"
+                              className="h-4 w-4 cursor-pointer rounded accent-cyan-500"
                             />
                           </td>
                           <td className="px-3 py-2 text-right">
@@ -696,7 +696,7 @@ export default function NewInvoiceModal({
                     min={0}
                     value={tax}
                     onChange={(e) => setTax(e.target.value)}
-                    className="h-8 w-32 rounded-md border border-[#ebe9e6] bg-white pl-5 pr-2 text-right font-mono text-sm outline-none focus:border-[#8b5cf6]"
+                    className="h-8 w-32 rounded-md border border-[#ebe9e6] bg-white pl-5 pr-2 text-right font-mono text-sm outline-none focus:border-[#06b6d4]"
                   />
                 </div>
               </div>
@@ -718,7 +718,7 @@ export default function NewInvoiceModal({
                   type="checkbox"
                   checked={withPayment}
                   onChange={(e) => setWithPayment(e.target.checked)}
-                  className="h-4 w-4 cursor-pointer rounded accent-violet-500"
+                  className="h-4 w-4 cursor-pointer rounded accent-cyan-500"
                 />
                 <span className="text-sm font-medium text-[#1a1a1a]">
                   Registrar pago al crear
@@ -815,7 +815,7 @@ export default function NewInvoiceModal({
             <button
               onClick={handleSubmit}
               disabled={createInvoice.isPending || !canSubmit}
-              className="h-[42px] flex-[2] rounded-lg bg-[#8b5cf6] text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] transition hover:bg-[#7c3aed] disabled:opacity-50"
+              className="h-[42px] flex-[2] rounded-lg bg-[#06b6d4] text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] transition hover:bg-[#0891b2] disabled:opacity-50"
             >
               {createInvoice.isPending ? 'Guardando…' : 'Guardar factura'}
             </button>

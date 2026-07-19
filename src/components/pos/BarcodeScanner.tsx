@@ -46,7 +46,7 @@ export default function BarcodeScanner({ startCamera, stopCamera, onClose }: Bar
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <Camera size={16} className="text-violet-400" />
+            <Camera size={16} className="text-cyan-400" />
             <p className="text-sm font-semibold text-white">Escanear código</p>
           </div>
           <button
@@ -73,36 +73,36 @@ export default function BarcodeScanner({ startCamera, stopCamera, onClose }: Bar
           {/* Corner guides */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div className="relative h-52 w-52">
-              {/* Esquinas en violeta */}
+              {/* Esquinas en cian */}
               <span
                 className="absolute left-0 top-0 h-7 w-7"
                 style={{
-                  borderTop: '3px solid #8b5cf6',
-                  borderLeft: '3px solid #8b5cf6',
+                  borderTop: '3px solid #06b6d4',
+                  borderLeft: '3px solid #06b6d4',
                   borderTopLeftRadius: 6,
                 }}
               />
               <span
                 className="absolute right-0 top-0 h-7 w-7"
                 style={{
-                  borderTop: '3px solid #8b5cf6',
-                  borderRight: '3px solid #8b5cf6',
+                  borderTop: '3px solid #06b6d4',
+                  borderRight: '3px solid #06b6d4',
                   borderTopRightRadius: 6,
                 }}
               />
               <span
                 className="absolute bottom-0 left-0 h-7 w-7"
                 style={{
-                  borderBottom: '3px solid #8b5cf6',
-                  borderLeft: '3px solid #8b5cf6',
+                  borderBottom: '3px solid #06b6d4',
+                  borderLeft: '3px solid #06b6d4',
                   borderBottomLeftRadius: 6,
                 }}
               />
               <span
                 className="absolute bottom-0 right-0 h-7 w-7"
                 style={{
-                  borderBottom: '3px solid #8b5cf6',
-                  borderRight: '3px solid #8b5cf6',
+                  borderBottom: '3px solid #06b6d4',
+                  borderRight: '3px solid #06b6d4',
                   borderBottomRightRadius: 6,
                 }}
               />

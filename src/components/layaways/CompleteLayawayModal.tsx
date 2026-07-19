@@ -101,7 +101,7 @@ export function CompleteLayawayModal({
                 <span className="text-[#1a1a1a]">
                   {it.product_name}{' '}
                   <span className="text-[#737373]">
-                    {[it.size ? `T.${it.size}` : null, it.color]
+                    {[it.size ? `V.${it.size}` : null, it.color]
                       .filter(Boolean)
                       .join(' · ')}
                   </span>

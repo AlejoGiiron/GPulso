@@ -16,7 +16,7 @@ interface SupplierModalProps {
 const LABEL =
   'mb-1.5 block text-[12px] font-semibold uppercase tracking-[.05em] text-[#737373]'
 const INPUT =
-  'h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none transition focus:border-[#8b5cf6] focus:shadow-[0_0_0_4px_#8b5cf61a]'
+  'h-10 w-full rounded-lg border border-[#ebe9e6] bg-white px-3 text-sm outline-none transition focus:border-[#06b6d4] focus:shadow-[0_0_0_4px_#06b6d41a]'
 
 export default function SupplierModal({
   supplier,
@@ -185,7 +185,7 @@ export default function SupplierModal({
               onChange={(e) => setField('notes', e.target.value)}
               placeholder="Información adicional sobre este proveedor…"
               rows={3}
-              className="w-full resize-none rounded-lg border border-[#ebe9e6] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#8b5cf6] focus:shadow-[0_0_0_4px_#8b5cf61a]"
+              className="w-full resize-none rounded-lg border border-[#ebe9e6] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#06b6d4] focus:shadow-[0_0_0_4px_#06b6d41a]"
             />
           </div>
         </div>
@@ -201,7 +201,7 @@ export default function SupplierModal({
           <button
             onClick={handleSubmit}
             disabled={isPending || !form.name.trim()}
-            className="h-[42px] flex-1 rounded-lg bg-[#8b5cf6] text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] transition hover:bg-[#7c3aed] disabled:opacity-50"
+            className="h-[42px] flex-1 rounded-lg bg-[#06b6d4] text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] transition hover:bg-[#0891b2] disabled:opacity-50"
           >
             {isPending
               ? 'Guardando…'

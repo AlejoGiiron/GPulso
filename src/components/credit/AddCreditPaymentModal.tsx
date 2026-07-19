@@ -150,7 +150,7 @@ export function AddCreditPaymentModal({ order, onClose, onDone }: Props) {
                 <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[.05em] text-[#737373]">
                   Monto del abono
                 </label>
-                <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+                <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
                   <span className="text-sm text-[#737373]">$</span>
                   <input
                     autoFocus
@@ -166,7 +166,7 @@ export function AddCreditPaymentModal({ order, onClose, onDone }: Props) {
                   <button
                     type="button"
                     onClick={() => setAmount(String(balance))}
-                    className="rounded-lg border border-[#ebe9e6] bg-white px-2.5 py-1 text-xs font-semibold text-[#525252] hover:border-violet-300 hover:bg-violet-50"
+                    className="rounded-lg border border-[#ebe9e6] bg-white px-2.5 py-1 text-xs font-semibold text-[#525252] hover:border-cyan-300 hover:bg-cyan-50"
                   >
                     Saldo completo ({fmtCOP(balance)})
                   </button>
@@ -188,7 +188,7 @@ export function AddCreditPaymentModal({ order, onClose, onDone }: Props) {
                     <button
                       type="button"
                       onClick={enterSplit}
-                      className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-violet-700"
+                      className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-cyan-700"
                     >
                       <Split size={12} /> Dividir
                     </button>
@@ -206,7 +206,7 @@ export function AddCreditPaymentModal({ order, onClose, onDone }: Props) {
                         onClick={() => setMethod(id)}
                         className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
                           active
-                            ? 'border-violet-600 bg-violet-50 text-violet-700'
+                            ? 'border-cyan-600 bg-cyan-50 text-cyan-700'
                             : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                         }`}
                       >
@@ -229,7 +229,7 @@ export function AddCreditPaymentModal({ order, onClose, onDone }: Props) {
                   <button
                     type="button"
                     onClick={() => setSplitMode(false)}
-                    className="text-[11px] font-semibold text-slate-500 hover:text-violet-700"
+                    className="text-[11px] font-semibold text-slate-500 hover:text-cyan-700"
                   >
                     ← Un solo método
                   </button>
@@ -272,7 +272,7 @@ export function AddCreditPaymentModal({ order, onClose, onDone }: Props) {
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-violet-600 text-sm font-semibold text-white shadow-[0_4px_12px_#8b5cf640] hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-cyan-600 text-sm font-semibold text-white shadow-[0_4px_12px_#06b6d440] hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Wallet size={14} />
             {addPayment.isPending ? 'Registrando…' : 'Registrar abono'}

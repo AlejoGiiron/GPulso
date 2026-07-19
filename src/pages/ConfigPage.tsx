@@ -66,7 +66,7 @@ export default function ConfigPage() {
             onClick={() => setActive(id)}
             className={`mb-0.5 flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
               active === id
-                ? 'bg-violet-500 text-white'
+                ? 'bg-cyan-500 text-white'
                 : 'text-[#525252] hover:bg-slate-50 hover:text-[#1a1a1a]'
             }`}
           >
@@ -98,7 +98,7 @@ export default function ConfigPage() {
             {active === 'sucursales' && 'Crea y administra las sucursales de tu negocio'}
             {active === 'usuarios' && 'Gestiona el equipo y sus permisos de acceso'}
             {active === 'roles' && 'Crea roles y define qué puede hacer cada uno'}
-            {active === 'productos' && 'Tallas, colores, marcas y límite de devoluciones'}
+            {active === 'productos' && 'Variantes, colores, marcas y límite de devoluciones'}
             {active === 'caja' && 'Métodos de pago, motivos de ajuste y QR para pagos'}
             {active === 'separados' && 'Condiciones del separado que se imprimen en el recibo'}
             {active === 'etiquetas' && 'Formato y campos para etiquetas de precio'}

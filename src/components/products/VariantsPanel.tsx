@@ -107,7 +107,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
 
   async function handleSubmit() {
     if (!form.color.trim() && !form.size) {
-      toast.error('Ingresa al menos talla o color')
+      toast.error('Ingresa al menos variante o color')
       return
     }
     setSubmitting(true)
@@ -224,20 +224,20 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                        Talla
+                        Variante
                       </label>
                       {isCustomSizes ? (
                         <input
                           value={form.size}
                           onChange={(e) => setField('size', e.target.value)}
-                          placeholder="Talla libre"
-                          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm outline-none focus:border-violet-400"
+                          placeholder="Variante libre"
+                          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm outline-none focus:border-cyan-400"
                         />
                       ) : (
                         <select
                           value={form.size}
                           onChange={(e) => setField('size', e.target.value)}
-                          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm outline-none focus:border-violet-400"
+                          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm outline-none focus:border-cyan-400"
                         >
                           {sizeOptions.map((s) => (
                             <option key={s} value={s}>
@@ -255,7 +255,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                         value={form.color}
                         onChange={(e) => setField('color', e.target.value)}
                         placeholder="Negro, Rojo…"
-                        className="h-9 w-full rounded-lg border border-slate-200 px-2.5 text-sm outline-none focus:border-violet-400"
+                        className="h-9 w-full rounded-lg border border-slate-200 px-2.5 text-sm outline-none focus:border-cyan-400"
                       />
                     </div>
                     <div>
@@ -266,7 +266,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                         value={form.sku}
                         onChange={(e) => setField('sku', e.target.value)}
                         placeholder="Opcional"
-                        className="h-9 w-full rounded-lg border border-slate-200 px-2.5 text-sm outline-none focus:border-violet-400"
+                        className="h-9 w-full rounded-lg border border-slate-200 px-2.5 text-sm outline-none focus:border-cyan-400"
                       />
                     </div>
                   </div>
@@ -281,7 +281,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                         value={form.barcode}
                         onChange={(e) => setField('barcode', e.target.value)}
                         placeholder="Dejar vacío para generar automáticamente"
-                        className="h-9 flex-1 rounded-lg border border-slate-200 px-2.5 font-mono text-sm outline-none focus:border-violet-400"
+                        className="h-9 flex-1 rounded-lg border border-slate-200 px-2.5 font-mono text-sm outline-none focus:border-cyan-400"
                       />
                       <button
                         type="button"
@@ -306,7 +306,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                         value={form.price}
                         onChange={(e) => setField('price', e.target.value)}
                         placeholder="0"
-                        className="h-9 w-full rounded-lg border border-slate-200 px-2.5 font-mono text-sm outline-none focus:border-violet-400"
+                        className="h-9 w-full rounded-lg border border-slate-200 px-2.5 font-mono text-sm outline-none focus:border-cyan-400"
                       />
                     </div>
                     <div>
@@ -320,7 +320,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                         value={form.cost_price}
                         onChange={(e) => setField('cost_price', e.target.value)}
                         placeholder="Opcional"
-                        className="h-9 w-full rounded-lg border border-slate-200 px-2.5 font-mono text-sm outline-none focus:border-violet-400"
+                        className="h-9 w-full rounded-lg border border-slate-200 px-2.5 font-mono text-sm outline-none focus:border-cyan-400"
                       />
                     </div>
                   </div>
@@ -336,7 +336,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                         min="0"
                         value={form.stock_qty}
                         onChange={(e) => setField('stock_qty', e.target.value)}
-                        className="h-9 w-full rounded-lg border border-slate-200 px-2.5 font-mono text-sm outline-none focus:border-violet-400"
+                        className="h-9 w-full rounded-lg border border-slate-200 px-2.5 font-mono text-sm outline-none focus:border-cyan-400"
                       />
                     </div>
                     <div>
@@ -348,7 +348,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                         min="0"
                         value={form.min_stock}
                         onChange={(e) => setField('min_stock', e.target.value)}
-                        className="h-9 w-full rounded-lg border border-slate-200 px-2.5 font-mono text-sm outline-none focus:border-violet-400"
+                        className="h-9 w-full rounded-lg border border-slate-200 px-2.5 font-mono text-sm outline-none focus:border-cyan-400"
                       />
                     </div>
                   </div>
@@ -366,7 +366,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                       type="button"
                       onClick={() => void handleSubmit()}
                       disabled={submitting}
-                      className="h-9 flex-[2] rounded-lg bg-violet-500 text-sm font-semibold text-white hover:bg-violet-600 disabled:opacity-50"
+                      className="h-9 flex-[2] rounded-lg bg-cyan-500 text-sm font-semibold text-white hover:bg-cyan-600 disabled:opacity-50"
                     >
                       {submitting ? 'Guardando…' : editingId ? 'Guardar cambios' : 'Crear variante'}
                     </button>
@@ -380,7 +380,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
               <div className="px-6 pt-5">
                 <button
                   onClick={openAdd}
-                  className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 text-sm font-medium text-violet-500 hover:border-violet-300 hover:bg-violet-50"
+                  className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 text-sm font-medium text-cyan-500 hover:border-cyan-300 hover:bg-cyan-50"
                 >
                   <Plus size={14} />
                   Nueva variante
@@ -402,7 +402,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                     <tr className="border-b border-slate-100">
                       <th className="w-8 pb-2.5 text-left" />
                       {[
-                        { label: 'Talla', align: 'left' },
+                        { label: 'Variante', align: 'left' },
                         { label: 'Color', align: 'left' },
                         { label: 'SKU', align: 'left' },
                         { label: 'Precio', align: 'right' },
@@ -431,7 +431,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                       return (
                         <tr
                           key={v.id}
-                          className={`border-b border-slate-50 ${isSelected ? 'bg-violet-50/40' : ''}`}
+                          className={`border-b border-slate-50 ${isSelected ? 'bg-cyan-50/40' : ''}`}
                         >
                           {/* Checkbox */}
                           <td className="py-2.5 pr-2">
@@ -439,7 +439,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                               type="checkbox"
                               checked={isSelected}
                               onChange={() => toggleSelect(v.id)}
-                              className="h-4 w-4 cursor-pointer rounded accent-violet-500"
+                              className="h-4 w-4 cursor-pointer rounded accent-cyan-500"
                             />
                           </td>
                           <td className="py-2.5">
@@ -467,7 +467,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                           </td>
                           <td
                             className={`py-2.5 text-right font-mono text-sm tabular-nums ${
-                              reserved > 0 ? 'text-violet-600' : 'text-slate-300'
+                              reserved > 0 ? 'text-cyan-600' : 'text-slate-300'
                             }`}
                           >
                             {reserved > 0 ? reserved : '—'}
@@ -499,7 +499,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                               <button
                                 onClick={() => openLabelModal([v])}
                                 title="Imprimir etiqueta"
-                                className="grid h-7 w-7 place-items-center rounded-md border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-violet-500"
+                                className="grid h-7 w-7 place-items-center rounded-md border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-cyan-500"
                               >
                                 <Printer size={12} />
                               </button>
@@ -549,7 +549,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                         onClick={() =>
                           void toggleActive.mutateAsync({ id: v.id, isActive: v.is_active })
                         }
-                        className="text-xs font-medium text-violet-500 hover:text-violet-700"
+                        className="text-xs font-medium text-cyan-500 hover:text-cyan-700"
                       >
                         Activar
                       </button>

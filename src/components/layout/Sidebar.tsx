@@ -25,6 +25,7 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useActiveLayawaysCount } from '@/hooks/useLayaways'
+import { Logo } from './Logo'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -43,7 +44,7 @@ function ActiveLayawaysBadge() {
   const { data: count = 0 } = useActiveLayawaysCount()
   if (count <= 0) return null
   return (
-    <span className="ml-auto inline-flex min-w-[18px] items-center justify-center rounded-full bg-violet-500 px-1.5 text-[10px] font-semibold text-white">
+    <span className="ml-auto inline-flex min-w-[18px] items-center justify-center rounded-full bg-cyan-500 px-1.5 text-[10px] font-semibold text-white">
       {count > 99 ? '99+' : count}
     </span>
   )
@@ -123,7 +124,7 @@ const NAV_GROUPS: NavGroup[] = [
 type ExpandedState = Record<string, boolean>
 
 function storageKey(userId: string): string {
-  return `gmura-sidebar-groups-${userId}`
+  return `gpulso-sidebar-groups-${userId}`
 }
 
 function loadExpanded(userId: string): ExpandedState | null {
@@ -200,7 +201,7 @@ function CollapsibleGroup({
         <span className="flex-1 text-left">{group.label}</span>
         {hasActiveHidden && (
           <span
-            className="h-1.5 w-1.5 rounded-full bg-violet-400"
+            className="h-1.5 w-1.5 rounded-full bg-cyan-400"
             aria-label="Sección con ruta activa"
           />
         )}
@@ -233,7 +234,7 @@ function CollapsibleGroup({
                   className={({ isActive }) =>
                     `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-violet-500/15 text-violet-300'
+                        ? 'bg-cyan-500/15 text-cyan-300'
                         : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                     }`
                   }
@@ -306,11 +307,9 @@ export default function Sidebar() {
     <aside className="flex h-screen w-56 flex-shrink-0 flex-col bg-slate-900">
       {/* Wordmark */}
       <div className="flex items-center gap-3 px-5 py-6">
-        <div className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg bg-violet-500 text-sm font-bold text-white">
-          G
-        </div>
+        <Logo size={32} className="flex-shrink-0" />
         <span className="text-[17px] font-semibold tracking-tight text-white">
-          G-Mura<span className="text-violet-400">.</span>
+          G-Pulso<span className="text-cyan-400">.</span>
         </span>
       </div>
 

@@ -5,6 +5,7 @@ import { z } from 'zod'
 import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { Logo } from '@/components/layout/Logo'
 
 const loginSchema = z.object({
   email: z.string().email('Correo electrónico inválido'),
@@ -14,8 +15,8 @@ const loginSchema = z.object({
 const FEATURES = [
   {
     n: '01',
-    title: 'Inventario por talla y color',
-    desc: 'Stock en tiempo real, sin sorpresas en caja.',
+    title: 'Inventario de tecnología',
+    desc: 'Celulares, cómputo y accesorios con stock en tiempo real.',
   },
   {
     n: '02',
@@ -68,7 +69,7 @@ export default function LoginPage() {
         className="relative flex flex-col overflow-hidden bg-slate-900 text-white"
         style={{ flex: '0 0 40%', padding: '40px 44px' }}
       >
-        {/* Glow violeta */}
+        {/* Glow cian */}
         <div
           className="pointer-events-none absolute"
           style={{
@@ -77,17 +78,15 @@ export default function LoginPage() {
             width: 380,
             height: 380,
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(139,92,246,0.27) 0%, transparent 65%)',
+            background: 'radial-gradient(circle, rgba(6,182,212,0.27) 0%, transparent 65%)',
           }}
         />
 
         {/* Wordmark */}
         <div className="relative flex items-center gap-3">
-          <div className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-violet-500 text-lg font-bold">
-            G
-          </div>
+          <Logo size={36} className="flex-shrink-0" />
           <span className="text-xl font-semibold tracking-tight">
-            G-Mura<span className="text-violet-400">.</span>
+            G-Pulso<span className="text-cyan-400">.</span>
           </span>
         </div>
 
@@ -98,10 +97,10 @@ export default function LoginPage() {
             style={{ fontSize: 40, lineHeight: 1.05, letterSpacing: '-0.03em' }}
           >
             El punto de venta hecho para{' '}
-            <em className="not-italic text-violet-400">tiendas de ropa</em>.
+            <em className="not-italic text-cyan-400">tiendas de tecnología</em>.
           </h1>
           <p className="mb-9 leading-relaxed text-slate-400" style={{ fontSize: 15 }}>
-            Construido alrededor de tallas, colores y rotación de inventario.
+            Construido alrededor de equipos, accesorios y taller de reparaciones.
           </p>
 
           {/* Lista de features */}
@@ -112,7 +111,7 @@ export default function LoginPage() {
             {FEATURES.map((f) => (
               <div key={f.n} className="flex gap-4">
                 <span
-                  className="min-w-[24px] pt-0.5 font-semibold text-violet-400 tabular-nums"
+                  className="min-w-[24px] pt-0.5 font-semibold text-cyan-400 tabular-nums"
                   style={{ fontSize: 13 }}
                 >
                   {f.n}
@@ -133,7 +132,7 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="relative flex justify-between text-xs text-slate-500">
           <span>v1.0.0</span>
-          <span>© 2026 G-Mura</span>
+          <span>© 2026 G-Pulso</span>
         </div>
       </aside>
 
@@ -176,14 +175,14 @@ export default function LoginPage() {
               placeholder="correo@tienda.co"
               autoComplete="email"
               required
-              className="h-[46px] w-full rounded-[10px] border border-stone-200 bg-white px-3.5 text-[14.5px] outline-none transition focus:border-violet-500 focus:ring-[4px] focus:ring-violet-500/10"
+              className="h-[46px] w-full rounded-[10px] border border-stone-200 bg-white px-3.5 text-[14.5px] outline-none transition focus:border-cyan-500 focus:ring-[4px] focus:ring-cyan-500/10"
             />
           </label>
 
           {/* Contraseña */}
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-medium text-neutral-600">Contraseña</span>
-            <div className="flex h-[46px] overflow-hidden rounded-[10px] border border-stone-200 bg-white transition focus-within:border-violet-500 focus-within:ring-[4px] focus-within:ring-violet-500/10">
+            <div className="flex h-[46px] overflow-hidden rounded-[10px] border border-stone-200 bg-white transition focus-within:border-cyan-500 focus-within:ring-[4px] focus-within:ring-cyan-500/10">
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
@@ -208,7 +207,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="flex h-[50px] items-center justify-center gap-2 rounded-[10px] bg-violet-500 text-[15px] font-semibold text-white transition hover:bg-violet-600 disabled:cursor-wait disabled:opacity-80"
+            className="flex h-[50px] items-center justify-center gap-2 rounded-[10px] bg-cyan-500 text-[15px] font-semibold text-white transition hover:bg-cyan-600 disabled:cursor-wait disabled:opacity-80"
             style={{ boxShadow: '0 6px 18px rgba(139,92,246,0.27)' }}
           >
             {submitting ? (

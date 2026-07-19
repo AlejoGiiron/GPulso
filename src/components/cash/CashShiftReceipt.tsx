@@ -7,8 +7,8 @@ import type {
   PaymentMethod,
 } from '@/types/database.types'
 
-const SHIFT_PRINT_CONTAINER_ID = 'gmura-shift-receipt-print'
-const SHIFT_PRINT_STYLE_ID = 'gmura-shift-receipt-print-style'
+const SHIFT_PRINT_CONTAINER_ID = 'gpulso-shift-receipt-print'
+const SHIFT_PRINT_STYLE_ID = 'gpulso-shift-receipt-print-style'
 
 export interface SalesByMethodRow {
   method: PaymentMethod

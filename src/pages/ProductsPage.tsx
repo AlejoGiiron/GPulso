@@ -289,7 +289,7 @@ function MatrixCell({ variant, bg, fg, isEditing, onEditStart, onEditCommit }: M
             if (e.key === 'Enter') e.currentTarget.blur()
             if (e.key === 'Escape') onEditCommit(variant.stock_qty)
           }}
-          className="w-12 rounded-md border-2 border-violet-400 bg-white px-1 py-0.5 text-center text-sm font-bold outline-none"
+          className="w-12 rounded-md border-2 border-cyan-400 bg-white px-1 py-0.5 text-center text-sm font-bold outline-none"
           style={{ boxShadow: '0 0 0 3px rgba(139,92,246,0.15)' }}
         />
       ) : (
@@ -340,7 +340,7 @@ function VariantsTable({ variants, onManageVariants }: VariantsTableProps) {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50">
-              {['Talla', 'Color', 'SKU', 'Código barras', 'Precio venta', 'Costo', 'Stock', 'Estado'].map((h) => (
+              {['Variante', 'Color', 'SKU', 'Código barras', 'Precio venta', 'Costo', 'Stock', 'Estado'].map((h) => (
                 <th
                   key={h}
                   className={`border-b border-slate-100 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 ${
@@ -387,7 +387,7 @@ function VariantsTable({ variants, onManageVariants }: VariantsTableProps) {
               <tr>
                 <td colSpan={8} className="px-4 py-8 text-center text-sm text-slate-400">
                   Sin variantes activas.{' '}
-                  <button onClick={onManageVariants} className="text-violet-500 hover:underline">
+                  <button onClick={onManageVariants} className="text-cyan-500 hover:underline">
                     Agregar variante
                   </button>
                 </td>
@@ -465,7 +465,7 @@ export default function ProductsPage() {
       <aside className="flex w-80 flex-shrink-0 flex-col border-r border-slate-200 bg-white">
         {/* Search + filters */}
         <div className="border-b border-slate-100 p-4">
-          <div className="relative mb-3 flex h-9 items-center rounded-lg border border-slate-200 bg-slate-50 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+          <div className="relative mb-3 flex h-9 items-center rounded-lg border border-slate-200 bg-slate-50 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
             <Search size={14} className="ml-3 flex-shrink-0 text-slate-400" />
             <input
               value={query}
@@ -527,7 +527,7 @@ export default function ProductsPage() {
                 onClick={() => setSelectedId(p.id)}
                 className={`mb-1 flex w-full items-center gap-2.5 rounded-xl p-2.5 text-left transition-all ${
                   isSel
-                    ? 'border border-violet-400 bg-white shadow-[0_0_0_3px_rgba(139,92,246,0.1)]'
+                    ? 'border border-cyan-400 bg-white shadow-[0_0_0_3px_rgba(139,92,246,0.1)]'
                     : 'border border-transparent hover:bg-slate-50'
                 }`}
               >
@@ -586,7 +586,7 @@ export default function ProductsPage() {
           </div>
           <button
             onClick={() => setShowNewProduct(true)}
-            className="flex h-9 items-center gap-1.5 rounded-lg bg-violet-500 px-4 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(139,92,246,0.35)] hover:bg-violet-600"
+            className="flex h-9 items-center gap-1.5 rounded-lg bg-cyan-500 px-4 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(139,92,246,0.35)] hover:bg-cyan-600"
           >
             <Plus size={14} />
             Nuevo producto
