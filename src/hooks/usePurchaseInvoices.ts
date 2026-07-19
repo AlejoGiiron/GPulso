@@ -58,6 +58,9 @@ export interface InvoiceItemDetail {
   unit_cost: number
   subtotal: number
   update_cost: boolean
+  // Fase 2 (C2a): recepción de seriales por línea serializada.
+  is_serialized: boolean
+  received_serials: string[]
 }
 
 export interface InvoicePaymentDetail {
@@ -202,7 +205,7 @@ interface RawDetailItem {
   subtotal: number
   update_cost: boolean
   variants: { size: string | null; color: string | null; sku: string | null } | null
-  products: { name: string; brand: string | null } | null
+  products: { name: string; brand: string | null; is_serialized: boolean } | null
 }
 
 interface RawDetailPayment {
@@ -241,7 +244,7 @@ export function useInvoiceDetail(id: string | null) {
            profiles(full_name),
            purchase_invoice_items(
              id, variant_id, product_id, qty, unit_cost, subtotal, update_cost,
-             variants(size, color, sku), products(name, brand)
+             variants(size, color, sku), products(name, brand, is_serialized)
            ),
            supplier_payments(
              id, amount, payment_date, payment_method, reference, notes,
@@ -254,6 +257,23 @@ export function useInvoiceDetail(id: string | null) {
       if (error) throw error
 
       const r = data as unknown as RawInvoiceDetail
+
+      // Seriales ya recibidos por línea serializada (C2a): una consulta acotada
+      // a las líneas de esta factura, agrupados client-side por línea.
+      const serialLineIds = (r.purchase_invoice_items ?? [])
+        .filter((it) => it.products?.is_serialized)
+        .map((it) => it.id)
+      const serialsByItem: Record<string, string[]> = {}
+      if (serialLineIds.length > 0) {
+        const { data: unitRows } = await supabase
+          .from('units')
+          .select('serial, purchase_invoice_item_id')
+          .in('purchase_invoice_item_id' as never, serialLineIds as never)
+          .order('created_at' as never, { ascending: true })
+        for (const u of (unitRows ?? []) as { serial: string; purchase_invoice_item_id: string }[]) {
+          ;(serialsByItem[u.purchase_invoice_item_id] ??= []).push(u.serial)
+        }
+      }
 
       const items: InvoiceItemDetail[] = (r.purchase_invoice_items ?? []).map(
         (it) => ({
@@ -269,6 +289,8 @@ export function useInvoiceDetail(id: string | null) {
           unit_cost: Number(it.unit_cost),
           subtotal: Number(it.subtotal),
           update_cost: it.update_cost,
+          is_serialized: it.products?.is_serialized ?? false,
+          received_serials: serialsByItem[it.id] ?? [],
         }),
       )
 

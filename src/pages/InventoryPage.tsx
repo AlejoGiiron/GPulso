@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from 'react'
 import {
   Package,
   AlertCircle,
@@ -10,13 +10,19 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   ScanLine,
+  Smartphone,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 import { useStockLevels, useStockMovements, useStoreProfiles, MOV_PAGE_SIZE } from '@/hooks/useInventory'
 import type { MovementFilters, VariantRow } from '@/hooks/useInventory'
 import { useInventoryMutations } from '@/hooks/useInventoryMutations'
+import { useVariantUnits } from '@/hooks/useUnits'
+import UnitList from '@/components/inventory/UnitList'
+import AddUnitModal from '@/components/inventory/AddUnitModal'
+import SerialSearchModal from '@/components/inventory/SerialSearchModal'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useCategories } from '@/hooks/useProducts'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -145,6 +151,44 @@ const ADJUST_TYPES = [
   'Merma',
   'Otro',
 ] as const
+
+// C1 — sub-fila expandida con la lista de unidades de una variante serializada.
+function ExpandedUnitsRow({
+  variantId,
+  colSpan,
+  canSeeCost,
+  onAddUnit,
+}: {
+  variantId: string
+  colSpan: number
+  canSeeCost: boolean
+  onAddUnit: () => void
+}) {
+  const { data: units = [], isLoading } = useVariantUnits(variantId)
+  return (
+    <tr className="bg-[#fafaf9]">
+      <td colSpan={colSpan} className="px-4 py-2">
+        <div className="overflow-hidden rounded-lg border border-[#ebe9e6] bg-white">
+          <div className="flex items-center justify-between border-b border-[#f5f4f1] px-4 py-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[.05em] text-[#737373]">
+              Unidades ({units.length})
+            </span>
+            {canSeeCost && (
+              <button
+                onClick={onAddUnit}
+                className="flex items-center gap-1 rounded-md border border-[#ebe9e6] bg-white px-2 py-1 text-[11px] font-medium text-cyan-600 hover:bg-cyan-50"
+              >
+                <Plus size={12} />
+                Agregar unidad
+              </button>
+            )}
+          </div>
+          <UnitList units={units} canSeeCost={canSeeCost} loading={isLoading} />
+        </div>
+      </td>
+    </tr>
+  )
+}
 
 interface AdjustModalProps {
   open: boolean
@@ -475,6 +519,10 @@ export default function InventoryPage() {
   const { can } = usePermissions()
   const [tab, setTab] = useState<Tab>('stock')
   const [showAdjustModal, setShowAdjustModal] = useState(false)
+  // Fase 2 (C1/C2b/C3): expansión de unidades, alta manual y búsqueda por serial.
+  const [expandedVariant, setExpandedVariant] = useState<string | null>(null)
+  const [addUnitTarget, setAddUnitTarget] = useState<VariantRow | null>(null)
+  const [showSerialSearch, setShowSerialSearch] = useState(false)
 
   // Stock tab filters
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -773,6 +821,14 @@ export default function InventoryPage() {
               </select>
 
               <button
+                onClick={() => setShowSerialSearch(true)}
+                className="flex h-9 items-center gap-2 rounded-lg border border-[#ebe9e6] bg-white px-4 text-sm font-medium text-[#525252] hover:bg-[#f8f7f5]"
+              >
+                <ScanLine size={14} />
+                Buscar serial
+              </button>
+
+              <button
                 onClick={exportExcel}
                 className="flex h-9 items-center gap-2 rounded-lg border border-[#ebe9e6] bg-white px-4 text-sm font-medium text-[#525252] hover:bg-[#f8f7f5]"
               >
@@ -835,10 +891,14 @@ export default function InventoryPage() {
                   <tbody>
                     {filtered.map((v) => {
                       const state = v.stock_state
+                      const serialized = v.products.is_serialized
+                      const expanded = expandedVariant === v.id
                       return (
+                        <Fragment key={v.id}>
                         <tr
-                          key={v.id}
                           className={`border-b border-[#f5f4f1] last:border-0 ${
+                            expanded ? 'bg-[#fafaf9]' : ''
+                          } ${
                             state === 'out'
                               ? 'bg-red-50/30'
                               : state === 'low'
@@ -847,14 +907,31 @@ export default function InventoryPage() {
                           }`}
                         >
                           <td className="px-4 py-3">
-                            <span className="text-sm font-medium text-[#1a1a1a]">
-                              {v.products.name}
-                            </span>
+                            {serialized ? (
+                              <button
+                                onClick={() => setExpandedVariant(expanded ? null : v.id)}
+                                className="flex items-center gap-1.5 text-left"
+                              >
+                                {expanded ? (
+                                  <ChevronDown size={14} className="text-cyan-500" />
+                                ) : (
+                                  <ChevronRight size={14} className="text-[#a8a29e]" />
+                                )}
+                                <span className="text-sm font-medium text-[#1a1a1a]">
+                                  {v.products.name}
+                                </span>
+                                <Smartphone size={13} className="text-cyan-500" />
+                              </button>
+                            ) : (
+                              <span className="text-sm font-medium text-[#1a1a1a]">
+                                {v.products.name}
+                              </span>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-sm text-[#525252]">
                             {v.products.brand ?? <span className="text-[#a8a29e]">—</span>}
                           </td>
-                          {/* Talla + color en una sola columna "Variante" */}
+                          {/* Variante (capacidad/color). Vacío para Única (C4). */}
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
                               {v.size && (
@@ -874,8 +951,11 @@ export default function InventoryPage() {
                                   <span className="text-sm capitalize text-[#525252]">{v.color}</span>
                                 </div>
                               )}
-                              {!v.size && !v.color && (
+                              {!v.size && !v.color && !serialized && (
                                 <span className="text-[#a8a29e]">—</span>
+                              )}
+                              {!v.size && !v.color && serialized && (
+                                <span className="text-[11px] text-cyan-600">Serializado</span>
                               )}
                             </div>
                           </td>
@@ -886,7 +966,11 @@ export default function InventoryPage() {
                             {v.barcode ?? <span className="text-[#a8a29e]">—</span>}
                           </td>
                           <td className="px-4 py-3 text-right font-mono text-sm tabular-nums text-[#525252]">
-                            {v.stock_qty}
+                            {serialized ? (
+                              <span className="text-[#1a1a1a]">{v.stock_qty} u.</span>
+                            ) : (
+                              v.stock_qty
+                            )}
                           </td>
                           <td
                             className={`px-4 py-3 text-right font-mono text-sm tabular-nums ${
@@ -905,6 +989,15 @@ export default function InventoryPage() {
                             <StockBadge state={state} />
                           </td>
                         </tr>
+                        {serialized && expanded && (
+                          <ExpandedUnitsRow
+                            variantId={v.id}
+                            colSpan={10}
+                            canSeeCost={can('inventario.gestionar')}
+                            onAddUnit={() => setAddUnitTarget(v)}
+                          />
+                        )}
+                        </Fragment>
                       )
                     })}
                   </tbody>
@@ -1132,6 +1225,21 @@ export default function InventoryPage() {
       </div>
 
       <AdjustModal open={showAdjustModal} onClose={() => setShowAdjustModal(false)} />
+
+      {showSerialSearch && (
+        <SerialSearchModal
+          canSeeCost={can('inventario.gestionar')}
+          onClose={() => setShowSerialSearch(false)}
+        />
+      )}
+      {addUnitTarget && (
+        <AddUnitModal
+          variantId={addUnitTarget.id}
+          productName={addUnitTarget.products.name}
+          variantLabel={[addUnitTarget.size, addUnitTarget.color].filter(Boolean).join(' · ')}
+          onClose={() => setAddUnitTarget(null)}
+        />
+      )}
     </>
   )
 }

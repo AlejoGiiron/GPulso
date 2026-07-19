@@ -931,7 +931,7 @@ export default function ReportsPage() {
                         <td className="px-4 py-3">
                           {p.size
                             ? <span className="inline-flex h-6 min-w-[32px] items-center justify-center rounded-[5px] bg-[#f5f4f1] px-2 text-xs font-semibold">{p.size}</span>
-                            : <span className="text-[#a8a29e]">—</span>}
+                            : null}
                         </td>
                         <td className="px-4 py-3 text-sm capitalize text-[#525252]">{p.color ?? <span className="text-[#a8a29e]">—</span>}</td>
                         <td className="px-4 py-3 text-right font-mono text-sm font-semibold tabular-nums">{p.units_sold}</td>
@@ -1458,7 +1458,7 @@ export default function ReportsPage() {
                         <td className="px-4 py-3">
                           {item.size
                             ? <span className="inline-flex h-6 min-w-[32px] items-center justify-center rounded-[5px] bg-[#f5f4f1] px-2 text-xs font-semibold">{item.size}</span>
-                            : <span className="text-[#a8a29e]">—</span>}
+                            : null}
                         </td>
                         <td className="px-4 py-3 text-sm capitalize text-[#525252]">{item.color ?? <span className="text-[#a8a29e]">—</span>}</td>
                         <td className="px-4 py-3 text-right font-mono text-sm font-semibold tabular-nums">{item.stock_qty}</td>
