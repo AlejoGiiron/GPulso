@@ -19,9 +19,10 @@ import {
   Bookmark,
   HandCoins,
   Split,
+  Smartphone,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { useCartStore, cartTotals } from '@/stores/cartStore'
+import { useCartStore, cartTotals, lineKey } from '@/stores/cartStore'
 import type { CartItem } from '@/stores/cartStore'
 import { ItemPriceField } from '@/components/pos/ItemPriceField'
 import {
@@ -32,8 +33,11 @@ import {
 import type { POSProduct, POSVariant } from '@/hooks/usePOSSearch'
 import { useBarcode } from '@/hooks/useBarcode'
 import BarcodeScanner from '@/components/pos/BarcodeScanner'
-import { useCreateOrder } from '@/hooks/useCreateOrder'
+import { useCreateOrder, CreateOrderError } from '@/hooks/useCreateOrder'
 import type { OrderPaymentLine } from '@/hooks/useCreateOrder'
+import { lookupUnitBySerial } from '@/hooks/useUnits'
+import UnitPickerModal from '@/components/pos/UnitPickerModal'
+import QuickAddUnitModal from '@/components/pos/QuickAddUnitModal'
 import { PaymentSplitLines } from '@/components/pos/PaymentSplitLines'
 import { sumSplitLines, type SplitLine } from '@/lib/paymentSplit'
 import {
@@ -60,6 +64,9 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { useCreateCustomer } from '@/hooks/useCustomerMutations'
 import { useCustomerSearch } from '@/hooks/useCustomers'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useAuth } from '@/hooks/useAuth'
+import { getActiveStoreId } from '@/hooks/useActiveStoreId'
+import type { UnitForSale } from '@/hooks/useUnits'
 import { GIFT_REASONS } from '@/lib/giftReasons'
 import { useCurrentShift } from '@/hooks/useCashShift'
 import { OpenShiftModal } from '@/components/layout/CashShiftModals'
@@ -1186,7 +1193,14 @@ function ProductCard({ product, onClick }: ProductCardProps) {
           <span className="font-mono text-[13px] font-semibold text-neutral-700">
             {fmtCOP(minPrice)}
           </span>
-          {sizes.length > 0 && (
+          {/* Serializado: disponibilidad como "N unidades" (D3). */}
+          {product.is_serialized && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-cyan-50 px-1.5 py-0.5 text-[10.5px] font-semibold text-cyan-700">
+              <Smartphone size={11} />
+              {totalStock} unidad{totalStock === 1 ? '' : 'es'}
+            </span>
+          )}
+          {!product.is_serialized && sizes.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {sizes.slice(0, 3).map((s) => (
                 <span
@@ -1454,16 +1468,19 @@ interface CartLineProps {
   maxItemDiscount: number
   // Solo si el usuario tiene ventas.regalo se muestra el control de regalo.
   canGift: boolean
-  onSetQty: (variantId: string, qty: number) => void
-  onSetPrice: (variantId: string, finalPrice: number) => void
-  onSetGift: (variantId: string, isGift: boolean, reason?: string | null) => void
-  onRemove: (variantId: string) => void
+  // Marca la línea en rojo cuando su unidad se perdió al cobrar (D4).
+  failed?: boolean
+  onSetQty: (key: string, qty: number) => void
+  onSetPrice: (key: string, finalPrice: number) => void
+  onSetGift: (key: string, isGift: boolean, reason?: string | null) => void
+  onRemove: (key: string) => void
 }
 
 function CartLine({
   item,
   maxItemDiscount,
   canGift,
+  failed = false,
   onSetQty,
   onSetPrice,
   onSetGift,
@@ -1472,12 +1489,17 @@ function CartLine({
   const [showReasons, setShowReasons] = useState(false)
   const canDiscount = maxItemDiscount > 0
   const discounted = item.unit_price < item.list_price
-  // El bloque de precio/descuento se muestra si hay algo que editar (tope > 0)
-  // o que informar (ya tiene descuento). Los ítems "sin cargo" no lo usan.
   const showPriceField = !item.isGift && (canDiscount || discounted)
+  // Identidad de línea: unidad serializada si la hay, si no la variante.
+  const key = item.unit_id ?? item.variant_id
+  const isEquipment = !!item.unit_id
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+    <div
+      className={`overflow-hidden rounded-xl border bg-white ${
+        failed ? 'border-red-400 ring-2 ring-red-100' : 'border-slate-200'
+      }`}
+    >
       {/* Banner SIN CARGO arriba (ámbar) con el motivo editable */}
       {item.isGift && (
         <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-100 px-3.5 py-2">
@@ -1487,7 +1509,7 @@ function CartLine({
           <span className="text-amber-500">·</span>
           <select
             value={item.giftReason ?? ''}
-            onChange={(e) => onSetGift(item.variant_id, true, e.target.value)}
+            onChange={(e) => onSetGift(key, true, e.target.value)}
             className="rounded-md border border-amber-300 bg-white px-2 py-1 text-[12px] font-semibold text-amber-800 outline-none focus:border-amber-400"
             aria-label="Motivo sin cargo"
           >
@@ -1498,7 +1520,7 @@ function CartLine({
             ))}
           </select>
           <button
-            onClick={() => onSetGift(item.variant_id, false)}
+            onClick={() => onSetGift(key, false)}
             className="ml-auto text-[11px] font-medium text-amber-700/80 hover:text-amber-900"
           >
             Quitar
@@ -1518,14 +1540,19 @@ function CartLine({
             <p className="truncate text-[14.5px] font-semibold text-slate-900">{item.name}</p>
             {(item.size || item.color) && (
               <p className="truncate text-[12px] text-slate-500">
-                {[item.size ? `T.${item.size}` : null, item.color]
-                  .filter(Boolean)
-                  .join(' · ')}
+                {[item.size, item.color].filter(Boolean).join(' · ')}
               </p>
+            )}
+            {/* Equipo serializado: chip con el IMEI/serial en JetBrains Mono. */}
+            {isEquipment && item.serial && (
+              <span className="mt-1 inline-flex items-center gap-1 rounded-md bg-cyan-50 px-1.5 py-0.5 font-mono text-[11px] font-medium text-cyan-700">
+                <Smartphone size={11} />
+                {item.serial}
+              </span>
             )}
           </div>
           <button
-            onClick={() => onRemove(item.variant_id)}
+            onClick={() => onRemove(key)}
             className="shrink-0 text-slate-300 hover:text-slate-600"
             aria-label="Quitar ítem"
           >
@@ -1533,28 +1560,34 @@ function CartLine({
           </button>
         </div>
 
-        {/* Cantidad (control grande) + subtotal */}
+        {/* Cantidad (control grande) + subtotal. Un equipo = 1 unidad, sin stepper. */}
         <div className="mt-3 flex items-center justify-between gap-3">
-          <div className="flex h-[34px] items-center overflow-hidden rounded-lg border border-slate-200">
-            <button
-              onClick={() => onSetQty(item.variant_id, item.qty - 1)}
-              className="flex h-full w-9 items-center justify-center text-slate-600 hover:bg-slate-50"
-              aria-label="Menos"
-            >
-              <Minus size={15} />
-            </button>
-            <span className="w-8 text-center font-mono text-base font-semibold tabular-nums">
-              {item.qty}
+          {isEquipment ? (
+            <span className="inline-flex h-[34px] items-center rounded-lg bg-slate-100 px-3 text-[12px] font-semibold text-slate-500">
+              1 unidad
             </span>
-            <button
-              onClick={() => onSetQty(item.variant_id, item.qty + 1)}
-              disabled={item.qty >= item.stock_qty}
-              className="flex h-full w-9 items-center justify-center text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-              aria-label="Más"
-            >
-              <Plus size={15} />
-            </button>
-          </div>
+          ) : (
+            <div className="flex h-[34px] items-center overflow-hidden rounded-lg border border-slate-200">
+              <button
+                onClick={() => onSetQty(key, item.qty - 1)}
+                className="flex h-full w-9 items-center justify-center text-slate-600 hover:bg-slate-50"
+                aria-label="Menos"
+              >
+                <Minus size={15} />
+              </button>
+              <span className="w-8 text-center font-mono text-base font-semibold tabular-nums">
+                {item.qty}
+              </span>
+              <button
+                onClick={() => onSetQty(key, item.qty + 1)}
+                disabled={item.qty >= item.stock_qty}
+                className="flex h-full w-9 items-center justify-center text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Más"
+              >
+                <Plus size={15} />
+              </button>
+            </div>
+          )}
           {item.isGift ? (
             <div className="text-right">
               <div className="font-mono text-[11px] text-slate-400 line-through">
@@ -1578,7 +1611,7 @@ function CartLine({
               listPrice={item.list_price}
               unitPrice={item.unit_price}
               maxItemDiscount={maxItemDiscount}
-              onCommit={(finalPrice) => onSetPrice(item.variant_id, finalPrice)}
+              onCommit={(finalPrice) => onSetPrice(key, finalPrice)}
             />
           </div>
         )}
@@ -1593,7 +1626,7 @@ function CartLine({
                 <button
                   key={r.value}
                   onClick={() => {
-                    onSetGift(item.variant_id, true, r.value)
+                    onSetGift(key, true, r.value)
                     setShowReasons(false)
                   }}
                   className="rounded border border-amber-300 bg-white px-2 py-0.5 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
@@ -1627,12 +1660,15 @@ interface CartPanelProps {
   onCheckout: () => void
   selectedCustomer: Customer | null
   setSelectedCustomer: (c: Customer | null) => void
+  // Línea (lineKey) cuya unidad se perdió al cobrar (D4) → se marca en rojo.
+  failedLineKey: string | null
 }
 
 function CartPanel({
   onCheckout,
   selectedCustomer,
   setSelectedCustomer,
+  failedLineKey,
 }: CartPanelProps) {
   const store = useCartStore()
   const { items, customer_id } = store
@@ -1699,13 +1735,14 @@ function CartPanel({
           <div className="flex flex-col gap-2.5 p-3">
             {items.map((item) => (
               <CartLine
-                key={item.variant_id}
+                key={lineKey(item)}
                 item={item}
                 maxItemDiscount={maxItemDiscount}
                 canGift={canGift}
+                failed={failedLineKey === lineKey(item)}
                 onSetQty={store.setQty}
-                onSetPrice={(variantId, finalPrice) =>
-                  store.setItemPrice(variantId, finalPrice, maxItemDiscount)
+                onSetPrice={(k, finalPrice) =>
+                  store.setItemPrice(k, finalPrice, maxItemDiscount)
                 }
                 onSetGift={store.setItemGift}
                 onRemove={store.removeItem}
@@ -1774,6 +1811,8 @@ export default function POSPage() {
   const [activeCat, setActiveCat] = useState('all')
   const [pickerProduct, setPickerProduct] = useState<POSProduct | null>(null)
   const [showPayment, setShowPayment] = useState(false)
+  // D4: línea (lineKey = unit_id) cuya unidad se perdió al cobrar.
+  const [failedLineKey, setFailedLineKey] = useState<string | null>(null)
   const [showFiar, setShowFiar] = useState(false)
   const [completedSale, setCompletedSale] = useState<CompletedSale | null>(null)
   const [showCamera, setShowCamera] = useState(false)
@@ -1793,8 +1832,35 @@ export default function POSPage() {
   const createOrder = useCreateOrder()
   const createCredit = useCreateCreditOrder()
   const { can } = usePermissions()
+  const { profile } = useAuth()
+  const storeId = getActiveStoreId(profile)
   const canFiar = can('ventas.fiar')
+  const canManageInventory = can('inventario.gestionar')
   const { data: currentShift, isLoading: loadingShift } = useCurrentShift()
+  // Camino secundario (tocar card serializada) y D6 (ingreso rápido).
+  const [unitPickerProduct, setUnitPickerProduct] = useState<POSProduct | null>(null)
+  const [quickAddSerial, setQuickAddSerial] = useState<string | null>(null)
+
+  // Agrega la unidad EXACTA al carrito (chip IMEI, qty 1, línea propia).
+  const addUnitToCart = useCallback(
+    (unit: UnitForSale) => {
+      addItem({
+        variant_id: unit.variant_id,
+        product_id: unit.product_id,
+        name: unit.name,
+        brand: unit.brand,
+        size: unit.size,
+        color: unit.color,
+        unit_price: unit.price,
+        list_price: unit.price,
+        stock_qty: 1,
+        unit_id: unit.unit_id,
+        serial: unit.serial,
+      })
+      toast.success(`${unit.name} · IMEI ${unit.serial}`)
+    },
+    [addItem],
+  )
 
   // Focus search on mount + Ctrl/Cmd+K
   useEffect(() => {
@@ -1811,22 +1877,52 @@ export default function POSPage() {
     return () => document.removeEventListener('keydown', handler)
   }, [])
 
-  // Barcode scan handler — usado por escáner USB y cámara
+  // Escáner-first (D1): un código escaneado se resuelve, EN ORDEN:
+  //  1) ¿Es un IMEI/serial de una unidad? → la unidad exacta cae al carrito.
+  //  2) ¿Es un código de barras de variante (accesorio)? → flujo actual.
+  //     Si la variante pertenece a un producto serializado, abre el selector de
+  //     unidades (no se agrega sin unidad).
+  //  3) Desconocido → D6: ofrecer "Registrar y vender" (con permiso).
   const handleScan = useCallback(
-    (code: string) => {
+    async (code: string) => {
       setQuery('')
       setShowCamera(false)
+      const term = code.trim()
+      if (!term) return
 
-      const match = findVariantByBarcode(allProducts, code)
+      // 1) Serial de unidad.
+      const unit = await lookupUnitBySerial(storeId, term)
+      if (unit) {
+        if (unit.status !== 'disponible') {
+          toast.error(
+            `IMEI ${term}: ${unit.status === 'vendida' ? 'ya vendido' : 'reservado'} — no se puede vender.`,
+          )
+          return
+        }
+        addUnitToCart(unit)
+        return
+      }
+
+      // 2) Código de barras de variante.
+      const match = findVariantByBarcode(allProducts, term)
       if (!match) {
-        toast.error(`Código no encontrado: ${code}`)
+        // 3) Desconocido → D6.
+        if (canManageInventory) {
+          setQuickAddSerial(term)
+        } else {
+          toast.error(`IMEI/código no encontrado: ${term}`)
+        }
+        return
+      }
+      if (match.product.is_serialized) {
+        // Equipo escaneado por su barcode (no por IMEI): elegir la unidad.
+        setUnitPickerProduct(match.product)
         return
       }
       if (match.variant.stock_qty === 0) {
         toast.error(`Sin stock: ${match.product.name}`)
         return
       }
-
       addItem({
         variant_id: match.variant.id,
         product_id: match.product.id,
@@ -1838,24 +1934,18 @@ export default function POSPage() {
         list_price: match.variant.price,
         stock_qty: match.variant.stock_qty,
       })
-
-      const detail = [
-        match.variant.size,
-        match.variant.color,
-      ]
-        .filter(Boolean)
-        .join(' ')
-      toast.success(
-        `Añadido: ${match.product.name}${detail ? ` — ${detail}` : ''}`,
-      )
+      const detail = [match.variant.size, match.variant.color].filter(Boolean).join(' ')
+      toast.success(`Añadido: ${match.product.name}${detail ? ` — ${detail}` : ''}`)
     },
-    [allProducts, addItem],
+    [storeId, allProducts, addItem, addUnitToCart, canManageInventory],
   )
 
   const { isCameraActive, startCamera, stopCamera, handleKeyDown: barcodeKeyDown } =
     useBarcode(handleScan)
 
-  // Combina detección de escáner USB con búsqueda manual por Enter
+  // Combina detección de escáner USB con búsqueda/tecleo manual por Enter.
+  // El Enter manual delega en handleScan → misma resolución serial-first
+  // (IMEI → barcode → D6) que el escáner.
   const handleSearchKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       const consumed = barcodeKeyDown(e)
@@ -1863,30 +1953,10 @@ export default function POSPage() {
         setQuery('')
         return
       }
-      // Enter manual — intenta coincidir con barcode en la búsqueda actual
       if (e.key !== 'Enter' || !query.trim()) return
-      const match = findVariantByBarcode(searchResults, query.trim())
-      if (!match) return
-      if (match.variant.stock_qty === 0) {
-        toast.error(`Sin stock: ${match.product.name}`)
-        setQuery('')
-        return
-      }
-      addItem({
-        variant_id: match.variant.id,
-        product_id: match.product.id,
-        name: match.product.name,
-        brand: match.product.brand,
-        size: match.variant.size,
-        color: match.variant.color,
-        unit_price: match.variant.price,
-        list_price: match.variant.price,
-        stock_qty: match.variant.stock_qty,
-      })
-      setQuery('')
-      toast.success(`Añadido: ${match.product.name}`)
+      void handleScan(query.trim())
     },
-    [barcodeKeyDown, query, searchResults, addItem],
+    [barcodeKeyDown, query, handleScan],
   )
 
   const displayed = useMemo(() => {
@@ -1910,10 +1980,15 @@ export default function POSPage() {
     toast.success(`${product.name} agregado`)
   }
 
-  // Clic en una card: si el producto tiene UNA sola variante disponible, se
-  // agrega directo (saltando el selector). Con 2+ variantes, o si la única
-  // está agotada, se abre el picker para elegir / ver el estado de stock.
+  // Clic en una card (D2, camino secundario):
+  //  · Serializado → selector de UNIDADES (elegir el IMEI exacto).
+  //  · No serializado con 1 variante disponible → se agrega directo.
+  //  · Resto → picker de variantes.
   const handleProductClick = (product: POSProduct) => {
+    if (product.is_serialized) {
+      setUnitPickerProduct(product)
+      return
+    }
     if (product.variants.length === 1 && product.variants[0].stock_qty > 0) {
       handleAddVariant(product, product.variants[0])
       return
@@ -1934,6 +2009,7 @@ export default function POSPage() {
       // Las líneas de pago para el desglose mixto del ticket.
       payments,
     }
+    setFailedLineKey(null)
     createOrder.mutate(
       {
         // El descuento vive en los unit_price de cada ítem (no hay descuento
@@ -1946,8 +2022,26 @@ export default function POSPage() {
       },
       {
         onSuccess: (order) => {
+          setFailedLineKey(null)
           setShowPayment(false)
           setCompletedSale({ order, ...snapshot })
+        },
+        onError: (err) => {
+          // D4 — un claim se perdió (otra caja tomó la unidad). La RPC ya
+          // revirtió TODO (sin orden/pago/stock): acá solo lo presentamos.
+          const e = err as CreateOrderError
+          if (e.failedUnitId) {
+            const lost = items.find((i) => i.unit_id === e.failedUnitId)
+            setFailedLineKey(e.failedUnitId)
+            setShowPayment(false) // vuelve al carrito, editable
+            toast.error(
+              lost
+                ? `${lost.name} · IMEI ${lost.serial} ya no está disponible (otra caja lo vendió). Quítalo del carrito y reintenta.`
+                : e.message,
+              { duration: 6000 },
+            )
+          }
+          // Otros errores ya muestran su toast desde la mutación.
         },
       },
     )
@@ -2163,6 +2257,7 @@ export default function POSPage() {
           onCheckout={() => setShowPayment(true)}
           selectedCustomer={selectedCustomer}
           setSelectedCustomer={setSelectedCustomer}
+          failedLineKey={failedLineKey}
         />
       </section>
 
@@ -2172,6 +2267,30 @@ export default function POSPage() {
           product={pickerProduct}
           onAdd={(v) => handleAddVariant(pickerProduct, v)}
           onClose={() => setPickerProduct(null)}
+        />
+      )}
+
+      {/* D2 — selector de unidades (tocar card serializada) */}
+      {unitPickerProduct && (
+        <UnitPickerModal
+          product={unitPickerProduct}
+          onPick={(unit) => {
+            addUnitToCart(unit)
+            setUnitPickerProduct(null)
+          }}
+          onClose={() => setUnitPickerProduct(null)}
+        />
+      )}
+
+      {/* D6 — ingreso rápido de unidad desde el POS */}
+      {quickAddSerial !== null && (
+        <QuickAddUnitModal
+          initialSerial={quickAddSerial}
+          onClose={() => setQuickAddSerial(null)}
+          onAdded={(unit) => {
+            addUnitToCart(unit)
+            setQuickAddSerial(null)
+          }}
         />
       )}
 

@@ -35,9 +35,16 @@ atacan en este proyecto.
    G-Mura. Ver la tabla "Fixes porteados" cuando se haga.
 
 2. **Escrituras financieras no atómicas** (multi-INSERT desde el navegador).
-   Las órdenes se crean con varios INSERT secuenciales desde el cliente y un
+   Las órdenes se creaban con varios INSERT secuenciales desde el cliente y un
    rollback compensatorio manual, no en una transacción de servidor.
-   **Pendiente:** RPC `create_order` (transacción atómica en Postgres).
+   **RESUELTA para la ruta de VENTAS** (Fase 2): la RPC `create_order`
+   (migración 041) crea orden + ítems + claims de unidades + pagos en UNA
+   transacción atómica; el POS ya cobra por ella y se retiró el multi-INSERT
+   client-side de la venta. **PENDIENTE** en: devoluciones/cambios, separados
+   (crear/abonar/completar), pagos de crédito (fiado) y demás operaciones de
+   turno — siguen con escrituras client-side + rollback compensatorio.
+   Candidata a portear a G-Mura (create_order es autocontenida; la rama de
+   unidades es condicional).
 
 3. **Tipado de Supabase decorativo** (~400 casts `as unknown as ...`).
    `src/types/database.types.ts` está hecho a mano y no infiere relaciones

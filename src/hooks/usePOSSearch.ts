@@ -29,6 +29,7 @@ export interface POSProduct {
   name: string
   brand: string | null
   image_url: string | null
+  is_serialized: boolean
   category: Pick<Category, 'id' | 'name' | 'color'> | null
   variants: POSVariant[]
 }
@@ -50,6 +51,7 @@ interface RawProduct {
   name: string
   brand: string | null
   image_url: string | null
+  is_serialized: boolean
   categories: { id: string; name: string; color: string | null } | null
   variants: RawVariant[]
 }
@@ -64,7 +66,7 @@ export function usePOSProducts() {
       const { data, error } = await supabase
         .from('products')
         .select(
-          'id, name, brand, image_url, categories(id, name, color), variants(id, size, color, price, stock_qty, reserved_qty, barcode, sku, is_active)',
+          'id, name, brand, image_url, is_serialized, categories(id, name, color), variants(id, size, color, price, stock_qty, reserved_qty, barcode, sku, is_active)',
         )
         .eq('store_id' as never, storeId)
         .eq('is_active' as never, true)
@@ -77,6 +79,7 @@ export function usePOSProducts() {
           name: r.name,
           brand: r.brand,
           image_url: r.image_url,
+          is_serialized: r.is_serialized,
           category: r.categories,
           variants: (r.variants ?? [])
             .filter((v) => v.is_active)
