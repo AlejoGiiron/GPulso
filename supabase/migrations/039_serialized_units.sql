@@ -118,6 +118,9 @@ CREATE TABLE IF NOT EXISTS public.units (
 COMMENT ON TABLE public.units IS
   'Unidades serializadas (IMEI/serial) sobre variantes. Fuente de verdad del stock de productos serializados; variants.stock_qty se deriva por trigger.';
 
+COMMENT ON COLUMN public.units.layaway_id IS
+  'Separado que reserva esta unidad (NULL si no está reservada). LIMITACIÓN ACEPTADA CONSCIENTEMENTE: la liberación al cancelar/expirar es por SEPARADO COMPLETO (todas las unidades con este layaway_id vuelven a disponible), NO por línea individual. Si en el futuro se necesita liberar líneas sueltas de un separado, habrá que enlazar por layaway_item_id.';
+
 CREATE INDEX IF NOT EXISTS idx_units_variant_id      ON public.units(variant_id);
 CREATE INDEX IF NOT EXISTS idx_units_store_id        ON public.units(store_id);
 CREATE INDEX IF NOT EXISTS idx_units_status          ON public.units(status);
@@ -197,23 +200,39 @@ $$;
 -- A3. Sincronización: variants.stock_qty = COUNT(unidades 'disponible')
 --     Se dispara en cualquier INSERT/UPDATE/DELETE de units.
 -- ------------------------------------------------------------
+-- NOTA SOBRE CONCURRENCIA (conocida y ACEPTADA — no la "arregles" encima):
+--   Bajo claims concurrentes de unidades DISTINTAS de la misma variante, el
+--   valor de variants.stock_qty puede quedar transitoriamente desfasado (dos
+--   transacciones recalculan COUNT casi a la vez). Eso es solo DISPLAY: el
+--   invariante real de "no vender dos veces la misma unidad" NO vive acá, vive
+--   en el rowcount de claim_unit (UPDATE ... WHERE status='disponible'). stock_qty
+--   es un derivado que se autocorrige en el siguiente cambio de unidades. No
+--   agregues locks ni serialización sobre este trigger creyendo que hay un bug.
 CREATE OR REPLACE FUNCTION public.sync_variant_stock_from_units()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-DECLARE
-  v_variant uuid;
 BEGIN
-  v_variant := COALESCE(NEW.variant_id, OLD.variant_id);
-
-  UPDATE public.variants
+  -- Variante afectada por el cambio (la NEW en insert/update, la OLD en delete).
+  UPDATE public.variants v
      SET stock_qty = (
-           SELECT count(*) FROM public.units
-            WHERE variant_id = v_variant AND status = 'disponible'
+           SELECT count(*) FROM public.units u
+            WHERE u.variant_id = v.id AND u.status = 'disponible'
          )
-   WHERE id = v_variant;
+   WHERE v.id = COALESCE(NEW.variant_id, OLD.variant_id);
+
+  -- Si una unidad cambió de variante (corrección de captura mal hecha), la
+  -- variante VIEJA también debe recalcularse o queda con stock fantasma.
+  IF TG_OP = 'UPDATE' AND NEW.variant_id IS DISTINCT FROM OLD.variant_id THEN
+    UPDATE public.variants v
+       SET stock_qty = (
+             SELECT count(*) FROM public.units u
+              WHERE u.variant_id = v.id AND u.status = 'disponible'
+           )
+     WHERE v.id = OLD.variant_id;
+  END IF;
 
   RETURN COALESCE(NEW, OLD);
 END;
@@ -433,6 +452,23 @@ DECLARE
   v_order   uuid;
   v_rows    integer;
 BEGIN
+  -- Coherencia del order_item: debe ser de ESTA tienda y de la MISMA variante
+  -- que la unidad. Sin esto (la función es SECURITY DEFINER, se salta el RLS) se
+  -- podría amarrar un IMEI de iPhone a la línea de un cargador o de otra tienda,
+  -- corrompiendo el rastro IMEI→cliente (Bloque E) desde el origen.
+  IF NOT EXISTS (
+    SELECT 1
+      FROM public.order_items oi
+      JOIN public.orders o ON o.id = oi.order_id
+      JOIN public.units  u ON u.id = p_unit_id
+     WHERE oi.id = p_order_item_id
+       AND o.store_id = get_my_store_id()
+       AND oi.variant_id = u.variant_id
+  ) THEN
+    RAISE EXCEPTION 'order_item inválido para esta unidad (tienda o variante no coinciden). unit_id=%, order_item_id=%',
+      p_unit_id, p_order_item_id USING ERRCODE = 'check_violation';
+  END IF;
+
   UPDATE public.units
      SET status = 'vendida', order_item_id = p_order_item_id, layaway_id = NULL
    WHERE id = p_unit_id
@@ -520,6 +556,21 @@ AS $$
 DECLARE
   v_variant uuid; v_store uuid; v_order uuid; v_rows integer;
 BEGIN
+  -- Misma coherencia que claim_unit: el order_item debe ser de esta tienda y de
+  -- la misma variante que la unidad (ver claim_unit).
+  IF NOT EXISTS (
+    SELECT 1
+      FROM public.order_items oi
+      JOIN public.orders o ON o.id = oi.order_id
+      JOIN public.units  u ON u.id = p_unit_id
+     WHERE oi.id = p_order_item_id
+       AND o.store_id = get_my_store_id()
+       AND oi.variant_id = u.variant_id
+  ) THEN
+    RAISE EXCEPTION 'order_item inválido para esta unidad (tienda o variante no coinciden). unit_id=%, order_item_id=%',
+      p_unit_id, p_order_item_id USING ERRCODE = 'check_violation';
+  END IF;
+
   UPDATE public.units
      SET status = 'vendida', order_item_id = p_order_item_id, layaway_id = NULL
    WHERE id = p_unit_id
@@ -546,7 +597,9 @@ GRANT  EXECUTE ON FUNCTION public.complete_reserved_unit(uuid, uuid) TO authenti
 --   El rastro histórico se conserva en orders/returns/stock_movements (Bloque E);
 --   la fila de la unidad se REUSA. Registra el movimiento 'return'.
 -- ------------------------------------------------------------
-CREATE OR REPLACE FUNCTION public.restore_returned_unit(p_unit_id uuid, p_return_id uuid DEFAULT NULL)
+-- p_return_id es OBLIGATORIO (sin DEFAULT): un movimiento 'return' sin
+-- referencia deja un hueco en la línea de tiempo de la unidad (Bloque E).
+CREATE OR REPLACE FUNCTION public.restore_returned_unit(p_unit_id uuid, p_return_id uuid)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
