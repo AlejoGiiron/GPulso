@@ -38,12 +38,12 @@ SET LOCAL "request.jwt.claims" = '{"sub":"00000000-0000-0000-0000-0000000000b1",
 DO $$
 DECLARE v_n int; v_pending int;
 BEGIN
-  v_n := public.receive_serialized_units((SELECT id FROM public.purchase_invoice_items LIMIT 1),
+  v_n := public.receive_serialized_units((SELECT ii.id FROM public.purchase_invoice_items ii JOIN public.purchase_invoices pi ON pi.id=ii.invoice_id WHERE pi.invoice_number='FC-REC-1' AND ii.qty=3),
                                          ARRAY['REC-IMEI-1','REC-IMEI-2']);
   IF v_n <> 2 THEN RAISE EXCEPTION 'T1 FALLO: no recibió 2.'; END IF;
   -- pendiente DERIVADO = qty - count(units de la línea)
   SELECT ii.qty - (SELECT count(*) FROM public.units u WHERE u.purchase_invoice_item_id = ii.id)
-    INTO v_pending FROM public.purchase_invoice_items ii LIMIT 1;
+    INTO v_pending FROM public.purchase_invoice_items ii JOIN public.purchase_invoices pi ON pi.id=ii.invoice_id WHERE pi.invoice_number='FC-REC-1' AND ii.qty=3;
   IF v_pending <> 1 THEN RAISE EXCEPTION 'T1 FALLO: pendiente derivado no es 1 (es %).', v_pending; END IF;
   IF (SELECT stock_qty FROM public.variants v JOIN public.products p ON p.id=v.product_id WHERE p.name='iPhone REC') <> 2
     THEN RAISE EXCEPTION 'T1 FALLO: stock_qty no es 2.'; END IF;
@@ -54,10 +54,10 @@ END $$;
 DO $$
 DECLARE v_pending int;
 BEGIN
-  PERFORM public.receive_serialized_units((SELECT id FROM public.purchase_invoice_items LIMIT 1),
+  PERFORM public.receive_serialized_units((SELECT ii.id FROM public.purchase_invoice_items ii JOIN public.purchase_invoices pi ON pi.id=ii.invoice_id WHERE pi.invoice_number='FC-REC-1' AND ii.qty=3),
                                           ARRAY['REC-IMEI-3']);
   SELECT ii.qty - (SELECT count(*) FROM public.units u WHERE u.purchase_invoice_item_id = ii.id)
-    INTO v_pending FROM public.purchase_invoice_items ii LIMIT 1;
+    INTO v_pending FROM public.purchase_invoice_items ii JOIN public.purchase_invoices pi ON pi.id=ii.invoice_id WHERE pi.invoice_number='FC-REC-1' AND ii.qty=3;
   IF v_pending <> 0 THEN RAISE EXCEPTION 'T2 FALLO: pendiente no es 0.'; END IF;
   IF (SELECT stock_qty FROM public.variants v JOIN public.products p ON p.id=v.product_id WHERE p.name='iPhone REC') <> 3
     THEN RAISE EXCEPTION 'T2 FALLO: stock_qty no es 3.'; END IF;
@@ -69,7 +69,7 @@ DO $$
 DECLARE v_blocked boolean := false;
 BEGIN
   BEGIN
-    PERFORM public.receive_serialized_units((SELECT id FROM public.purchase_invoice_items LIMIT 1),
+    PERFORM public.receive_serialized_units((SELECT ii.id FROM public.purchase_invoice_items ii JOIN public.purchase_invoices pi ON pi.id=ii.invoice_id WHERE pi.invoice_number='FC-REC-1' AND ii.qty=3),
                                             ARRAY['REC-IMEI-4']);
   EXCEPTION WHEN check_violation THEN v_blocked := true; END;
   IF NOT v_blocked THEN RAISE EXCEPTION 'T3 FALLO: permitió exceder la cantidad de la línea.'; END IF;
@@ -84,7 +84,7 @@ VALUES (:'inv', :'vser', :'prod', 2, 900000, 1800000) RETURNING id AS item2 \gse
 DO $$
 DECLARE v_blocked boolean := false; v_item2 uuid;
 BEGIN
-  SELECT id INTO v_item2 FROM public.purchase_invoice_items WHERE qty=2 LIMIT 1;
+  SELECT ii2.id INTO v_item2 FROM public.purchase_invoice_items ii2 JOIN public.purchase_invoices pi ON pi.id=ii2.invoice_id WHERE pi.invoice_number='FC-REC-1' AND ii2.qty=2 LIMIT 1;
   BEGIN
     PERFORM public.receive_serialized_units(v_item2, ARRAY['DUP-1','DUP-1']);
   EXCEPTION WHEN unique_violation THEN v_blocked := true; END;
@@ -98,7 +98,7 @@ SET LOCAL "request.jwt.claims" = '{"sub":"00000000-0000-0000-0000-0000000000b2",
 DO $$
 DECLARE v_blocked boolean := false; v_item2 uuid;
 BEGIN
-  SELECT id INTO v_item2 FROM public.purchase_invoice_items WHERE qty=2 LIMIT 1;
+  SELECT ii2.id INTO v_item2 FROM public.purchase_invoice_items ii2 JOIN public.purchase_invoices pi ON pi.id=ii2.invoice_id WHERE pi.invoice_number='FC-REC-1' AND ii2.qty=2 LIMIT 1;
   BEGIN
     PERFORM public.receive_serialized_units(v_item2, ARRAY['SELLER-1']);
   EXCEPTION WHEN insufficient_privilege THEN v_blocked := true; END;
@@ -108,3 +108,23 @@ END $$;
 
 ROLLBACK;
 \echo '✔ TEST RECEIVE SERIALIZED OK — todos los asserts pasaron.'
+
+-- ============================================================
+-- TEST DE CARRERA (2 sesiones — no cabe en una transacción con ROLLBACK).
+-- Verifica el FOR UPDATE OF ii del guard anti-exceso: dos recepciones parciales
+-- CONCURRENTES de la MISMA línea (qty=3) que juntas exceden N → la primera
+-- commitea, la segunda BLOQUEA en el lock y luego FALLA con el mensaje de exceso
+-- (no ambas pasan). Resultado esperado: 2 unidades, no 4.
+--
+-- Procedimiento (fixtures committeados: línea qty=3, id=…c1):
+--   Sesión A:  BEGIN; SELECT receive_serialized_units('…c1', ARRAY['A1','A2']);
+--              SELECT pg_sleep(3); COMMIT;
+--   Sesión B:  (arranca ~1s después)
+--              BEGIN; SELECT receive_serialized_units('…c1', ARRAY['B1','B2']); COMMIT;
+--
+--   → A: 2 unidades committeadas.
+--   → B: ERROR 'Excede la cantidad de la línea. Cantidad=3, ya recibidas=2, intento=2.'
+--   → COUNT(units de la línea) = 2.
+--
+-- Validado en lab (2026-07): con FOR UPDATE OF ii el resultado es 2; sin él, 4.
+-- ============================================================

@@ -52,11 +52,18 @@ BEGIN
   END IF;
 
   -- Línea de factura + tienda.
+  -- FOR UPDATE OF ii: bloquea la fila de la LÍNEA para SERIALIZAR sus recepciones.
+  -- Sin esto, dos recepciones parciales concurrentes de la misma línea (seriales
+  -- distintos) leerían el mismo COUNT, ambas pasarían el guard anti-exceso y
+  -- juntas superarían N. Con el lock, la segunda espera y ve el COUNT ya
+  -- actualizado. También protege contra edición concurrente del qty durante la
+  -- recepción. Lock de una fila, vida corta (hasta el COMMIT de la llamada).
   SELECT ii.variant_id, ii.qty, ii.unit_cost, ii.invoice_id, pi.store_id
     INTO v_variant, v_qty, v_cost, v_invoice, v_store
     FROM public.purchase_invoice_items ii
     JOIN public.purchase_invoices pi ON pi.id = ii.invoice_id
-   WHERE ii.id = p_invoice_item_id;
+   WHERE ii.id = p_invoice_item_id
+   FOR UPDATE OF ii;
 
   IF v_variant IS NULL THEN
     RAISE EXCEPTION 'Línea de factura no encontrada. id=%', p_invoice_item_id
