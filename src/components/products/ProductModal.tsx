@@ -5,7 +5,8 @@ import { useCategories } from '@/hooks/useProducts'
 import { useProductMutations } from '@/hooks/useProductMutations'
 import { useConfigMutations } from '@/hooks/useConfigMutations'
 import { useResolvedConfig } from '@/hooks/useConfig'
-import { DEFAULT_SIZE_TYPE_ID, findSizeType } from '@/lib/sizeTypes'
+import { DEFAULT_SIZE_TYPE_ID, findSizeType, isUniqueSizeType } from '@/lib/sizeTypes'
+import { fmtCOP } from '@/lib/formatters'
 import type { Product } from '@/types/database.types'
 
 interface ProductModalProps {
@@ -18,7 +19,7 @@ interface ProductModalProps {
 
 export default function ProductModal({ product, initialName, onClose, onSaved }: ProductModalProps) {
   const { data: categories = [] } = useCategories()
-  const { create, update, uploadImage } = useProductMutations()
+  const { create, createSimple, update, uploadImage } = useProductMutations()
   const config = useResolvedConfig()
   const sizeTypes = config.size_types
   const brands = config.brands
@@ -29,6 +30,16 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
   const [categoryId, setCategoryId] = useState(product?.category_id ?? '')
   const [description, setDescription] = useState(product?.description ?? '')
   const [sizeType, setSizeType] = useState<string>(product?.size_type ?? DEFAULT_SIZE_TYPE_ID)
+  // Fase 2: is_serialized se fija al CREAR (A1). Precio y stock inicial son del
+  // flujo "Única en un paso" (Bloque B) — la variante única se crea por debajo.
+  const [isSerialized, setIsSerialized] = useState(product?.is_serialized ?? false)
+  const [price, setPrice] = useState('')
+  const [costPrice, setCostPrice] = useState('')
+  const [initialStock, setInitialStock] = useState('')
+
+  // Producto de variante "Única" al CREAR → formulario de un paso.
+  const isUnique = isUniqueSizeType(sizeType)
+  const isSimpleCreate = !product && isUnique
 
   // Si el producto tiene un tipo de talla que ya no existe en la config
   // (ej. fue eliminado o renombrado), lo agregamos como opción extra para
@@ -89,9 +100,27 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
         size_type: sizeType,
       }
 
-      const saved = isEdit
-        ? await update.mutateAsync({ id: product.id, ...payload })
-        : await create.mutateAsync(payload)
+      let saved: Product
+      if (isEdit) {
+        saved = await update.mutateAsync({ id: product.id, ...payload })
+      } else if (isSimpleCreate) {
+        const priceNum = Math.round(parseFloat(price) || 0)
+        if (priceNum <= 0) {
+          toast.error('Ingresa un precio de venta válido')
+          setSubmitting(false)
+          return
+        }
+        const res = await createSimple.mutateAsync({
+          ...payload,
+          is_serialized: isSerialized,
+          price: priceNum,
+          cost_price: costPrice ? Math.round(parseFloat(costPrice)) : null,
+          initial_stock: Math.max(0, Math.round(parseFloat(initialStock) || 0)),
+        })
+        saved = res.product
+      } else {
+        saved = await create.mutateAsync({ ...payload, is_serialized: isSerialized })
+      }
 
       onSaved(saved)
     } catch {
@@ -122,9 +151,14 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
             <X size={14} />
           </button>
         </div>
-        {!isEdit && (
+        {!isEdit && !isUnique && (
           <p className="mb-5 text-sm text-slate-400">
             Las variantes (capacidad/color) se agregan después.
+          </p>
+        )}
+        {isSimpleCreate && (
+          <p className="mb-5 text-sm text-slate-400">
+            Producto de variante única: captura precio y stock aquí mismo.
           </p>
         )}
 
@@ -235,9 +269,86 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
               ))}
             </select>
             <p className="mt-1 text-[11px] text-slate-400">
-              Define qué valores de variante estarán disponibles al agregar variantes.
+              {isUnique
+                ? 'Variante única: sin selector de variante en ventas ni inventario.'
+                : 'Define qué valores de variante estarán disponibles al agregar variantes.'}
             </p>
           </div>
+
+          {/* Serializado (se fija al crear) */}
+          {!isEdit && (
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <input
+                type="checkbox"
+                checked={isSerialized}
+                onChange={(e) => setIsSerialized(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-cyan-500"
+              />
+              <span className="text-xs text-slate-600">
+                <span className="block font-semibold text-slate-700">
+                  Equipo serializado (IMEI/serial)
+                </span>
+                Cada unidad es única y rastreable. El stock se lleva por unidades,
+                no por cantidad. No se puede cambiar luego de tener unidades o ventas.
+              </span>
+            </label>
+          )}
+
+          {/* Única en un paso: precio + stock inicial */}
+          {isSimpleCreate && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                  Precio de venta *
+                </label>
+                <input
+                  inputMode="numeric"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value.replace(/[^\d]/g, ''))}
+                  placeholder="0"
+                  className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm tabular-nums outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
+                />
+                {price && (
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    {fmtCOP(parseFloat(price) || 0)}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                  Costo (opcional)
+                </label>
+                <input
+                  inputMode="numeric"
+                  value={costPrice}
+                  onChange={(e) => setCostPrice(e.target.value.replace(/[^\d]/g, ''))}
+                  placeholder="0"
+                  className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm tabular-nums outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
+                />
+              </div>
+              <div className="col-span-2">
+                {isSerialized ? (
+                  <p className="rounded-lg bg-cyan-50 px-3 py-2 text-[11px] text-cyan-700">
+                    Las unidades (IMEI/serial) se cargan desde Inventario o al recibir
+                    la compra. El producto nace con 0 unidades.
+                  </p>
+                ) : (
+                  <>
+                    <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                      Stock inicial
+                    </label>
+                    <input
+                      inputMode="numeric"
+                      value={initialStock}
+                      onChange={(e) => setInitialStock(e.target.value.replace(/[^\d]/g, ''))}
+                      placeholder="0"
+                      className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm tabular-nums outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Description */}
           <div>
@@ -262,14 +373,16 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
             </button>
             <button
               type="submit"
-              disabled={submitting || !name.trim()}
-              className="h-11 flex-[2] rounded-lg bg-cyan-500 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(139,92,246,0.35)] hover:bg-cyan-600 disabled:opacity-50"
+              disabled={submitting || !name.trim() || (isSimpleCreate && !price)}
+              className="h-11 flex-[2] rounded-lg bg-cyan-500 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(6,182,212,0.35)] hover:bg-cyan-600 disabled:opacity-50"
             >
               {submitting
                 ? 'Guardando…'
                 : isEdit
                   ? 'Guardar cambios'
-                  : 'Crear y agregar variantes'}
+                  : isUnique
+                    ? 'Crear producto'
+                    : 'Crear y agregar variantes'}
             </button>
           </div>
         </form>

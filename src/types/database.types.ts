@@ -90,7 +90,27 @@ export interface Product {
   store_id: string
   category_id: string | null
   size_type: string
+  is_serialized: boolean
   is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+// Fase 2 — unidades serializadas (IMEI/serial) sobre variantes.
+export type UnitStatus = 'disponible' | 'reservada' | 'vendida'
+
+export interface Unit {
+  id: string
+  organization_id: string
+  store_id: string
+  variant_id: string
+  serial: string
+  status: UnitStatus
+  cost: number | null
+  purchase_invoice_item_id: string | null
+  order_item_id: string | null
+  layaway_id: string | null
+  notas: string | null
   created_at: string
   updated_at: string
 }
@@ -176,6 +196,8 @@ export interface StockMovement {
   notes: string | null
   created_by: string
   created_at: string
+  // Fase 2 (042): unidad serializada del movimiento (NULL para accesorios).
+  unit_id: string | null
 }
 
 export interface Return {
@@ -523,10 +545,11 @@ export interface Database {
       }
       products: {
         Row: Product
-        Insert: Omit<Product, 'id' | 'created_at' | 'image_url'> & {
+        Insert: Omit<Product, 'id' | 'created_at' | 'image_url' | 'is_serialized'> & {
           id?: string
           created_at?: string
           image_url?: string | null
+          is_serialized?: boolean
         }
         Update: Partial<Omit<Product, 'id'>>
       }
@@ -538,6 +561,22 @@ export interface Database {
           is_active?: boolean
         }
         Update: Partial<Omit<Variant, 'id'>>
+      }
+      units: {
+        Row: Unit
+        // organization_id lo deriva un trigger desde store_id; status/timestamps
+        // tienen default.
+        Insert: Omit<
+          Unit,
+          'id' | 'organization_id' | 'status' | 'created_at' | 'updated_at'
+        > & {
+          id?: string
+          organization_id?: string
+          status?: UnitStatus
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Omit<Unit, 'id' | 'organization_id'>>
       }
       customers: {
         Row: Customer
@@ -576,7 +615,11 @@ export interface Database {
       }
       stock_movements: {
         Row: StockMovement
-        Insert: Omit<StockMovement, 'id' | 'created_at'> & { id?: string; created_at?: string }
+        Insert: Omit<StockMovement, 'id' | 'created_at' | 'unit_id'> & {
+          id?: string
+          created_at?: string
+          unit_id?: string | null
+        }
         Update: Partial<Omit<StockMovement, 'id'>>
       }
       returns: {

@@ -18,6 +18,15 @@ export const DEFAULT_SIZE_TYPES: SizeTypeConfig[] = [
 
 export const DEFAULT_SIZE_TYPE_ID = 'unique'
 export const CUSTOM_SIZE_TYPE_ID = 'custom'
+export const UNIQUE_SIZE_TYPE_ID = 'unique'
+
+// Un producto de tipo "Única" tiene UNA sola variante que debe ser INVISIBLE en
+// la UI (POS, inventario, reportes, devoluciones): sin selector ni etiqueta de
+// variante. La variante existe siempre en el modelo (heredado de G-Mura), pero
+// para 'unique' se crea con size/color en NULL y no se muestra. Fase 2, Bloque B.
+export function isUniqueSizeType(id: string | null | undefined): boolean {
+  return id === UNIQUE_SIZE_TYPE_ID
+}
 
 // Resuelve el tipo de talla configurado a partir de su id. Devuelve undefined
 // si el id no existe en la lista (ej. productos legacy con un tipo eliminado).

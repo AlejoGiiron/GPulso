@@ -13,6 +13,7 @@ export type VariantRow = Variant & {
     name: string
     brand: string | null
     category_id: string | null
+    is_serialized: boolean
     categories: { id: string; name: string } | null
   }
   /** Disponible = stock_qty - reserved_qty (precalculado en cliente). */
@@ -51,7 +52,7 @@ export function useStockLevels() {
         .select(`
           *,
           products!inner(
-            id, name, brand, category_id,
+            id, name, brand, category_id, is_serialized,
             categories(id, name)
           )
         `)

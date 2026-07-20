@@ -8,6 +8,11 @@ export interface CartItem {
   brand: string | null
   size: string | null
   color: string | null
+  // Fase 2: línea de EQUIPO serializado. unit_id/serial identifican la unidad
+  // EXACTA vendida. Para accesorios ambos van null. Una unidad = una línea
+  // (qty fija en 1, sin stepper). La identidad de línea es lineKey().
+  unit_id: string | null
+  serial: string | null
   // Precio FINAL editable (con descuento por ítem aplicado). Arranca igual a
   // list_price (sin descuento) y se baja con setItemPrice respetando el tope.
   unit_price: number
@@ -43,17 +48,34 @@ export function clampItemPrice(
   return Math.round(Math.min(Math.max(fp, min), listPrice))
 }
 
+// Identidad de una línea del carrito: la unidad serializada si la hay, si no la
+// variante. Un accesorio se agrupa por variante; cada equipo es su propia línea.
+export function lineKey(item: Pick<CartItem, 'unit_id' | 'variant_id'>): string {
+  return item.unit_id ?? item.variant_id
+}
+
 interface CartStore {
   items: CartItem[]
   customer_id: string | null
   addItem: (
-    item: Omit<CartItem, 'qty' | 'isGift' | 'giftReason' | 'prevUnitPrice'>,
+    item: Omit<
+      CartItem,
+      | 'qty'
+      | 'isGift'
+      | 'giftReason'
+      | 'prevUnitPrice'
+      | 'unit_id'
+      | 'serial'
+      | 'unit_price'
+    > & { unit_id?: string | null; serial?: string | null; unit_price?: number },
   ) => void
-  removeItem: (variant_id: string) => void
-  setQty: (variant_id: string, qty: number) => void
+  // Todas las mutaciones de línea reciben la CLAVE de línea (lineKey): variant_id
+  // para accesorios, unit_id para equipos.
+  removeItem: (key: string) => void
+  setQty: (key: string, qty: number) => void
   // Fija el precio FINAL de la línea, clampeado a [max(0, list-tope), list].
   setItemPrice: (
-    variant_id: string,
+    key: string,
     finalPrice: number,
     maxItemDiscount: number,
   ) => void
@@ -61,7 +83,7 @@ interface CartStore {
   // previo; al desmarcar lo restaura. Un motivo inválido no marca (defensa
   // de coherencia con el CHECK de la BD).
   setItemGift: (
-    variant_id: string,
+    key: string,
     isGift: boolean,
     reason?: string | null,
   ) => void
@@ -75,23 +97,53 @@ export const useCartStore = create<CartStore>((set) => ({
 
   addItem: (newItem) =>
     set((s) => {
-      const existing = s.items.find((i) => i.variant_id === newItem.variant_id)
+      const unit_id = newItem.unit_id ?? null
+      const serial = newItem.serial ?? null
+
+      // EQUIPO serializado: cada unidad es su propia línea, qty fija en 1. No se
+      // agrupa; si la misma unidad ya está en el carrito, no se duplica.
+      if (unit_id) {
+        if (s.items.some((i) => i.unit_id === unit_id)) return s
+        return {
+          items: [
+            ...s.items,
+            {
+              ...newItem,
+              unit_id,
+              serial,
+              unit_price: newItem.list_price,
+              qty: 1,
+              stock_qty: 1, // una unidad; el stepper no aplica
+              isGift: false,
+              giftReason: null,
+              prevUnitPrice: null,
+            },
+          ],
+        }
+      }
+
+      // ACCESORIO: se agrupa por variante (comportamiento heredado).
+      const existing = s.items.find(
+        (i) => i.unit_id === null && i.variant_id === newItem.variant_id,
+      )
       if (existing) {
         const next = Math.min(existing.qty + 1, newItem.stock_qty)
         return {
           items: s.items.map((i) =>
-            i.variant_id === newItem.variant_id ? { ...i, qty: next } : i,
+            i.unit_id === null && i.variant_id === newItem.variant_id
+              ? { ...i, qty: next }
+              : i,
           ),
         }
       }
       if (newItem.stock_qty <= 0) return s
-      // Un ítem nuevo arranca sin descuento (unit_price = list_price) y sin
-      // regalo.
       return {
         items: [
           ...s.items,
           {
             ...newItem,
+            unit_id: null,
+            serial: null,
             unit_price: newItem.list_price,
             qty: 1,
             isGift: false,
@@ -102,23 +154,23 @@ export const useCartStore = create<CartStore>((set) => ({
       }
     }),
 
-  removeItem: (variant_id) =>
-    set((s) => ({ items: s.items.filter((i) => i.variant_id !== variant_id) })),
+  removeItem: (key) =>
+    set((s) => ({ items: s.items.filter((i) => lineKey(i) !== key) })),
 
-  setQty: (variant_id, qty) =>
+  setQty: (key, qty) =>
     set((s) => {
-      if (qty <= 0) return { items: s.items.filter((i) => i.variant_id !== variant_id) }
+      if (qty <= 0) return { items: s.items.filter((i) => lineKey(i) !== key) }
       return {
         items: s.items.map((i) =>
-          i.variant_id === variant_id ? { ...i, qty: Math.min(qty, i.stock_qty) } : i,
+          lineKey(i) === key ? { ...i, qty: Math.min(qty, i.stock_qty) } : i,
         ),
       }
     }),
 
-  setItemPrice: (variant_id, finalPrice, maxItemDiscount) =>
+  setItemPrice: (key, finalPrice, maxItemDiscount) =>
     set((s) => ({
       items: s.items.map((i) =>
-        i.variant_id === variant_id
+        lineKey(i) === key
           ? {
               ...i,
               unit_price: clampItemPrice(finalPrice, i.list_price, maxItemDiscount),
@@ -127,10 +179,10 @@ export const useCartStore = create<CartStore>((set) => ({
       ),
     })),
 
-  setItemGift: (variant_id, isGift, reason) =>
+  setItemGift: (key, isGift, reason) =>
     set((s) => ({
       items: s.items.map((i) => {
-        if (i.variant_id !== variant_id) return i
+        if (lineKey(i) !== key) return i
         if (isGift) {
           // Motivo inválido → no se marca (mantiene la coherencia del CHECK).
           if (!isValidGiftReason(reason ?? null)) return i

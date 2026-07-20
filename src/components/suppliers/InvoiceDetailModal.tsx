@@ -9,6 +9,9 @@ import {
   fmtInvoiceDate,
 } from '@/lib/invoices'
 import { PAYMENT_METHODS } from '@/lib/paymentMethods'
+import { usePermissions } from '@/hooks/usePermissions'
+import SerialCapturePanel from '@/components/inventory/SerialCapturePanel'
+import type { InvoiceItemDetail } from '@/hooks/usePurchaseInvoices'
 import PaymentModal from './PaymentModal'
 
 interface InvoiceDetailModalProps {
@@ -47,9 +50,11 @@ export default function InvoiceDetailModal({
 }: InvoiceDetailModalProps) {
   const { data, isLoading } = useInvoiceDetail(invoiceId)
   const cancelInvoice = useCancelInvoice()
+  const { can } = usePermissions()
   const [showPayment, setShowPayment] = useState(false)
   const [showCancel, setShowCancel] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
+  const [captureLine, setCaptureLine] = useState<InvoiceItemDetail | null>(null)
 
   const printId = useMemo(() => `invoice-print-${invoiceId}`, [invoiceId])
   useInvoicePrintStyle(printId)
@@ -184,6 +189,30 @@ export default function InvoiceDetailModal({
                               {it.sku ? ` · ${it.sku}` : ''}
                               {it.update_cost ? ' · costo actualizado' : ''}
                             </p>
+                            {it.is_serialized && (() => {
+                              const pending = it.qty - it.received_serials.length
+                              return (
+                                <div className="mt-1 flex items-center gap-2">
+                                  {pending > 0 ? (
+                                    <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                                      {pending} por recibir
+                                    </span>
+                                  ) : (
+                                    <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
+                                      Seriales completos
+                                    </span>
+                                  )}
+                                  {pending > 0 && can('inventario.gestionar') && (
+                                    <button
+                                      onClick={() => setCaptureLine(it)}
+                                      className="rounded-md border border-cyan-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-cyan-600 hover:bg-cyan-50"
+                                    >
+                                      Capturar seriales
+                                    </button>
+                                  )}
+                                </div>
+                              )
+                            })()}
                           </td>
                           <td className="px-3 py-2 text-right font-mono tabular-nums">
                             {it.qty}
@@ -335,6 +364,18 @@ export default function InvoiceDetailModal({
           invoiceNumber={data.invoice.invoice_number}
           pendingAmount={data.pending_amount}
           onClose={() => setShowPayment(false)}
+        />
+      )}
+
+      {captureLine && (
+        <SerialCapturePanel
+          invoiceItemId={captureLine.id}
+          productName={captureLine.product_name}
+          variantLabel={[captureLine.size, captureLine.color].filter(Boolean).join(' · ')}
+          qty={captureLine.qty}
+          existingSerials={captureLine.received_serials}
+          onClose={() => setCaptureLine(null)}
+          onDone={() => setCaptureLine(null)}
         />
       )}
 

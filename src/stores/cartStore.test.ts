@@ -4,6 +4,7 @@ import {
   orderTotals,
   clampItemPrice,
   minFinalPrice,
+  lineKey,
   useCartStore,
   type CartItem,
 } from './cartStore'
@@ -18,6 +19,8 @@ function item(
     brand: fields.brand ?? null,
     size: fields.size ?? null,
     color: fields.color ?? null,
+    unit_id: fields.unit_id ?? null,
+    serial: fields.serial ?? null,
     // Por defecto sin descuento: unit_price = list_price.
     unit_price: fields.unit_price ?? fields.list_price,
     list_price: fields.list_price,
@@ -346,5 +349,60 @@ describe('useCartStore.setItemGift', () => {
     const items = useCartStore.getState().items
     expect(items.find((i) => i.variant_id === 'a')!.isGift).toBe(true)
     expect(items.find((i) => i.variant_id === 'b')!.isGift).toBe(false)
+  })
+})
+
+// ── Carrito con equipos serializados (Fase 2) ─────────────────────────────────
+
+describe('useCartStore — equipos serializados', () => {
+  beforeEach(() => {
+    useCartStore.setState({ items: [], customer_id: null })
+  })
+
+  it('lineKey usa unit_id si lo hay, si no variant_id', () => {
+    expect(lineKey({ unit_id: 'u1', variant_id: 'v1' })).toBe('u1')
+    expect(lineKey({ unit_id: null, variant_id: 'v1' })).toBe('v1')
+  })
+
+  it('dos unidades de la MISMA variante son dos líneas (no se agrupan)', () => {
+    const base = { product_id: 'p1', name: 'iPhone', brand: null, size: '128GB', color: 'Azul', list_price: 1_000_000, stock_qty: 2 }
+    useCartStore.getState().addItem({ ...base, variant_id: 'v1', unit_id: 'u1', serial: 'IMEI-1' })
+    useCartStore.getState().addItem({ ...base, variant_id: 'v1', unit_id: 'u2', serial: 'IMEI-2' })
+    const items = useCartStore.getState().items
+    expect(items).toHaveLength(2)
+    expect(items.every((i) => i.qty === 1)).toBe(true)
+  })
+
+  it('agregar la MISMA unidad dos veces no la duplica', () => {
+    const u = { product_id: 'p1', name: 'iPhone', brand: null, size: null, color: null, list_price: 1_000_000, stock_qty: 1, variant_id: 'v1', unit_id: 'u1', serial: 'IMEI-1' }
+    useCartStore.getState().addItem(u)
+    useCartStore.getState().addItem(u)
+    expect(useCartStore.getState().items).toHaveLength(1)
+    expect(useCartStore.getState().items[0].qty).toBe(1)
+  })
+
+  it('setQty sobre un equipo se clampa a 1 (sin stepper)', () => {
+    useCartStore.getState().addItem({ product_id: 'p1', name: 'iPhone', brand: null, size: null, color: null, list_price: 1_000_000, stock_qty: 1, variant_id: 'v1', unit_id: 'u1', serial: 'IMEI-1' })
+    useCartStore.getState().setQty('u1', 5)
+    expect(useCartStore.getState().items[0].qty).toBe(1)
+  })
+
+  it('removeItem por unit_id quita solo esa unidad', () => {
+    const base = { product_id: 'p1', name: 'iPhone', brand: null, size: null, color: null, list_price: 1_000_000, stock_qty: 2 }
+    useCartStore.getState().addItem({ ...base, variant_id: 'v1', unit_id: 'u1', serial: 'IMEI-1' })
+    useCartStore.getState().addItem({ ...base, variant_id: 'v1', unit_id: 'u2', serial: 'IMEI-2' })
+    useCartStore.getState().removeItem('u1')
+    const items = useCartStore.getState().items
+    expect(items).toHaveLength(1)
+    expect(items[0].unit_id).toBe('u2')
+  })
+
+  it('un accesorio (unit_id null) sigue agrupándose por variante', () => {
+    const acc = { product_id: 'p2', name: 'Cargador', brand: null, size: null, color: null, list_price: 50_000, stock_qty: 10, variant_id: 'va' }
+    useCartStore.getState().addItem(acc)
+    useCartStore.getState().addItem(acc)
+    const items = useCartStore.getState().items
+    expect(items).toHaveLength(1)
+    expect(items[0].qty).toBe(2)
   })
 })

@@ -7,6 +7,7 @@ import ProductModal from '@/components/products/ProductModal'
 import VariantsPanel from '@/components/products/VariantsPanel'
 import { fmtCOP } from '@/lib/formatters'
 import { getColorHex, sortSizes, stockState, priceRange } from '@/lib/products'
+import { isUniqueSizeType } from '@/lib/sizeTypes'
 import type { ProductWithDetails } from '@/hooks/useProducts'
 import type { Product, Variant } from '@/types/database.types'
 
@@ -50,6 +51,9 @@ function ProductHero({ product, variants, onEdit, onManageVariants }: ProductHer
   const totalStock = active.reduce((s, v) => s + v.stock_qty, 0)
   const oos = active.filter((v) => v.stock_qty === 0).length
   const low = active.filter((v) => v.stock_qty > 0 && v.stock_qty <= v.min_stock).length
+  // C4: para productos de variante Única, la variante es invisible (el producto
+  // ES la unidad de presentación) → sin stat "Variantes" ni gestión de variantes.
+  const isUnique = isUniqueSizeType(product.size_type)
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -105,7 +109,9 @@ function ProductHero({ product, variants, onEdit, onManageVariants }: ProductHer
           <div className="flex gap-6">
             {[
               { label: 'Stock total', value: totalStock, tone: null },
-              { label: 'Variantes', value: active.length, tone: null },
+              ...(isUnique
+                ? []
+                : [{ label: 'Variantes', value: active.length, tone: null }]),
               { label: 'Stock bajo', value: low, tone: low > 0 ? '#ea580c' : null },
               { label: 'Sin stock', value: oos, tone: oos > 0 ? '#dc2626' : null },
             ].map(({ label, value, tone }) => (
@@ -133,13 +139,15 @@ function ProductHero({ product, variants, onEdit, onManageVariants }: ProductHer
             <Edit2 size={13} />
             Editar
           </button>
-          <button
-            onClick={onManageVariants}
-            className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
-          >
-            <Layers size={13} />
-            Variantes
-          </button>
+          {!isUnique && (
+            <button
+              onClick={onManageVariants}
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            >
+              <Layers size={13} />
+              Variantes
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -314,33 +322,43 @@ function MatrixCell({ variant, bg, fg, isEditing, onEditStart, onEditCommit }: M
 interface VariantsTableProps {
   variants: Variant[]
   onManageVariants: () => void
+  isUnique?: boolean
 }
 
-function VariantsTable({ variants, onManageVariants }: VariantsTableProps) {
+function VariantsTable({ variants, onManageVariants, isUnique = false }: VariantsTableProps) {
   const active = variants.filter((v) => v.is_active)
+  // C4: en Única, la variante es invisible → sin columnas Variante/Color ni
+  // "Nueva variante". Se muestra precio/stock del producto como unidad.
+  const headers = isUnique
+    ? ['SKU', 'Código barras', 'Precio venta', 'Costo', 'Stock', 'Estado']
+    : ['Variante', 'Color', 'SKU', 'Código barras', 'Precio venta', 'Costo', 'Stock', 'Estado']
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
         <div>
           <h3 className="text-base font-semibold tracking-tight text-slate-900">
-            Detalle de variantes
+            {isUnique ? 'Precio y stock' : 'Detalle de variantes'}
           </h3>
-          <p className="text-xs text-slate-400">{active.length} variante{active.length !== 1 ? 's' : ''} activa{active.length !== 1 ? 's' : ''}</p>
+          {!isUnique && (
+            <p className="text-xs text-slate-400">{active.length} variante{active.length !== 1 ? 's' : ''} activa{active.length !== 1 ? 's' : ''}</p>
+          )}
         </div>
-        <button
-          onClick={onManageVariants}
-          className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 hover:bg-slate-50"
-        >
-          <Plus size={12} />
-          Nueva variante
-        </button>
+        {!isUnique && (
+          <button
+            onClick={onManageVariants}
+            className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 hover:bg-slate-50"
+          >
+            <Plus size={12} />
+            Nueva variante
+          </button>
+        )}
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50">
-              {['Variante', 'Color', 'SKU', 'Código barras', 'Precio venta', 'Costo', 'Stock', 'Estado'].map((h) => (
+              {headers.map((h) => (
                 <th
                   key={h}
                   className={`border-b border-slate-100 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 ${
@@ -355,20 +373,24 @@ function VariantsTable({ variants, onManageVariants }: VariantsTableProps) {
           <tbody>
             {active.map((v) => (
               <tr key={v.id} className="border-b border-slate-50 hover:bg-slate-50/50">
-                <td className="px-4 py-3">
-                  <span className="inline-flex h-6 min-w-[32px] items-center justify-center rounded-md bg-slate-100 px-2 text-xs font-semibold">
-                    {v.size ?? '—'}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <span className="flex items-center gap-1.5">
-                    <span
-                      className="h-3.5 w-3.5 flex-shrink-0 rounded-full shadow-[0_0_0_1px_rgba(0,0,0,0.1)]"
-                      style={{ background: getColorHex(v.color ?? '') }}
-                    />
-                    {v.color ?? '—'}
-                  </span>
-                </td>
+                {!isUnique && (
+                  <td className="px-4 py-3">
+                    <span className="inline-flex h-6 min-w-[32px] items-center justify-center rounded-md bg-slate-100 px-2 text-xs font-semibold">
+                      {v.size ?? '—'}
+                    </span>
+                  </td>
+                )}
+                {!isUnique && (
+                  <td className="px-4 py-3">
+                    <span className="flex items-center gap-1.5">
+                      <span
+                        className="h-3.5 w-3.5 flex-shrink-0 rounded-full shadow-[0_0_0_1px_rgba(0,0,0,0.1)]"
+                        style={{ background: getColorHex(v.color ?? '') }}
+                      />
+                      {v.color ?? '—'}
+                    </span>
+                  </td>
+                )}
                 <td className="px-4 py-3 font-mono text-xs text-slate-500">{v.sku ?? '—'}</td>
                 <td className="px-4 py-3 font-mono text-xs text-slate-400">{v.barcode ?? '—'}</td>
                 <td className="px-4 py-3 text-right font-mono text-sm">{fmtCOP(v.price)}</td>
@@ -385,7 +407,7 @@ function VariantsTable({ variants, onManageVariants }: VariantsTableProps) {
             ))}
             {active.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-sm text-slate-400">
+                <td colSpan={headers.length} className="px-4 py-8 text-center text-sm text-slate-400">
                   Sin variantes activas.{' '}
                   <button onClick={onManageVariants} className="text-cyan-500 hover:underline">
                     Agregar variante
@@ -450,8 +472,9 @@ export default function ProductsPage() {
   function handleProductSaved(product: Product) {
     setShowNewProduct(false)
     setEditingProduct(null)
-    // Open variants panel after creating a new product
-    if (!editingProduct) {
+    // Al crear un producto con variantes reales, abrir el panel para agregarlas.
+    // Los de variante Única ya nacen con su variante (flujo de un paso) → no.
+    if (!editingProduct && !isUniqueSizeType(product.size_type)) {
       setVariantsPanelProduct(product)
     }
     setSelectedId(product.id)
@@ -625,6 +648,7 @@ export default function ProductsPage() {
                   <VariantsTable
                     variants={variants}
                     onManageVariants={() => setVariantsPanelProduct(selectedProduct)}
+                    isUnique={isUniqueSizeType(selectedProduct.size_type)}
                   />
                 </>
               )}

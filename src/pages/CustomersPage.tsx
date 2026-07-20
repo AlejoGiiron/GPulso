@@ -37,6 +37,9 @@ import {
   useCreateCustomer,
   useUpdateCustomer,
 } from '@/hooks/useCustomerMutations'
+import { useCustomerUnits } from '@/hooks/useUnits'
+import { usePermissions } from '@/hooks/usePermissions'
+import UnitDetailModal from '@/components/inventory/UnitDetailModal'
 import { fmtCOP } from '@/lib/formatters'
 import type {
   CustomerListItem,
@@ -528,7 +531,7 @@ function ReturnRow({ ret }: { ret: CustomerReturn }) {
 
 // ── ProfileView ───────────────────────────────────────────────────────────────
 
-type ProfileTab = 'orders' | 'returns' | 'layaways'
+type ProfileTab = 'orders' | 'returns' | 'layaways' | 'equipos'
 
 // ── Layaways tab helpers ──────────────────────────────────────────────────────
 
@@ -615,6 +618,69 @@ function LayawaysTabContent({ customerId }: { customerId: string }) {
   }
 
   return <div>{rows.map((row) => <LayawayRow key={row.id} row={row} />)}</div>
+}
+
+// E2 — equipos serializados que el cliente posee HOY (unidades vendidas y
+// ligadas a sus órdenes). Cada uno abre su ficha (E1).
+function EquiposTabContent({ customerId }: { customerId: string }) {
+  const { data: units = [], isLoading } = useCustomerUnits(customerId)
+  const { can } = usePermissions()
+  const [detailUnitId, setDetailUnitId] = useState<string | null>(null)
+
+  if (isLoading) {
+    return (
+      <div className="space-y-px p-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="h-14 animate-pulse rounded-lg bg-slate-100" />
+        ))}
+      </div>
+    )
+  }
+  if (units.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f5f4f1]">
+          <Smartphone size={20} className="text-[#a8a29e]" />
+        </div>
+        <p className="text-sm text-[#737373]">Sin equipos comprados</p>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      {units.map((u) => {
+        const label = [u.size, u.color].filter(Boolean).join(' · ')
+        return (
+          <button
+            key={u.unit_id}
+            onClick={() => setDetailUnitId(u.unit_id)}
+            className="flex w-full items-center gap-3 border-b border-[#f5f4f1] px-6 py-3 text-left hover:bg-[#fafaf9]"
+          >
+            <Smartphone size={16} className="shrink-0 text-cyan-500" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-[#1a1a1a]">
+                {u.name}
+                {label ? <span className="text-[#a8a29e]"> · {label}</span> : null}
+              </p>
+              <p className="font-mono text-[12px] text-cyan-700">{u.serial}</p>
+            </div>
+            <div className="ml-auto text-right text-[11px] text-[#a8a29e]">
+              {u.order_number != null && <p>Orden #{u.order_number}</p>}
+              {u.bought_at && <p>{fmtDateShort(u.bought_at)}</p>}
+            </div>
+          </button>
+        )
+      })}
+      {detailUnitId && (
+        <UnitDetailModal
+          unitId={detailUnitId}
+          canSeeCost={can('inventario.gestionar')}
+          onClose={() => setDetailUnitId(null)}
+        />
+      )}
+    </div>
+  )
 }
 
 function ProfileView({
@@ -717,6 +783,7 @@ function ProfileView({
             { id: 'orders',    label: 'Compras',      icon: ShoppingBag, count: profile.orders.length  },
             { id: 'returns',   label: 'Devoluciones', icon: RotateCcw,   count: profile.returns.length },
             { id: 'layaways',  label: 'Separados',    icon: Bookmark,    count: null                    },
+            { id: 'equipos',   label: 'Equipos',      icon: Smartphone,  count: null                    },
           ] as { id: ProfileTab; label: string; icon: React.ElementType; count: number | null }[]
         ).map(({ id, label, icon: Icon, count }) => (
           <button
@@ -778,6 +845,12 @@ function ProfileView({
         {tab === 'layaways' && (
           <div className="rounded-none border-b border-[#ebe9e6] bg-white">
             <LayawaysTabContent customerId={profile.id} />
+          </div>
+        )}
+
+        {tab === 'equipos' && (
+          <div className="rounded-none border-b border-[#ebe9e6] bg-white">
+            <EquiposTabContent customerId={profile.id} />
           </div>
         )}
 

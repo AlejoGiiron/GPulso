@@ -2,246 +2,149 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from './useAuth'
 import { getActiveStoreId } from './useActiveStoreId'
-import { useCurrentShift } from './useCashShift'
-import { useResolvedConfig } from './useConfig'
 import toast from 'react-hot-toast'
 import { fmtCOP } from '@/lib/formatters'
 import type { Order, PaymentMethod } from '@/types/database.types'
 import { assertValidPayments, primaryPaymentMethod } from '@/lib/orderPayments'
-import { orderTotals, minFinalPrice } from '@/stores/cartStore'
+import { orderTotals } from '@/stores/cartStore'
 import type { CartItem } from '@/stores/cartStore'
 import { isValidGiftReason } from '@/lib/giftReasons'
 
-// Una línea de pago de la venta: método + monto. Una venta simple trae UNA
-// línea (amount = total); una venta MIXTA, varias. Σ amount == total.
+// Una línea de pago de la venta: método + monto.
 export interface OrderPaymentLine {
   method: PaymentMethod
   amount: number
 }
 
 export interface CreateOrderInput {
-  // Cada ítem lleva unit_price (precio final vendido) y list_price (catálogo).
-  // El descuento se deriva por ítem; ya no hay descuento global de cabecera.
   items: CartItem[]
   customer_id: string | null
-  // Pagos de la venta (order_payments, 032). Una o varias líneas; su suma debe
-  // ser igual al total (incluido el recargo). Reemplaza al payment_method único.
   payments: OrderPaymentLine[]
-  // Recibido en la línea EFECTIVO (para calcular el vuelto). Solo cash.
   cash_received?: number
-  // Recargo manual (ej. Addi). Se suma al total. Default 0.
   surcharge?: number
+}
+
+// Error de venta que además señala qué UNIDAD serializada se perdió (para que el
+// POS marque la línea en rojo). failedUnitId sale del mensaje de claim_unit.
+export class CreateOrderError extends Error {
+  failedUnitId: string | null
+  constructor(message: string, failedUnitId: string | null = null) {
+    super(message)
+    this.name = 'CreateOrderError'
+    this.failedUnitId = failedUnitId
+  }
+}
+
+// Extrae "unit_id=<uuid>" del mensaje crudo de la RPC (claim_unit) si lo trae.
+function extractFailedUnitId(message: string): string | null {
+  const m = message.match(/unit_id=([0-9a-fA-F-]{36})/)
+  return m ? m[1] : null
 }
 
 export function useCreateOrder() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
-  const { data: currentShift } = useCurrentShift()
-  const maxItemDiscount = useResolvedConfig().max_item_discount
 
   return useMutation({
     mutationFn: async (input: CreateOrderInput): Promise<Order> => {
       const storeId = getActiveStoreId(profile)
       const userId = profile?.id
-
       if (!storeId || !userId) {
-        throw new Error('Sesión inválida. Vuelve a iniciar sesión.')
+        throw new CreateOrderError('Sesión inválida. Vuelve a iniciar sesión.')
+      }
+      if (input.items.length === 0) {
+        throw new CreateOrderError('El carrito está vacío')
       }
 
-      if (input.items.length === 0) {
-        throw new Error('El carrito está vacío')
-      }
+      // Validación client-side (feedback rápido; el servidor revalida y el store
+      // ya clampeó el precio al tope). No re-chequea el mínimo por ítem acá.
       for (const item of input.items) {
         if (!item.variant_id || !item.product_id) {
-          throw new Error('Ítem inválido en el carrito (falta variante o producto)')
+          throw new CreateOrderError('Ítem inválido en el carrito (falta variante o producto)')
         }
-        if (item.qty <= 0) {
-          throw new Error(`Cantidad inválida para ${item.name}`)
-        }
+        if (item.qty <= 0) throw new CreateOrderError(`Cantidad inválida para ${item.name}`)
         if (item.unit_price < 0 || item.list_price < 0) {
-          throw new Error(`Precio inválido para ${item.name}`)
+          throw new CreateOrderError(`Precio inválido para ${item.name}`)
         }
-        // Defensa del modelo por ítem (el store ya clampa; esto atrapa
-        // anomalías antes de que el CHECK de la BD rechace el insert):
-        //  · el precio final no puede superar el catálogo (CHECK unit <= list)
-        //  · ni bajar del mínimo permitido por el tope configurado
         if (item.unit_price > item.list_price) {
-          throw new Error(
-            `Precio inválido para ${item.name}: el precio final (${fmtCOP(
-              item.unit_price,
-            )}) no puede superar el de catálogo (${fmtCOP(item.list_price)}).`,
+          throw new CreateOrderError(
+            `Precio inválido para ${item.name}: el final (${fmtCOP(item.unit_price)}) supera el catálogo (${fmtCOP(item.list_price)}).`,
           )
         }
         if (item.isGift) {
-          // Regalo: motivo de la lista + precio 0 (coherente con el CHECK
-          // order_items_gift_coherent de la 027). NO pasa por el tope de
-          // descuento: es un mecanismo aparte, gateado por ventas.regalo.
           if (!isValidGiftReason(item.giftReason)) {
-            throw new Error(
-              `Regalo sin motivo válido para ${item.name}.`,
-            )
+            throw new CreateOrderError(`Regalo sin motivo válido para ${item.name}.`)
           }
           if (item.unit_price !== 0) {
-            throw new Error(
-              `Un ítem de regalo debe tener precio 0 (${item.name}).`,
-            )
-          }
-        } else {
-          // No-regalo: respeta el mínimo permitido por el tope configurado.
-          const minFinal = minFinalPrice(item.list_price, maxItemDiscount)
-          if (item.unit_price < minFinal) {
-            throw new Error(
-              `Descuento no permitido para ${item.name}: el precio mínimo es ${fmtCOP(
-                minFinal,
-              )}.`,
-            )
+            throw new CreateOrderError(`Un ítem de regalo debe tener precio 0 (${item.name}).`)
           }
         }
       }
 
-      // Totales derivados de los ítems (subtotal catálogo, descuento derivado,
-      // total = finales + recargo). Misma fórmula/redondeo que el carrito.
-      const { subtotal, discount, surcharge, total } = orderTotals(
-        input.items,
-        input.surcharge,
-      )
-      if (total < 0) {
-        throw new Error('El total no puede ser negativo')
+      const { subtotal, discount, surcharge, total } = orderTotals(input.items, input.surcharge)
+      if (total < 0) throw new CreateOrderError('El total no puede ser negativo')
+
+      assertValidPayments(input.payments, total)
+      const primaryMethod = primaryPaymentMethod(input.payments)
+
+      // Venta ATÓMICA en servidor (migración 041): orden + ítems + claims de
+      // unidades + pagos, todo o nada. Retira el multi-INSERT client-side.
+      const p_items = input.items.map((it) => ({
+        variant_id: it.variant_id,
+        product_id: it.product_id,
+        qty: it.qty,
+        unit_price: it.unit_price,
+        list_price: it.list_price,
+        is_gift: it.isGift,
+        gift_reason: it.isGift ? it.giftReason : null,
+        // Equipo serializado: la unidad EXACTA a reclamar. Accesorio: null.
+        unit_id: it.unit_id,
+      }))
+      const p_payments = input.payments.map((p) => ({ method: p.method, amount: p.amount }))
+
+      const { data: orderId, error } = await supabase.rpc('create_order' as never, {
+        p_customer_id: input.customer_id,
+        p_cash_received: input.cash_received ?? null,
+        p_subtotal: subtotal,
+        p_discount: discount,
+        p_surcharge: surcharge,
+        p_total: total,
+        p_primary_method: primaryMethod,
+        p_items,
+        p_payments,
+      } as never)
+
+      if (error) {
+        throw new CreateOrderError(error.message, extractFailedUnitId(error.message))
       }
 
-      // Validación de las líneas de pago (pagos mixtos, 032): ≥1 línea, método
-      // válido (no 'credit'), monto > 0, sin método repetido y Σ montos == total
-      // (tolerancia de centavos). Lógica pura testeada en lib/orderPayments.
-      const lines = input.payments
-      assertValidPayments(lines, total)
-
-      // orders.payment_method = método PRIMARIO (el de mayor monto; desempate
-      // estable). Denormalización legacy: el cuadre y los reportes ya leen
-      // order_payments, no este campo. Para una venta de un solo método es ese
-      // método (idéntico a antes); evita agregar 'mixed' al enum.
-      const primaryMethod = primaryPaymentMethod(lines)
-
-      console.info('[useCreateOrder] Creando orden…', {
-        items: input.items.length,
-        total,
-        surcharge,
-        payments: lines.length,
-        primaryMethod,
-      })
-
-      const { data: order, error: orderError } = await supabase
+      // La RPC devuelve el uuid; traemos la orden para el ticket.
+      const { data: order, error: fetchErr } = await supabase
         .from('orders')
-        .insert({
-          store_id: storeId,
-          customer_id: input.customer_id,
-          created_by: userId,
-          status: 'completed',
-          subtotal,
-          discount,
-          surcharge,
-          total,
-          payment_method: primaryMethod,
-          cash_received: input.cash_received ?? null,
-          // Imputa la venta al turno abierto de la tienda (026). El POS exige
-          // turno para vender, así que normalmente estará presente; null si no.
-          shift_id: currentShift?.id ?? null,
-        } as never)
         .select()
+        .eq('id' as never, orderId as never)
         .single()
-
-      if (orderError || !order) {
-        console.error('[useCreateOrder] Error insertando orden:', orderError)
-        throw new Error(
-          `Error al guardar venta: ${orderError?.message ?? 'desconocido'}`,
-        )
+      if (fetchErr || !order) {
+        // La venta SÍ se guardó (la RPC commiteó); solo falló el fetch del ticket.
+        throw new CreateOrderError('Venta guardada, pero no se pudo cargar el comprobante. Búscala en el historial.')
       }
-
-      const o = order as Order
-
-      // Rollback compensatorio: borra la orden recién creada. El ON DELETE
-      // CASCADE de order_payments y order_items limpia los hijos ya insertados
-      // (no hay transacciones en el cliente Supabase, de ahí el borrado manual).
-      const rollbackOrder = async (context: string) => {
-        const { error: rbErr } = await supabase
-          .from('orders')
-          .delete()
-          .eq('id' as never, o.id)
-        if (rbErr) {
-          console.error(`[useCreateOrder] Rollback (${context}) falló:`, rbErr)
-        }
-      }
-
-      // Líneas de pago (order_payments, 032). Se insertan ANTES que los ítems:
-      // si fallan, se borra la orden sin haber tocado stock (los ítems disparan
-      // la deducción). Una venta simple inserta una sola fila.
-      console.info(
-        `[useCreateOrder] Orden ${o.id} creada, insertando ${lines.length} pago(s)…`,
-      )
-      const { error: paymentsError } = await supabase.from('order_payments').insert(
-        lines.map((l) => ({
-          order_id: o.id,
-          store_id: storeId,
-          method: l.method,
-          amount: l.amount,
-        })) as never,
-      )
-      if (paymentsError) {
-        console.error(
-          '[useCreateOrder] Error insertando pagos, ejecutando rollback…',
-          paymentsError,
-        )
-        await rollbackOrder('order_payments')
-        throw new Error(`Error al guardar el pago: ${paymentsError.message}`)
-      }
-
-      console.info(
-        `[useCreateOrder] Insertando ${input.items.length} ítems…`,
-      )
-
-      const { error: itemsError } = await supabase.from('order_items').insert(
-        input.items.map((item) => ({
-          order_id: o.id,
-          variant_id: item.variant_id,
-          product_id: item.product_id,
-          qty: item.qty,
-          // unit_price = precio FINAL vendido; list_price = catálogo (NOT NULL
-          // en la BD). list_price es obligatorio: el `as never` lo ocultaría.
-          unit_price: item.unit_price,
-          list_price: item.list_price,
-          // Regalo: is_gift + motivo. Si no es regalo, gift_reason va NULL
-          // (coherente con el CHECK order_items_gift_coherent de la 027).
-          is_gift: item.isGift,
-          gift_reason: item.isGift ? item.giftReason : null,
-        })) as never,
-      )
-
-      if (itemsError) {
-        console.error(
-          '[useCreateOrder] Error insertando ítems, ejecutando rollback…',
-          itemsError,
-        )
-        await rollbackOrder('order_items')
-        throw new Error(`Error al guardar venta: ${itemsError.message}`)
-      }
-
-      console.info('[useCreateOrder] Ítems insertados correctamente')
-      return o
+      return order as Order
     },
 
-    onSuccess: (order) => {
-      console.info('✅ Orden creada:', order.id)
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['orders'] })
       void queryClient.invalidateQueries({ queryKey: ['sales-history'] })
       void queryClient.invalidateQueries({ queryKey: ['variants'] })
       void queryClient.invalidateQueries({ queryKey: ['products'] })
       void queryClient.invalidateQueries({ queryKey: ['pos-products'] })
+      void queryClient.invalidateQueries({ queryKey: ['units'] })
       void queryClient.invalidateQueries({ queryKey: ['stock-movements'] })
       void queryClient.invalidateQueries({ queryKey: ['customers'] })
       void queryClient.invalidateQueries({ queryKey: ['cash-shift'] })
     },
 
     onError: (err: Error) => {
-      console.error('[useCreateOrder] Mutación falló:', err)
+      // El POS maneja el fallo de claim (marca la línea); acá solo el toast base.
       toast.error(err.message)
     },
   })
