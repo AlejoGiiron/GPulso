@@ -52,6 +52,7 @@ export function useUnitMutations() {
         .select()
         .single()
       if (uErr) throw uErr
+      const unitId = (unit as { id: string }).id
 
       const { error: mErr } = await supabase.from('stock_movements').insert({
         variant_id,
@@ -60,6 +61,8 @@ export function useUnitMutations() {
         qty: 1,
         notes: notas?.trim() || 'Ingreso manual de unidad',
         created_by: profile!.id,
+        // Estampa la unidad (042) para la línea de tiempo del Bloque E.
+        unit_id: unitId,
       } as never)
       // Best-effort: si el movimiento falla, la unidad ya existe (no revertimos;
       // el stock es correcto por el trigger). Se avisa pero no rompe el ingreso.

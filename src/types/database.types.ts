@@ -196,6 +196,8 @@ export interface StockMovement {
   notes: string | null
   created_by: string
   created_at: string
+  // Fase 2 (042): unidad serializada del movimiento (NULL para accesorios).
+  unit_id: string | null
 }
 
 export interface Return {
@@ -613,7 +615,11 @@ export interface Database {
       }
       stock_movements: {
         Row: StockMovement
-        Insert: Omit<StockMovement, 'id' | 'created_at'> & { id?: string; created_at?: string }
+        Insert: Omit<StockMovement, 'id' | 'created_at' | 'unit_id'> & {
+          id?: string
+          created_at?: string
+          unit_id?: string | null
+        }
         Update: Partial<Omit<StockMovement, 'id'>>
       }
       returns: {
