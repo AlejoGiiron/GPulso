@@ -30,6 +30,7 @@ import {
   type SalesHistoryRow,
   type SaleDetail,
 } from '@/hooks/useSalesHistory'
+import { useOrderItemUnits } from '@/hooks/useUnits'
 import {
   DateRangeFilter,
   type DateRangeValue,
@@ -192,6 +193,9 @@ function SummaryCard({
 function SaleDetailRow({ detail }: { detail: SaleDetail }) {
   const navigate = useNavigate()
   const canReturn = detail.status !== 'cancelled'
+  // E3 — IMEIs de las líneas serializadas de esta venta.
+  const itemIds = useMemo(() => detail.items.map((i) => i.id), [detail.items])
+  const { data: unitsByItem = {} } = useOrderItemUnits(itemIds)
   const { data: storeData } = useStoreConfig()
   const storeName =
     (storeData as unknown as { name?: string } | undefined)?.name ?? 'G-Pulso'
@@ -265,12 +269,18 @@ function SaleDetailRow({ detail }: { detail: SaleDetail }) {
                     {item.product_name}
                   </p>
                   <p className="text-xs text-[#737373]">
-                    {[item.size ? `T.${item.size}` : null, item.color]
-                      .filter(Boolean)
-                      .join(' · ')}
-                    {' · '}
+                    {[item.size, item.color].filter(Boolean).join(' · ')}
+                    {(item.size || item.color) && ' · '}
                     {fmtCOP(item.unit_price)} c/u
                   </p>
+                  {(unitsByItem[item.id] ?? []).map((serial) => (
+                    <span
+                      key={serial}
+                      className="mt-0.5 mr-1 inline-block rounded bg-cyan-50 px-1.5 py-0.5 font-mono text-[11px] text-cyan-700"
+                    >
+                      IMEI {serial}
+                    </span>
+                  ))}
                 </div>
                 <span className="shrink-0 text-xs text-[#737373]">
                   ×{item.qty}

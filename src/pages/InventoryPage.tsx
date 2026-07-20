@@ -23,6 +23,7 @@ import { useVariantUnits } from '@/hooks/useUnits'
 import UnitList from '@/components/inventory/UnitList'
 import AddUnitModal from '@/components/inventory/AddUnitModal'
 import SerialSearchModal from '@/components/inventory/SerialSearchModal'
+import UnitDetailModal from '@/components/inventory/UnitDetailModal'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useCategories } from '@/hooks/useProducts'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -158,11 +159,13 @@ function ExpandedUnitsRow({
   colSpan,
   canSeeCost,
   onAddUnit,
+  onUnitClick,
 }: {
   variantId: string
   colSpan: number
   canSeeCost: boolean
   onAddUnit: () => void
+  onUnitClick: (unitId: string) => void
 }) {
   const { data: units = [], isLoading } = useVariantUnits(variantId)
   return (
@@ -183,7 +186,12 @@ function ExpandedUnitsRow({
               </button>
             )}
           </div>
-          <UnitList units={units} canSeeCost={canSeeCost} loading={isLoading} />
+          <UnitList
+            units={units}
+            canSeeCost={canSeeCost}
+            loading={isLoading}
+            onUnitClick={onUnitClick}
+          />
         </div>
       </td>
     </tr>
@@ -523,6 +531,7 @@ export default function InventoryPage() {
   const [expandedVariant, setExpandedVariant] = useState<string | null>(null)
   const [addUnitTarget, setAddUnitTarget] = useState<VariantRow | null>(null)
   const [showSerialSearch, setShowSerialSearch] = useState(false)
+  const [detailUnitId, setDetailUnitId] = useState<string | null>(null)
 
   // Stock tab filters
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -995,6 +1004,7 @@ export default function InventoryPage() {
                             colSpan={10}
                             canSeeCost={can('inventario.gestionar')}
                             onAddUnit={() => setAddUnitTarget(v)}
+                            onUnitClick={setDetailUnitId}
                           />
                         )}
                         </Fragment>
@@ -1238,6 +1248,13 @@ export default function InventoryPage() {
           productName={addUnitTarget.products.name}
           variantLabel={[addUnitTarget.size, addUnitTarget.color].filter(Boolean).join(' · ')}
           onClose={() => setAddUnitTarget(null)}
+        />
+      )}
+      {detailUnitId && (
+        <UnitDetailModal
+          unitId={detailUnitId}
+          canSeeCost={can('inventario.gestionar')}
+          onClose={() => setDetailUnitId(null)}
         />
       )}
     </>

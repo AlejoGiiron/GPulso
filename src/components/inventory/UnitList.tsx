@@ -9,11 +9,19 @@ interface UnitListProps {
   canSeeCost: boolean
   loading?: boolean
   emptyText?: string
+  /** Si se pasa, cada fila abre la ficha de la unidad (E1). */
+  onUnitClick?: (unitId: string) => void
 }
 
 // Lista de unidades serializadas: serial en JetBrains Mono, badge de estado,
 // costo (según permiso), fecha de ingreso y origen (factura). Fase 2, C1/E.
-export default function UnitList({ units, canSeeCost, loading, emptyText }: UnitListProps) {
+export default function UnitList({
+  units,
+  canSeeCost,
+  loading,
+  emptyText,
+  onUnitClick,
+}: UnitListProps) {
   if (loading) {
     return <p className="px-4 py-3 text-xs text-[#a8a29e]">Cargando unidades…</p>
   }
@@ -31,7 +39,13 @@ export default function UnitList({ units, canSeeCost, loading, emptyText }: Unit
         const meta = unitStatusMeta(u.status)
         const origin = u.purchase_invoice_items?.purchase_invoices?.invoice_number
         return (
-          <div key={u.id} className="flex items-center gap-3 px-4 py-2.5">
+          <div
+            key={u.id}
+            onClick={onUnitClick ? () => onUnitClick(u.id) : undefined}
+            className={`flex items-center gap-3 px-4 py-2.5 ${
+              onUnitClick ? 'cursor-pointer hover:bg-[#fafaf9]' : ''
+            }`}
+          >
             <span className="font-mono text-[13px] font-medium tracking-tight text-[#1a1a1a]">
               {u.serial}
             </span>

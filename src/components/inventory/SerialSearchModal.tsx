@@ -3,6 +3,7 @@ import { X, ScanLine } from 'lucide-react'
 import { useUnitBySerial } from '@/hooks/useUnits'
 import { useDebounce } from '@/hooks/useDebounce'
 import UnitList from './UnitList'
+import UnitDetailModal from './UnitDetailModal'
 
 interface SerialSearchModalProps {
   canSeeCost: boolean
@@ -16,6 +17,7 @@ export default function SerialSearchModal({ canSeeCost, onClose }: SerialSearchM
   const [term, setTerm] = useState('')
   const debounced = useDebounce(term, 300)
   const { data: unit, isFetching } = useUnitBySerial(debounced)
+  const [detailUnitId, setDetailUnitId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -84,11 +86,26 @@ export default function SerialSearchModal({ canSeeCost, onClose }: SerialSearchM
                   </p>
                 )}
               </div>
-              <UnitList units={[unit]} canSeeCost={canSeeCost} />
+              <UnitList
+                units={[unit]}
+                canSeeCost={canSeeCost}
+                onUnitClick={setDetailUnitId}
+              />
+              <p className="px-4 pb-3 text-[11px] text-slate-400">
+                Toca la unidad para ver su ficha e historial.
+              </p>
             </div>
           )}
         </div>
       </div>
+
+      {detailUnitId && (
+        <UnitDetailModal
+          unitId={detailUnitId}
+          canSeeCost={canSeeCost}
+          onClose={() => setDetailUnitId(null)}
+        />
+      )}
     </div>
   )
 }
