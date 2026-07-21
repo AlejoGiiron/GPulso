@@ -20,35 +20,47 @@ export interface RepairStatusMeta {
   dot: string
   /** Badge pill completo. */
   badge: string
-  /** Acento de la cabecera de columna. */
+  /** Acento de la cabecera de columna y del # de orden. */
   columnAccent: string
+  /** Borde izquierdo de color de la tarjeta del kanban. */
+  border: string
 }
 
 export const REPAIR_STATUS_META: Record<RepairStatus, RepairStatusMeta> = {
   recibido: {
     label: 'Recibido',
-    dot: 'bg-slate-400',
-    badge: 'bg-slate-100 text-slate-600 border border-slate-200',
-    columnAccent: 'text-slate-600',
+    dot: 'bg-indigo-400',
+    badge: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
+    columnAccent: 'text-indigo-600',
+    border: 'border-l-indigo-400',
   },
   en_reparacion: {
     label: 'En reparación',
-    dot: 'bg-cyan-500',
-    badge: 'bg-cyan-50 text-cyan-700 border border-cyan-200',
-    columnAccent: 'text-cyan-700',
+    dot: 'bg-amber-400',
+    badge: 'bg-amber-50 text-amber-700 border border-amber-200',
+    columnAccent: 'text-amber-600',
+    border: 'border-l-amber-400',
   },
   listo: {
     label: 'Listo',
-    dot: 'bg-emerald-500',
-    badge: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-    columnAccent: 'text-emerald-700',
+    dot: 'bg-cyan-500',
+    badge: 'bg-cyan-50 text-cyan-700 border border-cyan-200',
+    columnAccent: 'text-cyan-600',
+    border: 'border-l-cyan-500',
   },
   entregado: {
     label: 'Entregado',
-    dot: 'bg-slate-300',
-    badge: 'bg-slate-50 text-slate-500 border border-slate-200',
+    dot: 'bg-emerald-500',
+    badge: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
     columnAccent: 'text-slate-500',
+    border: 'border-l-slate-200',
   },
+}
+
+// Etiqueta de días transcurridos para el chip de la tarjeta: "Hoy" / "1 día" / "N días".
+export function repairAgeLabel(days: number): string {
+  if (days <= 0) return 'Hoy'
+  return days === 1 ? '1 día' : `${days} días`
 }
 
 // ── Checklist de recepción — DOS semánticas ─────────────────────────────────

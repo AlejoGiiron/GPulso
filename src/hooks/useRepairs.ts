@@ -22,6 +22,7 @@ export interface RepairBoardCard {
   marca: string
   modelo: string
   imei_serial: string | null
+  color: string | null
   falla_reportada: string
   precio: number | null
   created_at: string
@@ -50,6 +51,7 @@ interface RawBoardRow {
   marca: string
   modelo: string
   imei_serial: string | null
+  color: string | null
   falla_reportada: string
   precio: number | null
   created_at: string
@@ -58,7 +60,7 @@ interface RawBoardRow {
 }
 
 const BOARD_COLS =
-  'id, order_number, status, marca, modelo, imei_serial, falla_reportada, precio, created_at, delivered_at, customers(full_name, phone)'
+  'id, order_number, status, marca, modelo, imei_serial, color, falla_reportada, precio, created_at, delivered_at, customers(full_name, phone)'
 
 export function useRepairBoard() {
   const { profile } = useAuth()
@@ -121,6 +123,7 @@ export function useRepairBoard() {
         marca: r.marca,
         modelo: r.modelo,
         imei_serial: r.imei_serial,
+        color: r.color,
         falla_reportada: r.falla_reportada,
         precio: r.precio,
         created_at: r.created_at,
