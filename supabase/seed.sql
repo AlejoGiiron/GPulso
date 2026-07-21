@@ -99,3 +99,57 @@ BEGIN
 
   RAISE NOTICE 'seed OK: org Lab G-Pulso + tienda + 3 usuarios (admin/vendedora/tecnico @lab.local, pass lab12345).';
 END $$;
+
+-- ------------------------------------------------------------
+-- Datos DEMO del taller: clientes + órdenes en varios estados/edades para que el
+-- kanban se vea poblado (colores por columna, chips de días, costos). Idempotente.
+-- ------------------------------------------------------------
+DO $$
+DECLARE
+  v_store uuid := 'a0000000-0000-0000-0000-000000000010';
+  v_admin uuid := 'a0000000-0000-0000-0000-0000000000a1';
+BEGIN
+  -- Clientes demo.
+  INSERT INTO public.customers (id, full_name, phone, store_id) VALUES
+    ('b0000000-0000-0000-0000-000000000001', 'Ana Torres',     '3005551201', v_store),
+    ('b0000000-0000-0000-0000-000000000002', 'Miguel Sánchez', '3129084471', v_store),
+    ('b0000000-0000-0000-0000-000000000003', 'Carlos Ruiz',    '3014429087', v_store),
+    ('b0000000-0000-0000-0000-000000000004', 'Laura Gómez',    '3187742210', v_store),
+    ('b0000000-0000-0000-0000-000000000005', 'Pedro Ramírez',  '3001285567', v_store),
+    ('b0000000-0000-0000-0000-000000000006', 'Sofía Díaz',     '3156628890', v_store)
+  ON CONFLICT (id) DO NOTHING;
+
+  -- Órdenes de reparación (created_at controla los "días transcurridos").
+  INSERT INTO public.repair_orders
+    (id, store_id, customer_id, marca, modelo, imei_serial, falla_reportada, status, precio, received_by, created_at)
+  VALUES
+    ('c0000000-0000-0000-0000-000000000001', v_store, 'b0000000-0000-0000-0000-000000000001',
+     'Apple', 'iPhone 12', '350100111222333', 'La pantalla no responde al tacto en la mitad inferior.',
+     'recibido', NULL, v_admin, now()),
+    ('c0000000-0000-0000-0000-000000000002', v_store, 'b0000000-0000-0000-0000-000000000002',
+     'Samsung', 'Galaxy A32', '350100444555666', 'La batería se agota en pocas horas y se calienta.',
+     'recibido', NULL, v_admin, now() - interval '1 day'),
+    ('c0000000-0000-0000-0000-000000000003', v_store, 'b0000000-0000-0000-0000-000000000003',
+     'Xiaomi', 'Redmi Note 12', '350100777888999', 'No carga aunque se conecte; el conector se siente flojo.',
+     'en_reparacion', 150000, v_admin, now() - interval '3 days'),
+    ('c0000000-0000-0000-0000-000000000004', v_store, 'b0000000-0000-0000-0000-000000000004',
+     'Apple', 'MacBook Air 2019', 'C02XL0AAJGH5', 'No enciende ni da señales de carga.',
+     'en_reparacion', 400000, v_admin, now() - interval '5 days'),
+    ('c0000000-0000-0000-0000-000000000005', v_store, 'b0000000-0000-0000-0000-000000000005',
+     'Apple', 'iPhone 11', '350100123123123', 'Pantalla rota tras caída; táctil intermitente.',
+     'listo', 350000, v_admin, now() - interval '6 days'),
+    ('c0000000-0000-0000-0000-000000000006', v_store, 'b0000000-0000-0000-0000-000000000006',
+     'Motorola', 'Moto G60', '350100321321321', 'Puerto de carga suelto, no hace buen contacto.',
+     'listo', 180000, v_admin, now() - interval '7 days')
+  ON CONFLICT (id) DO NOTHING;
+
+  -- Repuestos demo (compra externa) para las órdenes con costo.
+  INSERT INTO public.repair_parts (id, repair_order_id, store_id, source, descripcion, costo, created_by) VALUES
+    ('d0000000-0000-0000-0000-000000000003', 'c0000000-0000-0000-0000-000000000003', v_store, 'compra_externa', 'Conector de carga', 38000, v_admin),
+    ('d0000000-0000-0000-0000-000000000004', 'c0000000-0000-0000-0000-000000000004', v_store, 'compra_externa', 'Placa de carga', 120000, v_admin),
+    ('d0000000-0000-0000-0000-000000000005', 'c0000000-0000-0000-0000-000000000005', v_store, 'compra_externa', 'Pantalla OLED', 210000, v_admin),
+    ('d0000000-0000-0000-0000-000000000006', 'c0000000-0000-0000-0000-000000000006', v_store, 'compra_externa', 'Flex puerto de carga', 55000, v_admin)
+  ON CONFLICT (id) DO NOTHING;
+
+  RAISE NOTICE 'seed demo OK: 6 clientes + 6 órdenes (recibido/en_reparacion/listo) + repuestos.';
+END $$;
