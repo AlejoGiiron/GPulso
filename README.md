@@ -58,16 +58,41 @@ de G-Pulso. Ver el patrón de RBAC y permisos en [`CLAUDE.md`](CLAUDE.md).
 
 ### Lab local (Docker Supabase)
 
+> **Aislado de G-Mura.** `supabase/config.toml` usa `project_id = "gpulso"` → el
+> stack local es `supabase_*_gpulso`, con su propio volumen (ver FORKED_FROM.md).
+> Si el stack de G-Mura está corriendo, páralo antes (comparten los puertos
+> 54321/54322): `docker stop $(docker ps -q --filter name=_gmura)`.
+
 ```bash
-supabase start                       # levanta el stack local
-# Aplica TODAS las migraciones sobre una BD virgen del contenedor:
+supabase start                       # levanta el stack local (esquema vacío)
+
+# Este set de migraciones NO se replaya con `supabase db reset` (necesita
+# check_function_bodies=false + el preflight de la 006); por eso db.seed está
+# DESHABILITADO y se migra + siembra a mano:
 ./scripts/apply-migrations-fresh.sh \
   --db-url "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
   --with-grants                      # --with-grants: GRANTs de tabla (Supabase real ya los trae)
 
-# Carga en .env la URL y anon key locales:
-supabase status                      # imprime API URL (54321) y anon key
+# Siembra datos de laboratorio (org + tienda + 3 usuarios de prueba):
+docker run --rm -i --add-host=host.docker.internal:host-gateway postgres:17 \
+  psql "postgresql://postgres:postgres@host.docker.internal:54322/postgres" \
+  -v ON_ERROR_STOP=1 < supabase/seed.sql
+
+# Carga en .env la URL y la key locales:
+supabase status                      # imprime API URL (54321) y la Publishable key
+# .env → VITE_GPULSO_SUPABASE_URL=http://127.0.0.1:54321
+#        VITE_GPULSO_SUPABASE_ANON_KEY=sb_publishable_…   (la Publishable de `supabase status`)
+# Reinicia `npm run dev` tras cambiar el .env (Vite lee las env al arrancar).
 ```
+
+**Usuarios de laboratorio** (seed idempotente, `supabase/seed.sql`; todos con la
+contraseña `lab12345`). Los tres cubren los cortes de permiso del taller:
+
+| Email | Rol | Puede |
+|-------|-----|-------|
+| `admin@lab.local` | Administrador | Todo (ve el grupo **Taller**, ve costos de repuestos, cobra) |
+| `vendedora@lab.local` | Vendedor | Recibe equipos y **cobra** entregas; **NO** ve costos de repuestos |
+| `tecnico@lab.local` | Técnico | Gestiona el taller y **ve costos**; **NO** vende (no puede cobrar) |
 
 Auditoría rápida de RLS (no debe devolver filas):
 
