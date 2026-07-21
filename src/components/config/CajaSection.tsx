@@ -116,6 +116,8 @@ export default function CajaSection() {
     useState<LayawayInitialPaymentMode>('none')
   const [layawayInitialValue, setLayawayInitialValue] = useState('')
   const [layawayDefaultDays, setLayawayDefaultDays] = useState('')
+  const [commissionAmount, setCommissionAmount] = useState('')
+  const [commissionWorkerPct, setCommissionWorkerPct] = useState('')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -127,6 +129,10 @@ export default function CajaSection() {
     setLayawayInitialMode(config.layaway_initial_payment_mode)
     setLayawayInitialValue(String(config.layaway_initial_payment_value ?? 0))
     setLayawayDefaultDays(String(config.layaway_default_days ?? 90))
+    setCommissionAmount(String(config.commission_default_amount ?? 100000))
+    setCommissionWorkerPct(
+      String(Math.round((config.commission_worker_share ?? 0.5) * 100)),
+    )
   }, [store, config])
 
   function addReason() {
@@ -206,6 +212,16 @@ export default function CajaSection() {
       return
     }
 
+    const commAmount = Math.max(0, parseInt(commissionAmount || '0', 10) || 0)
+    if (commAmount <= 0) {
+      toast.error('El monto por defecto de la comisión debe ser mayor que 0')
+      return
+    }
+    const workerPct = Math.max(
+      0,
+      Math.min(100, parseInt(commissionWorkerPct || '0', 10) || 0),
+    )
+
     setSaving(true)
     try {
       await updateStoreConfig.mutateAsync({
@@ -215,6 +231,8 @@ export default function CajaSection() {
         layaway_initial_payment_mode: layawayInitialMode,
         layaway_initial_payment_value: initialValue,
         layaway_default_days: daysParsed,
+        commission_default_amount: commAmount,
+        commission_worker_share: workerPct / 100,
       })
       toast.success('Configuración de caja guardada')
     } catch {
@@ -448,6 +466,63 @@ export default function CajaSection() {
               Plazo máximo desde la fecha de creación. Máximo {MAX_LAYAWAY_DAYS}{' '}
               días.
             </p>
+          </div>
+        </div>
+
+        {/* Comisiones por crédito (Fase 4) */}
+        <div className="px-5 py-5">
+          <div className="mb-3 flex items-center gap-2">
+            <CreditCard size={13} className="text-[#737373]" />
+            <p className="text-[11px] font-semibold uppercase tracking-[.05em] text-[#737373]">
+              Comisiones por crédito
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Monto por defecto */}
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-[#525252]">
+                Monto por defecto
+              </label>
+              <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
+                <span className="text-xs text-[#a8a29e]">$</span>
+                <input
+                  value={commissionAmount}
+                  onChange={(e) =>
+                    setCommissionAmount(e.target.value.replace(/\D/g, ''))
+                  }
+                  placeholder="100000"
+                  inputMode="numeric"
+                  className="h-9 flex-1 bg-transparent font-mono text-sm outline-none"
+                />
+                <span className="text-xs text-[#a8a29e]">COP</span>
+              </div>
+              <p className="mt-1 text-[11px] text-[#a8a29e]">
+                Se puede cambiar al registrar cada comisión.
+              </p>
+            </div>
+
+            {/* Reparto al trabajador */}
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-[#525252]">
+                Parte del trabajador
+              </label>
+              <div className="flex items-center gap-2 rounded-lg border border-[#ebe9e6] px-3 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-100">
+                <input
+                  value={commissionWorkerPct}
+                  onChange={(e) =>
+                    setCommissionWorkerPct(e.target.value.replace(/\D/g, ''))
+                  }
+                  placeholder="50"
+                  inputMode="numeric"
+                  className="h-9 flex-1 bg-transparent font-mono text-sm outline-none"
+                />
+                <span className="text-xs text-[#a8a29e]">%</span>
+              </div>
+              <p className="mt-1 text-[11px] text-[#a8a29e]">
+                Por defecto 50%. El local recibe el resto.
+              </p>
+            </div>
           </div>
         </div>
 
