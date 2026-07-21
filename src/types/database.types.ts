@@ -562,6 +562,35 @@ export interface RepairPart {
   created_at: string
 }
 
+// ── Fase 4 — Comisiones por crédito ───────────────────────────────────────────
+
+/** efectivo → al cajón (se imputa al turno); consignacion → no toca caja. */
+export type CommissionMethod = 'efectivo' | 'consignacion'
+
+export interface CreditCommission {
+  id: string
+  organization_id: string
+  store_id: string
+  /** Día de la comisión (fecha civil de Bogotá). */
+  fecha: string
+  /** Trabajador que gestionó el crédito (a quién se le paga en la quincena). */
+  worker_id: string
+  /** Opcional: pueden no registrar el cliente. */
+  customer_id: string | null
+  /** Monto total de la comisión (CONFIGURABLE por tienda). */
+  monto_total: number
+  /** Reparto: monto_local + monto_trabajador = monto_total. */
+  monto_local: number
+  monto_trabajador: number
+  metodo: CommissionMethod
+  /** Turno al que se imputa la comisión en efectivo; NULL en consignación. */
+  shift_id: string | null
+  notas: string | null
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
 // ── Database schema ───────────────────────────────────────────────────────────
 
 export interface Database {
@@ -868,6 +897,13 @@ export interface Database {
       repair_parts: {
         Row: RepairPart
         // Se insertan solo vía RPC add_repair_part; no INSERT directo.
+        Insert: never
+        Update: never
+      }
+      credit_commissions: {
+        Row: CreditCommission
+        // Se registran solo vía RPC register_credit_commission; no INSERT
+        // directo (no hay política INSERT). Inmutables: sin UPDATE.
         Insert: never
         Update: never
       }
