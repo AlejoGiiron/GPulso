@@ -264,9 +264,24 @@ Que las funciones tengan el blindaje que se probó en lab, no solo que existan:
 ```bash
 MSYS_NO_PATHCONV=1 docker run --rm -i -e GPULSO_DB_URL postgres:17 \
   sh -c 'psql "$GPULSO_DB_URL"' <<'SQL'
--- deliver_repair: busca el turno POR TIENDA, SIN opened_by (regla de create_order)
-SELECT position('opened_by' in pg_get_functiondef('public.deliver_repair'::regproc)) = 0
-       AS turno_sin_opened_by;
+-- deliver_repair: el turno se busca POR TIENDA (store_id + closed_at), SIN
+-- opened_by (regla de create_order). IMPORTANTE: pg_get_functiondef incluye los
+-- COMENTARIOS del cuerpo, y hay uno que dice "...sin opened_by" → un substring
+-- ingenuo daría falso positivo. Se ignoran las líneas de comentario (las que,
+-- tras recortar espacios, empiezan por --) antes de buscar, y además se
+-- comprueba EN POSITIVO que la consulta a cash_shifts filtra por store_id.
+WITH code AS (
+  SELECT btrim(l) AS l
+  FROM regexp_split_to_table(
+         pg_get_functiondef('public.deliver_repair'::regproc), E'\n') AS l
+  WHERE btrim(l) NOT LIKE '--%'          -- descarta comentarios
+)
+SELECT
+  NOT EXISTS (SELECT 1 FROM code WHERE l ILIKE '%opened_by%')          AS turno_sin_opened_by,
+  EXISTS (SELECT 1 FROM code
+           WHERE l ILIKE '%cash_shifts%'
+             AND l ILIKE '%store_id%'
+             AND l ILIKE '%closed_at%')                                AS turno_por_tienda;
 -- deliver_repair: tiene el FOR UPDATE de la orden (serializa la doble entrega)
 SELECT pg_get_functiondef('public.deliver_repair'::regproc) LIKE '%FOR UPDATE%'
        AS deliver_tiene_for_update;
@@ -275,9 +290,12 @@ SELECT pg_get_functiondef('public.ensure_repair_service_variant'::regproc) LIKE 
        AS ensure_usa_do_update;
 SQL
 ```
-**Esperado:** `turno_sin_opened_by = t`, `deliver_tiene_for_update = t`,
-`ensure_usa_do_update = t`. Si alguno da `f` → se aplicó una versión vieja de la
-`045`: **detente**, revisa el archivo y re-aplica solo la `045`.
+**Esperado:** `turno_sin_opened_by = t`, `turno_por_tienda = t`,
+`deliver_tiene_for_update = t`, `ensure_usa_do_update = t`. Si `turno_sin_opened_by`
+diera `f` (opened_by en CÓDIGO real, no en comentario) → la regla del turno por
+tienda estaría rota: **detente** y revisa. Si `deliver_tiene_for_update` o
+`ensure_usa_do_update` dan `f` → se aplicó una versión vieja de la `045`:
+re-aplica solo la `045`.
 
 ### 3.6 ⭐ LA MÁS IMPORTANTE — CelFashion recibió el rol Técnico y los permisos
 
