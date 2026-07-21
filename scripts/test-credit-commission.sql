@@ -269,6 +269,44 @@ BEGIN
   RAISE NOTICE 'T11 OK: reasignación tras cierre; expectedCash sin cambio y traza guardada.';
 END $$;
 
+-- ── T13 — Anular una comisión YA anulada → RECHAZADO (no se pierde quién la
+--          anuló primero). ────────────────────────────────────────────────────
+DO $$
+DECLARE v_rev uuid; v_ok boolean := false;
+BEGIN
+  SELECT id INTO v_rev FROM public.credit_commissions WHERE reversed_at IS NOT NULL LIMIT 1;
+  BEGIN PERFORM public.reverse_credit_commission(v_rev);
+  EXCEPTION WHEN check_violation THEN v_ok := true;
+  END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'T13 FALLO: anular una ya anulada debía rechazar.'; END IF;
+  RAISE NOTICE 'T13 OK: no se puede anular una comisión ya anulada.';
+END $$;
+
+-- ── T14 — Reasignar una comisión ANULADA → RECHAZADO (no se le paga a nadie) ─
+DO $$
+DECLARE v_rev uuid; v_ok boolean := false;
+BEGIN
+  SELECT id INTO v_rev FROM public.credit_commissions WHERE reversed_at IS NOT NULL LIMIT 1;
+  BEGIN PERFORM public.reassign_commission_worker(v_rev, '00000000-0000-0000-0000-0000000000c1');
+  EXCEPTION WHEN check_violation THEN v_ok := true;
+  END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'T14 FALLO: reasignar una anulada debía rechazar.'; END IF;
+  RAISE NOTICE 'T14 OK: no se puede reasignar una comisión anulada.';
+END $$;
+
+-- ── T15 — Reasignar a un trabajador que NO es de la org → RECHAZADO ──────────
+DO $$
+DECLARE v_act uuid; v_ok boolean := false;
+BEGIN
+  SELECT id INTO v_act FROM public.credit_commissions WHERE reversed_at IS NULL LIMIT 1;
+  -- uuid inexistente → no pertenece a la organización.
+  BEGIN PERFORM public.reassign_commission_worker(v_act, '00000000-0000-0000-0000-0000000000f9');
+  EXCEPTION WHEN check_violation THEN v_ok := true;
+  END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'T15 FALLO: reasignar a un trabajador ajeno a la org debía rechazar.'; END IF;
+  RAISE NOTICE 'T15 OK: reasignar a un trabajador ajeno a la organización rechazado.';
+END $$;
+
 -- ── T12 — Worker sin permiso NO puede revertir NI reasignar (ni por API) ─────
 SET LOCAL "request.jwt.claims" = '{"sub":"00000000-0000-0000-0000-0000000000c2","role":"authenticated"}';
 DO $$
@@ -290,4 +328,4 @@ END $$;
 RESET ROLE;
 ROLLBACK;
 
-\echo '✔ TEST 048/050 OK — registro + RLS self-select + escritura RPC-only + reverso gateado + reasignación caja-safe.'
+\echo '✔ TEST 048/050 OK — registro + RLS self-select + escritura RPC-only + reverso gateado + reasignación caja-safe + guards (doble anulación / reasignar anulada / worker fuera de org).'

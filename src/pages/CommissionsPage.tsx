@@ -278,19 +278,28 @@ function CommissionTable({
                             <UserCog size={15} />
                           </button>
                           {/* Anular solo si es reversible (consignación o
-                              efectivo con turno abierto). */}
-                          <button
-                            onClick={() => setReversing(r)}
-                            disabled={!r.reversible}
-                            className="rounded-md p-1.5 text-[#a8a29e] enabled:hover:bg-red-50 enabled:hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
-                            title={
-                              r.reversible
-                                ? 'Anular comisión'
-                                : 'No se puede anular: efectivo de un turno ya cerrado'
-                            }
-                          >
-                            <Ban size={15} />
-                          </button>
+                              efectivo con turno abierto). Cuando NO lo es (efectivo
+                              de un turno ya cerrado) se muestra bloqueado CON la
+                              guía de cómo corregir — un botón bloqueado sin
+                              explicación es donde la gente inventa atajos. El
+                              tooltip va en un <span> (el hover no dispara sobre un
+                              <button> deshabilitado). */}
+                          {r.reversible ? (
+                            <button
+                              onClick={() => setReversing(r)}
+                              title="Anular comisión"
+                              className="rounded-md p-1.5 text-[#a8a29e] hover:bg-red-50 hover:text-red-600"
+                            >
+                              <Ban size={15} />
+                            </button>
+                          ) : (
+                            <span
+                              className="inline-flex cursor-help rounded-md p-1.5 text-[#d6d3d1]"
+                              title="El turno de esta comisión ya está cerrado. Para corregir el monto: registra la comisión correcta y haz el ajuste por Gastos en el turno de hoy."
+                            >
+                              <Ban size={15} />
+                            </span>
+                          )}
                         </div>
                       )}
                     </td>
