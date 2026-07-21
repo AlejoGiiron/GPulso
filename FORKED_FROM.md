@@ -68,6 +68,22 @@ en G-Mura.
 > Contraste: la migración `037_active_user_enforcement.sql` SÍ es portable (ver
 > "Deudas heredadas" #1) — es candidata a portear en sentido inverso a G-Mura.
 
+### Aislamiento del stack LOCAL de Supabase (`project_id`)
+
+El aislamiento del fork (Fase 1) cubrió repo, proyecto Supabase **cloud** y
+Vercel, pero **NO el stack local**: `supabase/config.toml` heredó
+`project_id = "gmura"`. Con ese id, `supabase start` en G-Pulso **reutilizaba el
+mismo stack de contenedores y el mismo volumen de datos** que el G-Mura local
+(puertos 54321/54322 compartidos) → la app de G-Pulso se conectaba a la BD local
+de G-Mura (datos espejo de producción del cliente de ropa).
+
+**Fix (2026-07-21):** `project_id = "gpulso"`. Ahora `supabase start` crea un
+stack propio (`supabase_*_gpulso`) con volumen aislado. **Específico de G-Pulso,
+NO portable** — G-Mura debe conservar su `project_id = "gmura"`. Verificado en su
+momento que la BD local de G-Mura NO tenía objetos de G-Pulso (`units`,
+`repair_orders`, `is_service`, etc.) → el escape nunca llegó a contaminar sus
+datos espejo, solo hacía que G-Pulso leyera los de G-Mura.
+
 ## Hallazgos a reportar a G-Mura (porteo de conocimiento inverso)
 
 Cosas descubiertas trabajando en G-Pulso que le sirven a G-Mura.

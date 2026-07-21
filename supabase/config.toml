@@ -2,7 +2,7 @@
 # https://supabase.com/docs/guides/local-development/cli/config
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
-project_id = "gmura"
+project_id = "gpulso"
 
 [api]
 enabled = true
@@ -52,7 +52,11 @@ max_client_conn = 100
 
 [db.migrations]
 # If disabled, migrations will be skipped during a db push or reset.
-enabled = true
+# Lab local: desactivado a propósito para que `supabase start` levante un
+# public VACÍO y restauremos el dump de produccion como fuente de verdad
+# (sin aplicar la 020 multi-tenancy). Volver a true para probar migraciones.
+# NOTA: este cambio es LOCAL (skip-worktree); el baseline commiteado es true.
+enabled = false
 # Specifies an ordered list of schema files that describe your database.
 # Supports glob patterns relative to supabase directory: "./schemas/*.sql"
 schema_paths = []
