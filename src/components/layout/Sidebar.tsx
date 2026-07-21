@@ -21,10 +21,12 @@ import {
   Truck,
   Building2,
   HandCoins,
+  Wrench,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useActiveLayawaysCount } from '@/hooks/useLayaways'
+import { useReadyRepairsCount } from '@/hooks/useRepairs'
 import { Logo } from './Logo'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -45,6 +47,17 @@ function ActiveLayawaysBadge() {
   if (count <= 0) return null
   return (
     <span className="ml-auto inline-flex min-w-[18px] items-center justify-center rounded-full bg-cyan-500 px-1.5 text-[10px] font-semibold text-white">
+      {count > 99 ? '99+' : count}
+    </span>
+  )
+}
+
+// Equipos LISTOS esperando retiro (emerald = acción pendiente de cobro).
+function ReadyRepairsBadge() {
+  const { data: count = 0 } = useReadyRepairsCount()
+  if (count <= 0) return null
+  return (
+    <span className="ml-auto inline-flex min-w-[18px] items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[10px] font-semibold text-white">
       {count > 99 ? '99+' : count}
     </span>
   )
@@ -78,6 +91,20 @@ const NAV_GROUPS: NavGroup[] = [
         Badge: ActiveLayawaysBadge,
       },
       { label: 'Devoluciones', path: '/devoluciones', icon: Undo2, permission: 'devoluciones.gestionar' },
+    ],
+  },
+  {
+    id: 'taller',
+    label: 'Taller',
+    icon: Wrench,
+    items: [
+      {
+        label: 'Reparaciones',
+        path: '/reparaciones',
+        icon: Wrench,
+        permission: 'reparaciones.gestionar',
+        Badge: ReadyRepairsBadge,
+      },
     ],
   },
   {

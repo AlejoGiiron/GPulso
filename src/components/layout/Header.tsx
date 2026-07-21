@@ -10,6 +10,7 @@ import {
 } from './CashShiftModals'
 import { LayawayNotifications } from './LayawayNotifications'
 import { SupplierNotifications } from './SupplierNotifications'
+import { RepairsReadyBell } from './RepairsReadyBell'
 import { StoreSwitcher } from './StoreSwitcher'
 
 function getBogoTime(): string {
@@ -79,6 +80,8 @@ export default function Header() {
           )}
 
           {can('compras.gestionar') && <SupplierNotifications />}
+
+          {can('reparaciones.gestionar') && <RepairsReadyBell />}
 
           <span className="h-5 w-px bg-gray-200" />
 
