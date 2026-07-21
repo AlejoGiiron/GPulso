@@ -599,3 +599,81 @@ describe('calculateShiftSummary — pagos MIXTOS (032, Fase 2)', () => {
     expect(r.salesByMethod.find((s) => s.method === 'card')?.total).toBe(30_000)
   })
 })
+
+// ── Comisiones por crédito en efectivo (Fase 4) ────────────────────────────────
+describe('calculateShiftSummary — comisiones por crédito', () => {
+  it('comisión en efectivo sube cashSales y expectedCash como bucket propio', () => {
+    const r = calculateShiftSummary({
+      openingAmount: 100_000,
+      orders: [order('o1', 50_000)],
+      layawayPayments: [],
+      commissionIncomes: [{ amount: 50_000 }],
+      expenses: [],
+    })
+    // 100k apertura + 50k venta + 50k comisión = 200k esperado
+    expect(r.commissionsIncome).toBe(50_000)
+    expect(r.cashSales).toBe(100_000)
+    expect(r.expectedCash).toBe(200_000)
+  })
+
+  it('la comisión NO es venta: no entra a salesByMethod ni a regularSalesTotal', () => {
+    const r = calculateShiftSummary({
+      openingAmount: 0,
+      orders: [order('o1', 30_000, 'card')], // venta que NO es efectivo
+      layawayPayments: [],
+      commissionIncomes: [{ amount: 100_000 }],
+      expenses: [],
+    })
+    expect(r.regularSalesTotal).toBe(30_000) // solo la venta
+    expect(r.totalSales).toBe(30_000) // la comisión no infla ventas
+    expect(r.orderCount).toBe(1)
+    // La comisión no crea una fila de método (no es una venta).
+    const methods = r.salesByMethod.map((s) => s.method)
+    expect(methods).toEqual(['card'])
+    // Pero SÍ es efectivo en el cajón → sube el esperado.
+    expect(r.cashSales).toBe(100_000)
+    expect(r.expectedCash).toBe(100_000)
+  })
+
+  it('varias comisiones se suman; sin comisiones el bucket es 0 (compat)', () => {
+    const varias = calculateShiftSummary({
+      openingAmount: 0,
+      orders: [],
+      layawayPayments: [],
+      commissionIncomes: [{ amount: 50_000 }, { amount: 50_000 }],
+      expenses: [],
+    })
+    expect(varias.commissionsIncome).toBe(100_000)
+    expect(varias.expectedCash).toBe(100_000)
+
+    const sin = calculateShiftSummary({
+      openingAmount: 0,
+      orders: [order('o1', 10_000)],
+      layawayPayments: [],
+      expenses: [],
+    })
+    expect(sin.commissionsIncome).toBe(0)
+    expect(sin.expectedCash).toBe(10_000)
+  })
+
+  it('INVARIANTE: agregar una comisión efectivo solo suma su monto al esperado', () => {
+    const base: ShiftSummaryInput = {
+      openingAmount: 100_000,
+      orders: [order('o1', 40_000)],
+      layawayPayments: [abono(20_000)],
+      creditPayments: [creditAbono(10_000)],
+      expenses: [{ amount: 5_000 }],
+    }
+    const sin = calculateShiftSummary(base)
+    const con = calculateShiftSummary({
+      ...base,
+      commissionIncomes: [{ amount: 100_000 }],
+    })
+    // El único cambio en el efectivo esperado es +100.000 (la comisión).
+    expect(con.expectedCash - sin.expectedCash).toBe(100_000)
+    // Y no cambia nada de ventas/egresos.
+    expect(con.totalSales).toBe(sin.totalSales)
+    expect(con.totalExpenses).toBe(sin.totalExpenses)
+    expect(con.regularSalesTotal).toBe(sin.regularSalesTotal)
+  })
+})

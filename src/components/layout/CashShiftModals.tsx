@@ -470,6 +470,7 @@ export function CloseShiftModal({ shift, onClose }: CloseShiftModalProps) {
                   regularSalesTotal={closing.regularSalesTotal}
                   returnsIncome={closing.returnsIncome}
                   returnsExpense={closing.returnsExpense}
+                  commissionsIncome={closing.commissionsIncome}
                 />
               </div>
             )}
@@ -520,6 +521,7 @@ export function CloseShiftModal({ shift, onClose }: CloseShiftModalProps) {
           regularSalesTotal={closing.regularSalesTotal}
           returnsIncome={closing.returnsIncome}
           returnsExpense={closing.returnsExpense}
+          commissionsIncome={closing.commissionsIncome}
         />
       )}
     </>
