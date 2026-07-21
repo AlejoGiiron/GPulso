@@ -86,6 +86,12 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     ],
   },
   {
+    label: 'Comisiones',
+    permissions: [
+      { key: 'comisiones.gestionar', label: 'Gestionar comisiones por crédito' },
+    ],
+  },
+  {
     label: 'Administración',
     permissions: [
       { key: 'config.gestionar', label: 'Configuración de la tienda' },
@@ -123,6 +129,7 @@ export const ALL_PERMISSIONS = [
   'roles.gestionar',
   'reparaciones.gestionar',
   'reparaciones.ver_costos',
+  'comisiones.gestionar',
 ] as const
 
 /** Keys del catálogo, aplanadas en orden de grupo. */

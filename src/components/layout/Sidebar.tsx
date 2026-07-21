@@ -22,6 +22,7 @@ import {
   Building2,
   HandCoins,
   Wrench,
+  CreditCard,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
@@ -131,6 +132,17 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Truck,
     items: [
       { label: 'Proveedores', path: '/proveedores', icon: Building2, permission: 'compras.gestionar' },
+    ],
+  },
+  {
+    id: 'comisiones',
+    label: 'Comisiones',
+    icon: CreditCard,
+    items: [
+      // Sin `permission`: visible a cualquier usuario. Con comisiones.gestionar
+      // ve todo y registra; un trabajador sin el permiso ve SOLO lo suyo (RLS +
+      // la propia página acotan la vista).
+      { label: 'Comisiones', path: '/comisiones', icon: CreditCard },
     ],
   },
   {

@@ -354,15 +354,98 @@ Sidebar agrupado en secciones colapsables (feature/12-caja-completa) ✅
     cash_expense automático (trigger) → afectan el cuadre de caja como egreso
     "Pago a proveedor: X". useShiftClosing ya los cuenta en totalExpenses sin
     doble conteo (el pago no es una orden ni un abono de separado)
+- **Comisiones por crédito (Fase 4)**: CelFashion es punto de venta de una
+  financiera; cada crédito cerrado deja una comisión (configurable, hoy
+  $100.000) repartida local/trabajador (default 50/50 editable) que se paga al
+  trabajador por quincena. Es un EVENTO independiente: NO es método de pago del
+  POS, NO toca inventario, NO crea órdenes.
+  · La comisión en EFECTIVO entra al cuadre como fuente de cash-in propia
+    imputada al turno por `credit_commissions.shift_id` (Opción A), igual que un
+    abono de separado/fiado — NO como cash_expense. Vive en un solo lugar
+    compartido `src/lib/shiftCommissions.ts` (usado por useShiftClosing y
+    useShiftHistory). shiftCalc la suma a cashSales y la expone como
+    `commissionsIncome` (sección "COMISIONES DE CRÉDITO" del recibo). La
+    consignación NO toca caja (shift_id NULL).
+  · Permiso `comisiones.gestionar` (Dueño/Administrador). Un trabajador sin el
+    permiso ve SOLO sus comisiones (RLS self-select), lectura.
+  · El pago quincenal al trabajador se asienta como EGRESO por la vía de gastos
+    existente (no hay nómina); el reporte quincenal por trabajador dice cuánto.
 - Configuración (tienda, usuarios, productos, caja, etiquetas)
 
 ## Estado actual del proyecto
-Última fase completada: claridad del historial de ventas para el cuadre
+Última fase completada: Fase 4 — comisiones por crédito (BD+UI, gate verde;
+migraciones 048–050 PENDIENTES de aplicar en prod, ver scripts/PROD-FASE4.md)
+Previo: claridad del historial de ventas para el cuadre
 (tipo de venta + dinero real entrado por día)
 Previo: tarjeta de producto con marca, rango de precios y descripción
 (diferenciar productos del mismo nombre)
 En progreso: feature - marca (autocompletar + en todos los documentos)
 Siguiente: Addi recargo, historial de gastos, descuento por ítem
+
+Fase 4 — Comisiones por crédito (feature/fase-4-comisiones) ✅
+  - Migración 048_credit_commissions: enum commission_method
+    (efectivo|consignacion); tabla credit_commissions (organization_id por
+    trigger desde store; worker_id FK profiles; customer_id FK NULL; monto_total
+    numeric DEFAULT 100000 CONFIGURABLE; monto_local/monto_trabajador con CHECK
+    de reparto coherente ±0.5; shift_id FK cash_shifts con CHECK estructural
+    efectivo⇒shift_id NOT NULL / consignacion⇒NULL; inmutable, sin UPDATE).
+    Índices (store, worker, store+fecha, shift parcial). RLS: SELECT
+    gestionar-ve-todo OR worker_id=auth.uid() (self-select); DELETE gestionar;
+    sin INSERT/UPDATE directo (solo RPC). RPC register_credit_commission
+    (SECURITY DEFINER, atómica): valida sesión, permiso comisiones.gestionar,
+    montos, reparto coherente, worker/cliente de MI org, y turno abierto POR
+    TIENDA en efectivo (misma regla que create_order/deliver_repair) → imputa
+    shift_id; consignación shift_id NULL.
+  - Migración 049_comisiones_permission: canonical_role_permissions +=
+    comisiones.gestionar a Administrador (Dueño via *); reconciliación aditiva
+    SIN filtro de org (patrón 034/035/046); self-verify. permissionsCatalog.ts
+    grupo "Comisiones" + ALL_PERMISSIONS (23 permisos).
+  - CUADRE (Opción A, decisión aprobada): la comisión en efectivo es fuente de
+    cash-in PROPIA imputada por shift_id, NO un cash_expense. src/lib/
+    shiftCommissions.ts (fetchShiftCashCommissions) = ÚNICA fuente compartida por
+    useShiftClosing y useShiftHistory (no reincide en la deuda heredada #4).
+    shiftCalc: input commissionIncomes → suma a cashSales (sube expectedCash) +
+    output commissionsIncome (NO entra a salesByMethod ni regularSalesTotal).
+    CashShiftReceipt: sección "COMISIONES DE CRÉDITO"; CloseShiftModal y
+    CashShiftsHistoryPage pasan commissionsIncome. INVARIANTE testeado: agregar
+    una comisión efectivo solo suma su monto al esperado, no infla ventas.
+  - Config: StoreConfig.commission_default_amount (100000) +
+    commission_worker_share (0.5) en DEFAULT_CONFIG; CajaSection sección
+    "Comisiones por crédito" (monto default + % trabajador).
+  - src/lib/commissionCalc.ts (puro): splitCommission (reparto, el local absorbe
+    el redondeo → suma exacta), quincenaRange (corte 1–15 / 16–fin de mes).
+  - useCreditCommissions: useCommissionsList (período, respeta RLS),
+    summarizeByWorker (reporte quincenal), useStoreWorkers (selector),
+    useRegisterCommission (RPC, invalida shift-closing/history si efectivo),
+    useDeleteCommission. CommissionsPage (/comisiones, sin permission en sidebar/
+    ruta → gestor ve/registra todo + reporte quincenal; trabajador ve "Mis
+    comisiones" solo lectura). NewCommissionModal (worker, método con aviso de
+    turno, monto + reparto editable, cliente opcional, fecha, notas) +
+    ConfirmDeleteCommissionModal (aviso si efectivo afecta cuadre).
+  - Pago al trabajador = EGRESO por la vía de gastos existente (no nómina);
+    documentado en PROD-FASE4.md.
+  - SEGURIDAD (RPC-only): credit_commissions solo tiene política SELECT; sin
+    INSERT/UPDATE/DELETE → authenticated no escribe directo, la RPC (SECURITY
+    DEFINER) es la única vía. Cierra el bypass de las validaciones (turno/tienda).
+  - CORRECCIÓN / REVERSO (Migración 050): ledger append-only con traza.
+    · reverse_credit_commission ANULA con traza (reversed_at/by; la fila NO se
+      borra, sigue visible marcada). FRONTERA: "¿toca el expectedCash de un turno
+      CERRADO?" — consignación y efectivo-turno-ABIERTO se pueden anular;
+      efectivo-turno-CERRADO NO (no reescribir un cuadre settled; el monto/método
+      mal de una cerrada se corrige por ajuste en la caja de hoy).
+    · reassign_commission_worker cambia el beneficiario, permitido SIEMPRE (aun
+      con turno cerrado) porque es CAJA-SAFE (no toca expectedCash); deja traza
+      (reassigned_at/by + original_worker_id).
+    · Las ANULADAS se excluyen de TODO cálculo: shiftCommissions (expectedCash),
+      commissionCalc.summarizeByWorker/sumActive (reporte quincenal + totales) y
+      el recibo. En la UI la anulada se VE marcada (con fecha), no desaparece.
+  - Tests: commissionCalc.test.ts (reparto, quincena, anuladas no suman) + casos
+    de comisión en shiftCalc.test.ts; scripts/test-credit-commission.sql (12
+    casos: registro/turno/permiso/RLS/escritura-RPC-only + reverso gateado +
+    reasignación caja-safe, verde en lab). Gate verde: tsc + eslint + 295 tests +
+    build.
+  - PENDIENTE: aplicar 048–050 en prod (scripts/PROD-FASE4.md); no requiere Edge
+    Functions (todo va por migración).
 
 Claridad del historial de ventas (feature/sales-history-cash-clarity) ✅
   - PROBLEMA: el cuadre diario dolía porque el historial mostraba el TOTAL de

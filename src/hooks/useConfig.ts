@@ -43,6 +43,9 @@ export const DEFAULT_CONFIG: StoreConfig = {
   max_item_discount: 0,
   layaway_discount_mode: 'none',
   layaway_discount_value: 0,
+  // Comisiones por crédito: $100.000 total, reparto 50/50 (editable en Config).
+  commission_default_amount: 100000,
+  commission_worker_share: 0.5,
 }
 
 export function resolveConfig(raw: Record<string, unknown> | null | undefined): StoreConfig {

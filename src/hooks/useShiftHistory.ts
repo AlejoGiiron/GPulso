@@ -4,6 +4,7 @@ import { useAuth } from './useAuth'
 import { getActiveStoreId } from './useActiveStoreId'
 import { bogotaDayStartToUtc, bogotaDayEndToUtc } from '@/lib/dates'
 import { reconcileCash, shiftDifference } from '@/lib/shiftCalc'
+import { fetchShiftCashCommissions } from '@/lib/shiftCommissions'
 import type { CashShift, Profile } from '@/types/database.types'
 
 export const SHIFT_HISTORY_PAGE_SIZE = 50
@@ -310,6 +311,15 @@ export function useShiftHistory(filters: ShiftHistoryFilters) {
         created_by: string
       }[]) {
         addLegacyByWindow(p.created_by, p.created_at, Number(p.amount))
+      }
+
+      // ── Comisiones por crédito en efectivo (Fase 4) ────────────────────────
+      // Imputación DIRECTA por shift_id (la tabla es nueva, sin ruta legacy).
+      // Vía compartida con useShiftClosing → misma fuente para el cuadre, así la
+      // columna "Esperado" del historial coincide con el recibo impreso.
+      const commissionByShift = await fetchShiftCashCommissions(storeId, shiftIds)
+      for (const [sid, total] of commissionByShift) {
+        cashByShift.set(sid, (cashByShift.get(sid) ?? 0) + total)
       }
 
       const rows: ShiftHistoryRow[] = shiftsRaw.map((s) => {

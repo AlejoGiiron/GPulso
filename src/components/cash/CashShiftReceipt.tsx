@@ -60,6 +60,9 @@ export interface CashShiftReceiptProps {
   // Devoluciones (presentación aparte; no afectan el cuadre).
   returnsIncome?: number
   returnsExpense?: number
+  // Comisiones por crédito en efectivo (Fase 4). Ya están dentro de cashSales;
+  // esto solo las muestra en su propia sección para que no queden escondidas.
+  commissionsIncome?: number
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -139,6 +142,8 @@ export function CashShiftReceipt(props: CashShiftReceiptProps) {
   const returnsIncome = props.returnsIncome ?? 0
   const returnsExpense = props.returnsExpense ?? 0
   const hasReturns = returnsIncome > 0 || returnsExpense > 0
+  // Comisiones por crédito en efectivo: ya suman a cashSales; se listan aparte.
+  const commissionsIncome = props.commissionsIncome ?? 0
   const regularExpenses = expenses.filter((e) => e.kind !== 'return')
   const regularExpensesTotal = regularExpenses.reduce(
     (sum, e) => sum + Number(e.amount),
@@ -339,6 +344,25 @@ export function CashShiftReceipt(props: CashShiftReceiptProps) {
                   : fmtCOP(returnsIncome - returnsExpense)}
               </span>
             </Line>
+          </div>
+        </>
+      )}
+
+      {/* Comisiones por crédito en efectivo (Fase 4; ya dentro de cashSales) */}
+      {commissionsIncome > 0 && (
+        <>
+          <div style={monoLight}>{DIVIDER}</div>
+          <div style={sectionStyle}>
+            <div style={{ fontWeight: 700, marginBottom: 2 }}>
+              COMISIONES DE CRÉDITO
+            </div>
+            <Line>
+              <span style={monoLight}>+ Ingreso efectivo:</span>
+              <span>{fmtCOP(commissionsIncome)}</span>
+            </Line>
+            <div style={{ ...monoLight, fontSize: 10, fontStyle: 'italic' }}>
+              Incluido en ventas efec. del cuadre
+            </div>
           </div>
         </>
       )}

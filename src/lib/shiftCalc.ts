@@ -53,6 +53,14 @@ export interface ShiftExpenseInput {
   kind?: 'expense' | 'return'
 }
 
+// Comisión por crédito en EFECTIVO imputada al turno (Fase 4). Es dinero que
+// entró al cajón pero NO es venta: se suma al efectivo del cuadre igual que un
+// abono de separado/fiado, sin contar como venta ni aparecer en salesByMethod.
+// Las comisiones por CONSIGNACIÓN no llegan acá (no tocan caja).
+export interface ShiftCommissionInput {
+  amount: number
+}
+
 export interface ShiftSummaryInput {
   openingAmount: number
   orders: ShiftOrderInput[]
@@ -64,6 +72,9 @@ export interface ShiftSummaryInput {
   // Abonos de fiados imputados al turno. Opcional para compatibilidad con los
   // call sites/tests previos a fiados (default []).
   creditPayments?: ShiftCreditPaymentInput[]
+  // Comisiones por crédito en efectivo imputadas al turno (Fase 4). Solo las de
+  // efectivo (las de consignación no tocan caja). Opcional (default []).
+  commissionIncomes?: ShiftCommissionInput[]
   expenses: ShiftExpenseInput[]
 }
 
@@ -73,6 +84,9 @@ export interface ShiftSummary {
   layawayPaymentsTotal: number
   // Total de abonos de fiado del turno (parte del efectivo; NO revenue).
   creditPaymentsTotal: number
+  // Total de comisiones por crédito en efectivo del turno (Fase 4). Parte del
+  // efectivo esperado; NO es venta ni revenue. Se muestra aparte en el recibo.
+  commissionsIncome: number
   totalSales: number
   cashSales: number
   totalExpenses: number
@@ -221,6 +235,15 @@ export function calculateShiftSummary(input: ShiftSummaryInput): ShiftSummary {
     })
   }
 
+  // Comisiones por crédito en efectivo (Fase 4): dinero en el cajón que NO es
+  // venta. Suben cashSales (→ expectedCash) pero NO entran a salesByMethod ni a
+  // regularSalesTotal; se muestran en su propia sección del recibo.
+  let commissionsIncome = 0
+  for (const c of input.commissionIncomes ?? []) {
+    commissionsIncome += c.amount
+    cashSales += c.amount
+  }
+
   const salesByMethod: SalesByMethod[] = Array.from(aggMap.entries())
     .map(([method, v]) => ({ method, ...v }))
     .sort((a, b) => b.total - a.total)
@@ -247,6 +270,7 @@ export function calculateShiftSummary(input: ShiftSummaryInput): ShiftSummary {
     regularSalesTotal,
     layawayPaymentsTotal,
     creditPaymentsTotal,
+    commissionsIncome,
     totalSales,
     cashSales,
     totalExpenses,

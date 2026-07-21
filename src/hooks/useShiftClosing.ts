@@ -7,6 +7,7 @@ import {
   type SalesByMethod,
   type OrderPaymentInput,
 } from '@/lib/shiftCalc'
+import { fetchShiftCashCommissions } from '@/lib/shiftCommissions'
 import type {
   CashShift,
   CashExpense,
@@ -47,6 +48,7 @@ export interface ShiftClosingData {
   layawayPaymentsTotal: number
   creditPayments: CreditPaymentRow[]
   creditPaymentsTotal: number
+  commissionsIncome: number
   regularSalesTotal: number
   returnsIncome: number
   returnsExpense: number
@@ -324,7 +326,13 @@ export function useShiftClosing(shiftId: string | null) {
       if (expErr) throw expErr
       const expenses = (expensesRaw ?? []) as unknown as CashExpense[]
 
-      // 5. Agregación pura del cuadre (orders + abonos - egresos). La función
+      // 4b. Comisiones por crédito en efectivo imputadas al turno (Fase 4). Vía
+      //    compartida con useShiftHistory (fetchShiftCashCommissions): una sola
+      //    fuente para la imputación de comisiones al cuadre.
+      const commissionByShift = await fetchShiftCashCommissions(storeId, [shiftId])
+      const commissionsCash = commissionByShift.get(shiftId) ?? 0
+
+      // 5. Agregación pura del cuadre (orders + abonos + comisiones - egresos). La función
       //    excluye las órdenes generadas al completar separados para no contar
       //    dos veces el dinero.
       const summary = calculateShiftSummary({
@@ -341,6 +349,8 @@ export function useShiftClosing(shiftId: string | null) {
           amount: p.amount,
           payment_method: p.payment_method,
         })),
+        commissionIncomes:
+          commissionsCash > 0 ? [{ amount: commissionsCash }] : [],
         expenses: expenses.map((e) => ({ amount: Number(e.amount), kind: e.kind })),
       })
 
@@ -358,6 +368,7 @@ export function useShiftClosing(shiftId: string | null) {
         layawayPaymentsTotal: summary.layawayPaymentsTotal,
         creditPayments,
         creditPaymentsTotal: summary.creditPaymentsTotal,
+        commissionsIncome: summary.commissionsIncome,
         regularSalesTotal: summary.regularSalesTotal,
         returnsIncome: summary.returnsIncome,
         returnsExpense: summary.returnsExpense,

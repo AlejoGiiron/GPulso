@@ -17,6 +17,7 @@ import LayawaysPage from '@/pages/LayawaysPage'
 import SuppliersPage from '@/pages/SuppliersPage'
 import CarteraPage from '@/pages/CarteraPage'
 import RepairsPage from '@/pages/RepairsPage'
+import CommissionsPage from '@/pages/CommissionsPage'
 
 export default function App() {
   return (
@@ -60,6 +61,10 @@ export default function App() {
           />
           <Route path="inventario" element={<InventoryPage />} />
           <Route path="devoluciones" element={<ReturnsPage />} />
+          {/* Comisiones: sin permission → visible a cualquier usuario. La página
+              se acota sola (gestor ve/registra todo; trabajador ve solo lo suyo
+              por RLS). */}
+          <Route path="comisiones" element={<CommissionsPage />} />
           <Route
             path="proveedores"
             element={

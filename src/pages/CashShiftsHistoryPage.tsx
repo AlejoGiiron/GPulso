@@ -155,6 +155,7 @@ function ReprintReceiptModal({
                   regularSalesTotal={closing.regularSalesTotal}
                   returnsIncome={closing.returnsIncome}
                   returnsExpense={closing.returnsExpense}
+                  commissionsIncome={closing.commissionsIncome}
                 />
               </div>
             )}
@@ -202,6 +203,7 @@ function ReprintReceiptModal({
           regularSalesTotal={closing.regularSalesTotal}
           returnsIncome={closing.returnsIncome}
           returnsExpense={closing.returnsExpense}
+          commissionsIncome={closing.commissionsIncome}
         />
       )}
     </>

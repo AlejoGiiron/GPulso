@@ -72,6 +72,15 @@ export interface StoreConfig {
   layaway_initial_payment_mode: LayawayInitialPaymentMode
   layaway_initial_payment_value: number
   layaway_default_days: number
+  // ── Comisiones por crédito (Fase 4) ──────────────────────────────────────────
+  // Monto total por defecto de una comisión (COP). CONFIGURABLE: las comisiones
+  // cambian, nunca se hardcodea. Es solo el default del formulario; cada comisión
+  // puede registrarse con otro monto.
+  commission_default_amount: number
+  // Fracción del total que le toca al TRABAJADOR (0..1). Por defecto 0.5 (50/50);
+  // editable por si algún día cambia el criterio de reparto. El local recibe el
+  // resto (1 - fracción).
+  commission_worker_share: number
   // Tope de descuento por ítem (en pesos): rebaja máxima permitida por unidad
   // al vender o crear separados. Límite DURO. 0 = no se permite descuento.
   // El precio final mínimo de un ítem es max(0, list_price - max_item_discount).
