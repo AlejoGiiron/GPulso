@@ -2,12 +2,19 @@ import { describe, it, expect } from 'vitest'
 import { ALL_PERMISSIONS, CATALOG_KEYS } from './permissionsCatalog'
 
 describe('permissionsCatalog', () => {
-  it('cubre EXACTAMENTE los 20 permisos canónicos (sin huérfanos ni sobrantes)', () => {
+  it('cubre EXACTAMENTE los 22 permisos canónicos (sin huérfanos ni sobrantes)', () => {
     expect([...CATALOG_KEYS].sort()).toEqual([...ALL_PERMISSIONS].sort())
   })
 
-  it('la lista canónica tiene 20 permisos', () => {
-    expect(ALL_PERMISSIONS.length).toBe(20)
+  it('la lista canónica tiene 22 permisos', () => {
+    expect(ALL_PERMISSIONS.length).toBe(22)
+  })
+
+  it('incluye reparaciones.* (permisos de la 046 / Fase 3)', () => {
+    expect(ALL_PERMISSIONS as readonly string[]).toContain('reparaciones.gestionar')
+    expect(ALL_PERMISSIONS as readonly string[]).toContain('reparaciones.ver_costos')
+    expect(CATALOG_KEYS).toContain('reparaciones.gestionar')
+    expect(CATALOG_KEYS).toContain('reparaciones.ver_costos')
   })
 
   it('incluye ventas.regalo (permiso de la 027)', () => {

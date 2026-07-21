@@ -77,15 +77,17 @@ const MOV_TYPE_LABELS: Record<StockMovementType, string> = {
   return: 'Devolución',
   adjustment: 'Ajuste',
   purchase: 'Compra',
+  repair_consumption: 'Repuesto',
 }
 
 function MovTypeBadge({ type }: { type: StockMovementType }) {
   const label = MOV_TYPE_LABELS[type]
   const styles: Record<StockMovementType, string> = {
-    sale:       'bg-red-50 text-red-600 border border-red-200',
-    return:     'bg-emerald-50 text-emerald-600 border border-emerald-200',
-    adjustment: 'bg-blue-50 text-blue-600 border border-blue-200',
-    purchase:   'bg-cyan-50 text-cyan-600 border border-cyan-200',
+    sale:               'bg-red-50 text-red-600 border border-red-200',
+    return:             'bg-emerald-50 text-emerald-600 border border-emerald-200',
+    adjustment:         'bg-blue-50 text-blue-600 border border-blue-200',
+    purchase:           'bg-cyan-50 text-cyan-600 border border-cyan-200',
+    repair_consumption: 'bg-amber-50 text-amber-600 border border-amber-200',
   }
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${styles[type]}`}>
