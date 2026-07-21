@@ -58,6 +58,9 @@ export function useStockLevels() {
         `)
         .eq('store_id' as never, storeId)
         .eq('is_active' as never, true)
+        // El servicio de reparación (is_service) no es inventario: se mostraría
+        // como "agotado" siempre. Se excluye del listado de stock.
+        .eq('products.is_service' as never, false)
         .order('created_at' as never, { ascending: false })
 
       if (error) throw error

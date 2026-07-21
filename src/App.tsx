@@ -16,6 +16,7 @@ import ExpenseHistoryPage from '@/pages/ExpenseHistoryPage'
 import LayawaysPage from '@/pages/LayawaysPage'
 import SuppliersPage from '@/pages/SuppliersPage'
 import CarteraPage from '@/pages/CarteraPage'
+import RepairsPage from '@/pages/RepairsPage'
 
 export default function App() {
   return (
@@ -41,6 +42,14 @@ export default function App() {
             }
           />
           <Route path="separados" element={<LayawaysPage />} />
+          <Route
+            path="reparaciones"
+            element={
+              <ProtectedRoute permission="reparaciones.gestionar">
+                <RepairsPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="productos"
             element={

@@ -1,7 +1,12 @@
 export type UserRole = 'admin' | 'seller'
 export type OrderStatus = 'completed' | 'cancelled' | 'returned'
 export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'addi' | 'credit'
-export type StockMovementType = 'sale' | 'return' | 'adjustment' | 'purchase'
+export type StockMovementType =
+  | 'sale'
+  | 'return'
+  | 'adjustment'
+  | 'purchase'
+  | 'repair_consumption'
 export type ReturnType = 'return' | 'exchange'
 export type ReturnStatus = 'pending' | 'completed'
 export type ReturnAction = 'refund' | 'exchange'
@@ -91,6 +96,9 @@ export interface Product {
   category_id: string | null
   size_type: string
   is_serialized: boolean
+  // Fase 3 — producto de servicio (ej. "Servicio de reparación"): se vende sin
+  // descontar stock; excluido de inventario/POS. Lo crea/usa deliver_repair.
+  is_service: boolean
   is_active: boolean
   created_at: string
   updated_at: string
@@ -493,6 +501,67 @@ export interface CreditBalance {
   pending_amount: number
 }
 
+// ── Fase 3 — Taller de reparaciones ───────────────────────────────────────────
+
+export type RepairStatus = 'recibido' | 'en_reparacion' | 'listo' | 'entregado'
+export type RepairPartSource = 'inventario' | 'compra_externa'
+
+/** Checklist de recepción: dos listas separadas de banderas booleanas. */
+export interface RepairChecklist {
+  danos?: Record<string, boolean>
+  verificaciones?: Record<string, boolean>
+}
+
+export interface RepairOrder {
+  id: string
+  organization_id: string
+  store_id: string
+  order_number: number
+  customer_id: string
+  marca: string
+  modelo: string
+  imei_serial: string | null
+  color: string | null
+  falla_reportada: string
+  checklist: RepairChecklist
+  observaciones: string | null
+  accesorios: string | null
+  /** CONFIDENCIAL: nunca va en el comprobante del cliente. */
+  password_equipo: string | null
+  status: RepairStatus
+  /** Lo que se cobra al retirar. NULL hasta definirse; 0 = garantía. */
+  precio: number | null
+  received_by: string
+  delivered_by: string | null
+  delivered_at: string | null
+  /** Venta generada al cobrar (deliver_repair). */
+  order_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface RepairStatusHistory {
+  id: string
+  repair_order_id: string
+  store_id: string
+  status: RepairStatus
+  changed_by: string | null
+  created_at: string
+}
+
+export interface RepairPart {
+  id: string
+  repair_order_id: string
+  store_id: string
+  source: RepairPartSource
+  variant_id: string | null
+  qty: number | null
+  descripcion: string | null
+  costo: number
+  created_by: string | null
+  created_at: string
+}
+
 // ── Database schema ───────────────────────────────────────────────────────────
 
 export interface Database {
@@ -545,11 +614,15 @@ export interface Database {
       }
       products: {
         Row: Product
-        Insert: Omit<Product, 'id' | 'created_at' | 'image_url' | 'is_serialized'> & {
+        Insert: Omit<
+          Product,
+          'id' | 'created_at' | 'image_url' | 'is_serialized' | 'is_service'
+        > & {
           id?: string
           created_at?: string
           image_url?: string | null
           is_serialized?: boolean
+          is_service?: boolean
         }
         Update: Partial<Omit<Product, 'id'>>
       }
@@ -762,6 +835,41 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Omit<SupplierPayment, 'id'>>
+      }
+      repair_orders: {
+        Row: RepairOrder
+        // organization_id (trigger desde store), order_number (trigger),
+        // status/checklist/timestamps tienen default.
+        Insert: Omit<
+          RepairOrder,
+          | 'id'
+          | 'organization_id'
+          | 'order_number'
+          | 'status'
+          | 'delivered_by'
+          | 'delivered_at'
+          | 'order_id'
+          | 'created_at'
+          | 'updated_at'
+        > & {
+          id?: string
+          organization_id?: string
+          status?: RepairStatus
+          checklist?: RepairChecklist
+        }
+        Update: Partial<Omit<RepairOrder, 'id' | 'organization_id' | 'order_number'>>
+      }
+      repair_status_history: {
+        Row: RepairStatusHistory
+        // La escribe solo el trigger; los usuarios no insertan.
+        Insert: never
+        Update: never
+      }
+      repair_parts: {
+        Row: RepairPart
+        // Se insertan solo vía RPC add_repair_part; no INSERT directo.
+        Insert: never
+        Update: never
       }
     }
     Views: {

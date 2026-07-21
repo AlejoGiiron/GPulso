@@ -20,6 +20,9 @@ export function useProducts() {
         .from('products')
         .select('*, categories(id, name, color), variants(id, stock_qty, is_active, price)')
         .eq('store_id' as never, storeId)
+        // El servicio de reparación es un producto de sistema, no se gestiona
+        // desde el CRUD de productos.
+        .eq('is_service' as never, false)
         .order('name')
       if (error) throw error
       return (data ?? []) as unknown as ProductWithDetails[]

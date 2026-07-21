@@ -79,6 +79,13 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     permissions: [{ key: 'gastos.gestionar', label: 'Registrar gastos de caja' }],
   },
   {
+    label: 'Reparaciones',
+    permissions: [
+      { key: 'reparaciones.gestionar', label: 'Gestionar reparaciones (taller)' },
+      { key: 'reparaciones.ver_costos', label: 'Ver costos de repuestos' },
+    ],
+  },
+  {
     label: 'Administración',
     permissions: [
       { key: 'config.gestionar', label: 'Configuración de la tienda' },
@@ -114,6 +121,8 @@ export const ALL_PERMISSIONS = [
   'config.gestionar',
   'usuarios.gestionar',
   'roles.gestionar',
+  'reparaciones.gestionar',
+  'reparaciones.ver_costos',
 ] as const
 
 /** Keys del catálogo, aplanadas en orden de grupo. */

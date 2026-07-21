@@ -70,6 +70,9 @@ export function usePOSProducts() {
         )
         .eq('store_id' as never, storeId)
         .eq('is_active' as never, true)
+        // El servicio de reparación no se vende suelto por el POS (se cobra vía
+        // deliver_repair). Se excluye de la búsqueda de productos vendibles.
+        .eq('is_service' as never, false)
         .order('name' as never)
       if (error) throw error
       return (data ?? []).map((row) => {
