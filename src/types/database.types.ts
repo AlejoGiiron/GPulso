@@ -589,6 +589,13 @@ export interface CreditCommission {
   created_by: string
   created_at: string
   updated_at: string
+  /** Anulación (soft-void, 050): si no es NULL la comisión no cuenta en ningún cálculo pero sigue visible. */
+  reversed_at: string | null
+  reversed_by: string | null
+  /** Reasignación de beneficiario (050): quién/cuándo + trabajador original. */
+  reassigned_at: string | null
+  reassigned_by: string | null
+  original_worker_id: string | null
 }
 
 // ── Database schema ───────────────────────────────────────────────────────────

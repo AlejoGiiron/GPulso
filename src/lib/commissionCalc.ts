@@ -58,3 +58,67 @@ export function quincenaRange(dateStr: string): DateRange {
     to: `${y}-${pad2(m)}-${pad2(lastDayOfMonth(y, m))}`,
   }
 }
+
+// ── Reporte quincenal por trabajador ──────────────────────────────────────────
+// Suma por trabajador lo que se le paga (monto_trabajador). Es lo que reemplaza
+// el cuaderno. CRÍTICO: las comisiones ANULADAS (reversed_at != null) NO cuentan
+// en ningún total — si una sola las siguiera sumando, se le pagaría de más a
+// alguien.
+
+export interface CommissionAggInput {
+  worker_id: string
+  worker_name: string
+  monto_total: number
+  monto_local: number
+  monto_trabajador: number
+  reversed_at: string | null
+}
+
+export interface WorkerCommissionReport {
+  worker_id: string
+  worker_name: string
+  count: number
+  totalWorker: number
+  totalLocal: number
+  totalCommission: number
+}
+
+/** Agrupa por trabajador EXCLUYENDO las anuladas. */
+export function summarizeByWorker(
+  rows: CommissionAggInput[],
+): WorkerCommissionReport[] {
+  const map = new Map<string, WorkerCommissionReport>()
+  for (const r of rows) {
+    if (r.reversed_at) continue // anulada: no se paga
+    const prev =
+      map.get(r.worker_id) ??
+      ({
+        worker_id: r.worker_id,
+        worker_name: r.worker_name,
+        count: 0,
+        totalWorker: 0,
+        totalLocal: 0,
+        totalCommission: 0,
+      } satisfies WorkerCommissionReport)
+    prev.count += 1
+    prev.totalWorker += r.monto_trabajador
+    prev.totalLocal += r.monto_local
+    prev.totalCommission += r.monto_total
+    map.set(r.worker_id, prev)
+  }
+  return Array.from(map.values()).sort((a, b) => b.totalWorker - a.totalWorker)
+}
+
+/** Suma de montos ACTIVOS (no anulados) de una lista, por campo. */
+export function sumActive(
+  rows: { monto_total: number; monto_trabajador: number; reversed_at: string | null }[],
+): { total: number; worker: number } {
+  let total = 0
+  let worker = 0
+  for (const r of rows) {
+    if (r.reversed_at) continue
+    total += r.monto_total
+    worker += r.monto_trabajador
+  }
+  return { total, worker }
+}

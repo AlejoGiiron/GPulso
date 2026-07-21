@@ -176,7 +176,118 @@ BEGIN
   RAISE NOTICE 'T6 OK: RLS self-select — el trabajador ve solo lo suyo (% suyas, 0 ajenas).', v_mias;
 END $$;
 
+-- ============================================================
+-- Punto 2 (050) — reverso (gateado por turno) + reasignación (caja-safe).
+-- ============================================================
+SET LOCAL "request.jwt.claims" = '{"sub":"00000000-0000-0000-0000-0000000000c1","role":"authenticated"}';
+
+-- ── T8 — Reverso de EFECTIVO con turno ABIERTO → OK + no cuenta al cuadre ────
+DO $$
+DECLARE v_open uuid; v_eff uuid; v_before numeric; v_after numeric;
+BEGIN
+  SELECT id INTO v_open FROM public.cash_shifts WHERE closed_at IS NULL LIMIT 1;
+  SELECT id INTO v_eff FROM public.credit_commissions
+    WHERE metodo='efectivo' AND shift_id=v_open AND reversed_at IS NULL LIMIT 1;  -- la de T4
+  SELECT coalesce(sum(monto_total),0) INTO v_before FROM public.credit_commissions
+    WHERE metodo='efectivo' AND shift_id=v_open AND reversed_at IS NULL;
+
+  PERFORM public.reverse_credit_commission(v_eff);
+
+  IF (SELECT reversed_at FROM public.credit_commissions WHERE id=v_eff) IS NULL THEN
+    RAISE EXCEPTION 'T8 FALLO: no marcó reversed_at.';
+  END IF;
+  -- La anulada NO cuenta al efectivo del turno (fuente del expectedCash).
+  SELECT coalesce(sum(monto_total),0) INTO v_after FROM public.credit_commissions
+    WHERE metodo='efectivo' AND shift_id=v_open AND reversed_at IS NULL;
+  IF v_after <> v_before - 100000 THEN
+    RAISE EXCEPTION 'T8 FALLO: la anulada sigue contando (esperado %, got %).', v_before-100000, v_after;
+  END IF;
+  RAISE NOTICE 'T8 OK: reverso efectivo turno abierto; la anulada baja el efectivo esperado.';
+END $$;
+
+-- Registrar una NUEVA efectivo (turno aún abierto) para probar el reverso tras
+-- cierre y la reasignación caja-safe.
+DO $$ BEGIN
+  PERFORM public.register_credit_commission(
+    '00000000-0000-0000-0000-0000000000c2','efectivo',100000,50000,50000,NULL,NULL,'para cerrar');
+END $$;
+
+-- Cerrar el turno (como postgres).
+RESET ROLE;
+UPDATE public.cash_shifts SET closed_at = now(), closing_amount = 0 WHERE closed_at IS NULL;
+SET LOCAL ROLE authenticated;
+SET LOCAL "request.jwt.claims" = '{"sub":"00000000-0000-0000-0000-0000000000c1","role":"authenticated"}';
+
+-- ── T9 — Reverso de EFECTIVO con turno CERRADO → RECHAZADO ──────────────────
+DO $$
+DECLARE v_c2 uuid; v_ok boolean := false;
+BEGIN
+  SELECT id INTO v_c2 FROM public.credit_commissions
+    WHERE metodo='efectivo' AND reversed_at IS NULL LIMIT 1;  -- la recién creada
+  BEGIN PERFORM public.reverse_credit_commission(v_c2);
+  EXCEPTION WHEN check_violation THEN v_ok := true;
+  END;
+  IF NOT v_ok THEN RAISE EXCEPTION 'T9 FALLO: reverso de efectivo-turno-cerrado debía rechazar.'; END IF;
+  RAISE NOTICE 'T9 OK: reverso efectivo turno cerrado rechazado.';
+END $$;
+
+-- ── T10 — Reverso de CONSIGNACIÓN → OK (no toca caja, permitido siempre) ─────
+DO $$
+DECLARE v_c uuid;
+BEGIN
+  SELECT id INTO v_c FROM public.credit_commissions
+    WHERE metodo='consignacion' AND reversed_at IS NULL LIMIT 1;
+  PERFORM public.reverse_credit_commission(v_c);
+  IF (SELECT reversed_at FROM public.credit_commissions WHERE id=v_c) IS NULL THEN
+    RAISE EXCEPTION 'T10 FALLO: no anuló la consignación.';
+  END IF;
+  RAISE NOTICE 'T10 OK: reverso de consignación permitido.';
+END $$;
+
+-- ── T11 — Reasignación TRAS CIERRE → OK y expectedCash NO cambia ─────────────
+DO $$
+DECLARE v_c2 uuid; v_shift uuid; v_oldw uuid; v_before numeric; v_after numeric;
+BEGIN
+  SELECT id, shift_id, worker_id INTO v_c2, v_shift, v_oldw
+    FROM public.credit_commissions WHERE metodo='efectivo' AND reversed_at IS NULL LIMIT 1;
+  SELECT coalesce(sum(monto_total),0) INTO v_before FROM public.credit_commissions
+    WHERE metodo='efectivo' AND shift_id=v_shift AND reversed_at IS NULL;
+
+  PERFORM public.reassign_commission_worker(v_c2, '00000000-0000-0000-0000-0000000000c1');
+
+  IF (SELECT worker_id FROM public.credit_commissions WHERE id=v_c2) = v_oldw THEN
+    RAISE EXCEPTION 'T11 FALLO: no reasignó el beneficiario.';
+  END IF;
+  IF (SELECT original_worker_id FROM public.credit_commissions WHERE id=v_c2) IS DISTINCT FROM v_oldw THEN
+    RAISE EXCEPTION 'T11 FALLO: no guardó el trabajador original.';
+  END IF;
+  SELECT coalesce(sum(monto_total),0) INTO v_after FROM public.credit_commissions
+    WHERE metodo='efectivo' AND shift_id=v_shift AND reversed_at IS NULL;
+  IF v_after <> v_before THEN
+    RAISE EXCEPTION 'T11 FALLO: reasignar cambió el efectivo del cuadre (%, %).', v_before, v_after;
+  END IF;
+  RAISE NOTICE 'T11 OK: reasignación tras cierre; expectedCash sin cambio y traza guardada.';
+END $$;
+
+-- ── T12 — Worker sin permiso NO puede revertir NI reasignar (ni por API) ─────
+SET LOCAL "request.jwt.claims" = '{"sub":"00000000-0000-0000-0000-0000000000c2","role":"authenticated"}';
+DO $$
+DECLARE v_r boolean := false; v_a boolean := false;
+BEGIN
+  -- El permiso se chequea ANTES del lookup de fila → el id da igual.
+  BEGIN PERFORM public.reverse_credit_commission('00000000-0000-0000-0000-0000000000f0');
+  EXCEPTION WHEN insufficient_privilege THEN v_r := true;
+  END;
+  BEGIN PERFORM public.reassign_commission_worker(
+    '00000000-0000-0000-0000-0000000000f0','00000000-0000-0000-0000-0000000000c1');
+  EXCEPTION WHEN insufficient_privilege THEN v_a := true;
+  END;
+  IF NOT v_r THEN RAISE EXCEPTION 'T12 FALLO: worker pudo revertir.'; END IF;
+  IF NOT v_a THEN RAISE EXCEPTION 'T12 FALLO: worker pudo reasignar.'; END IF;
+  RAISE NOTICE 'T12 OK: worker sin permiso no puede revertir ni reasignar.';
+END $$;
+
 RESET ROLE;
 ROLLBACK;
 
-\echo '✔ TEST 048 OK — register_credit_commission + RLS self-select + escritura RPC-only.'
+\echo '✔ TEST 048/050 OK — registro + RLS self-select + escritura RPC-only + reverso gateado + reasignación caja-safe.'

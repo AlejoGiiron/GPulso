@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { splitCommission, quincenaRange } from './commissionCalc'
+import {
+  splitCommission,
+  quincenaRange,
+  summarizeByWorker,
+  sumActive,
+  type CommissionAggInput,
+} from './commissionCalc'
 
 describe('splitCommission', () => {
   it('reparto 50/50 de $100.000', () => {
@@ -45,5 +51,58 @@ describe('quincenaRange', () => {
 
   it('fin de mes correcto en abril (30)', () => {
     expect(quincenaRange('2026-04-30')).toEqual({ from: '2026-04-16', to: '2026-04-30' })
+  })
+})
+
+describe('summarizeByWorker / sumActive — las ANULADAS no cuentan', () => {
+  const row = (
+    worker_id: string,
+    monto: number,
+    reversed_at: string | null = null,
+  ): CommissionAggInput => ({
+    worker_id,
+    worker_name: `W-${worker_id}`,
+    monto_total: monto,
+    monto_local: monto / 2,
+    monto_trabajador: monto / 2,
+    reversed_at,
+  })
+
+  it('agrupa por trabajador y suma la parte del trabajador', () => {
+    const r = summarizeByWorker([row('a', 100_000), row('a', 100_000), row('b', 100_000)])
+    expect(r.find((x) => x.worker_id === 'a')).toMatchObject({
+      count: 2,
+      totalWorker: 100_000,
+      totalCommission: 200_000,
+    })
+    expect(r.find((x) => x.worker_id === 'b')?.totalWorker).toBe(50_000)
+  })
+
+  it('una comisión ANULADA no suma en el reporte quincenal', () => {
+    const activo = summarizeByWorker([row('a', 100_000), row('a', 100_000)])
+    const conAnulada = summarizeByWorker([
+      row('a', 100_000),
+      row('a', 100_000, '2026-07-21T10:00:00Z'), // anulada
+    ])
+    expect(activo.find((x) => x.worker_id === 'a')?.totalWorker).toBe(100_000)
+    // La anulada NO se paga: total del worker baja a una sola comisión.
+    expect(conAnulada.find((x) => x.worker_id === 'a')).toMatchObject({
+      count: 1,
+      totalWorker: 50_000,
+    })
+  })
+
+  it('un trabajador con TODAS sus comisiones anuladas desaparece del reporte', () => {
+    const r = summarizeByWorker([row('a', 100_000, '2026-07-21T10:00:00Z')])
+    expect(r).toEqual([])
+  })
+
+  it('sumActive excluye anuladas del total del período', () => {
+    const s = sumActive([
+      row('a', 100_000),
+      row('b', 100_000, '2026-07-21T10:00:00Z'), // anulada
+    ])
+    expect(s.total).toBe(100_000)
+    expect(s.worker).toBe(50_000)
   })
 })

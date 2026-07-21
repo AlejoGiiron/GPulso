@@ -9,6 +9,9 @@ import { supabase } from '@/lib/supabase'
 // (CHECK credit_commissions_shift_coherent en la 048), así que la imputación es
 // DIRECTA por shift_id, sin ventana de tiempo ni ruta legacy (la tabla es nueva,
 // no hay filas pre-026 con shift_id NULL). Las de consignación no tocan caja.
+//
+// Las ANULADAS (reversed_at NOT NULL, 050) NO cuentan al efectivo esperado: se
+// filtran acá para que el cuadre no las sume (regla crítica del reverso).
 
 /**
  * Suma de comisiones por crédito en efectivo imputadas a cada turno.
@@ -26,6 +29,7 @@ export async function fetchShiftCashCommissions(
     .select('shift_id, monto_total')
     .eq('store_id' as never, storeId)
     .eq('metodo' as never, 'efectivo')
+    .is('reversed_at' as never, null) // las anuladas no cuentan al cuadre
     .in('shift_id' as never, shiftIds)
   if (error) throw error
 
