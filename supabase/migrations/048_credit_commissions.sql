@@ -50,9 +50,10 @@ COMMENT ON TYPE commission_method IS
 
 -- ------------------------------------------------------------
 -- Tabla credit_commissions.
---   Inmutable (sin UPDATE): un asiento del "cuaderno" no se edita, se corrige
---   borrando (comisiones.gestionar) y re-registrando. Trazabilidad como
---   cash_expenses (007).
+--   Ledger append-only (como cash_expenses, 007): un asiento del "cuaderno" no se
+--   edita en sitio. La escritura es RPC-only (ver RLS abajo); la corrección/
+--   reverso irá por una RPC dedicada que valida el estado del turno (Fase 4
+--   punto 2, pendiente de aprobación).
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.credit_commissions (
   id               uuid              PRIMARY KEY DEFAULT gen_random_uuid(),
