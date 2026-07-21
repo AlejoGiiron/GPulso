@@ -22,11 +22,19 @@ export interface CommissionFilters {
 export interface CommissionRow extends CreditCommission {
   worker_name: string
   customer_name: string | null
+  /** Nombre del trabajador ORIGINAL si la comisión fue reasignada. */
+  original_worker_name: string | null
+  /** true si es efectivo imputada a un turno YA cerrado (no reversible). */
+  shift_closed: boolean
+  /** ¿Se puede anular? consignación o efectivo-turno-abierto, y aún no anulada. */
+  reversible: boolean
 }
 
 type RawCommission = CreditCommission & {
   worker: { full_name: string } | null
   customer: { full_name: string } | null
+  original_worker: { full_name: string } | null
+  shift: { closed_at: string | null } | null
 }
 
 // ── Lista del período ─────────────────────────────────────────────────────────
@@ -38,12 +46,17 @@ export function useCommissionsList(filters: CommissionFilters) {
   return useQuery<CommissionRow[]>({
     queryKey: ['credit-commissions', storeId, filters],
     queryFn: async () => {
+      // Las ANULADAS se traen igual (se muestran marcadas); los cálculos que NO
+      // deben contarlas (reporte quincenal, totales) las excluyen aparte
+      // (commissionCalc.summarizeByWorker/sumActive).
       let q = supabase
         .from('credit_commissions')
         .select(
           `*,
            worker:worker_id(full_name),
-           customer:customer_id(full_name)`,
+           customer:customer_id(full_name),
+           original_worker:original_worker_id(full_name),
+           shift:shift_id(closed_at)`,
         )
         .eq('store_id' as never, storeId)
         .gte('fecha' as never, filters.from)
@@ -58,53 +71,26 @@ export function useCommissionsList(filters: CommissionFilters) {
       const { data, error } = await q
       if (error) throw error
 
-      return ((data ?? []) as unknown as RawCommission[]).map((r) => ({
-        ...r,
-        monto_total: Number(r.monto_total),
-        monto_local: Number(r.monto_local),
-        monto_trabajador: Number(r.monto_trabajador),
-        worker_name: r.worker?.full_name ?? 'Trabajador',
-        customer_name: r.customer?.full_name ?? null,
-      }))
+      return ((data ?? []) as unknown as RawCommission[]).map((r) => {
+        const shiftClosed = r.metodo === 'efectivo' && !!r.shift?.closed_at
+        const reversible =
+          !r.reversed_at && (r.metodo === 'consignacion' || !shiftClosed)
+        return {
+          ...r,
+          monto_total: Number(r.monto_total),
+          monto_local: Number(r.monto_local),
+          monto_trabajador: Number(r.monto_trabajador),
+          worker_name: r.worker?.full_name ?? 'Trabajador',
+          customer_name: r.customer?.full_name ?? null,
+          original_worker_name: r.original_worker?.full_name ?? null,
+          shift_closed: shiftClosed,
+          reversible,
+        }
+      })
     },
     enabled: !!storeId && !!filters.from && !!filters.to,
     staleTime: 30_000,
   })
-}
-
-// ── Reporte quincenal por trabajador ──────────────────────────────────────────
-// Deriva del mismo listado (una sola fuente): agrupa por trabajador y suma lo
-// que se le paga (monto_trabajador). Es lo que reemplaza el cuaderno.
-
-export interface WorkerCommissionReport {
-  worker_id: string
-  worker_name: string
-  count: number
-  totalWorker: number
-  totalLocal: number
-  totalCommission: number
-}
-
-export function summarizeByWorker(rows: CommissionRow[]): WorkerCommissionReport[] {
-  const map = new Map<string, WorkerCommissionReport>()
-  for (const r of rows) {
-    const prev =
-      map.get(r.worker_id) ??
-      ({
-        worker_id: r.worker_id,
-        worker_name: r.worker_name,
-        count: 0,
-        totalWorker: 0,
-        totalLocal: 0,
-        totalCommission: 0,
-      } satisfies WorkerCommissionReport)
-    prev.count += 1
-    prev.totalWorker += r.monto_trabajador
-    prev.totalLocal += r.monto_local
-    prev.totalCommission += r.monto_total
-    map.set(r.worker_id, prev)
-  }
-  return Array.from(map.values()).sort((a, b) => b.totalWorker - a.totalWorker)
 }
 
 // ── Trabajadores de la tienda (para el selector) ──────────────────────────────
@@ -177,6 +163,52 @@ export function useRegisterCommission() {
   })
 }
 
-// NOTA: no hay borrado/edición desde el cliente. La tabla es RPC-only para
-// escritura (048); la corrección/reverso irá por una RPC dedicada que valida el
-// estado del turno (Fase 4 punto 2, pendiente de aprobación).
+// ── Corrección (050): reverso + reasignación, ambos por RPC ───────────────────
+// No hay edición directa desde el cliente (tabla RPC-only). El reverso es una
+// ANULACIÓN con traza (la fila no se borra); la reasignación cambia el
+// beneficiario dejando traza. La regla de turno la aplica la RPC en el servidor.
+
+export function useReverseCommission() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (row: CommissionRow): Promise<void> => {
+      const { error } = await supabase.rpc('reverse_credit_commission' as never, {
+        p_id: row.id,
+      } as never)
+      if (error) throw error
+    },
+    onSuccess: (_v, row) => {
+      qc.invalidateQueries({ queryKey: ['credit-commissions'] })
+      // Anular una efectivo (turno abierto) baja el efectivo esperado del turno.
+      if (row.metodo === 'efectivo') {
+        qc.invalidateQueries({ queryKey: ['shift-closing'] })
+        qc.invalidateQueries({ queryKey: ['shift-history'] })
+      }
+      toast.success('Comisión anulada')
+    },
+    onError: (err: Error) => toast.error(err.message),
+  })
+}
+
+export function useReassignCommissionWorker() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: {
+      id: string
+      newWorkerId: string
+    }): Promise<void> => {
+      const { error } = await supabase.rpc('reassign_commission_worker' as never, {
+        p_id: input.id,
+        p_new_worker: input.newWorkerId,
+      } as never)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      // Reasignar NO toca el efectivo esperado (caja-safe): solo cambia a quién
+      // se le paga la quincena. No se invalidan las queries del cuadre.
+      qc.invalidateQueries({ queryKey: ['credit-commissions'] })
+      toast.success('Comisión reasignada')
+    },
+    onError: (err: Error) => toast.error(err.message),
+  })
+}

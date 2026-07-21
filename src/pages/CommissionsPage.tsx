@@ -1,16 +1,17 @@
 import { useMemo, useState } from 'react'
-import { CreditCard, Plus, Users } from 'lucide-react'
+import { CreditCard, Plus, Users, Ban, UserCog } from 'lucide-react'
 import { fmtCOP } from '@/lib/formatters'
 import { todayInBogota } from '@/lib/dateRange'
-import { quincenaRange } from '@/lib/commissionCalc'
+import { quincenaRange, summarizeByWorker, sumActive } from '@/lib/commissionCalc'
 import { usePermissions } from '@/hooks/usePermissions'
 import {
   useCommissionsList,
-  summarizeByWorker,
   type CommissionFilters,
   type CommissionRow,
 } from '@/hooks/useCreditCommissions'
 import { NewCommissionModal } from '@/components/commissions/NewCommissionModal'
+import { ReverseCommissionModal } from '@/components/commissions/ReverseCommissionModal'
+import { ReassignWorkerModal } from '@/components/commissions/ReassignWorkerModal'
 import type { CommissionMethod } from '@/types/database.types'
 
 // Etiquetas de método (chip). efectivo = cian (entra al cajón); consignación =
@@ -38,10 +39,12 @@ export default function CommissionsPage() {
 
   const filters: CommissionFilters = { from, to }
   const { data: rows = [], isLoading } = useCommissionsList(filters)
+  // Reporte y totales EXCLUYEN las anuladas (summarizeByWorker/sumActive las
+  // filtran). La lista de abajo sí las muestra, marcadas.
   const report = useMemo(() => summarizeByWorker(rows), [rows])
-
-  const totalPeriodo = rows.reduce((s, r) => s + r.monto_total, 0)
-  const totalTrabajadores = rows.reduce((s, r) => s + r.monto_trabajador, 0)
+  const totals = useMemo(() => sumActive(rows), [rows])
+  const totalPeriodo = totals.total
+  const totalTrabajadores = totals.worker
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-6">
@@ -166,7 +169,7 @@ export default function CommissionsPage() {
             No hay comisiones registradas en el período.
           </p>
         ) : (
-          <CommissionTable rows={rows} />
+          <CommissionTable rows={rows} canManage={canManage} />
         )}
       </div>
 
@@ -177,48 +180,134 @@ export default function CommissionsPage() {
 
 // ── Tabla ─────────────────────────────────────────────────────────────────────
 
-function CommissionTable({ rows }: { rows: CommissionRow[] }) {
+function fmtTsDate(iso: string): string {
+  return new Intl.DateTimeFormat('es-CO', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'America/Bogota',
+  }).format(new Date(iso))
+}
+
+function CommissionTable({
+  rows,
+  canManage,
+}: {
+  rows: CommissionRow[]
+  canManage: boolean
+}) {
+  const [reversing, setReversing] = useState<CommissionRow | null>(null)
+  const [reassigning, setReassigning] = useState<CommissionRow | null>(null)
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-[#f5f4f1] text-left text-[11px] uppercase tracking-[.04em] text-[#a8a29e]">
-            <th className="px-5 py-2.5 font-medium">Fecha</th>
-            <th className="px-3 py-2.5 font-medium">Trabajador</th>
-            <th className="px-3 py-2.5 font-medium">Cliente</th>
-            <th className="px-3 py-2.5 font-medium">Método</th>
-            <th className="px-3 py-2.5 text-right font-medium">Total</th>
-            <th className="px-5 py-2.5 text-right font-medium">Trabajador</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-[#f5f4f1]">
-          {rows.map((r) => {
-            const meta = METHOD_META[r.metodo]
-            return (
-              <tr key={r.id} className="hover:bg-[#fafaf9]">
-                <td className="whitespace-nowrap px-5 py-2.5 font-mono text-[13px] text-[#525252]">
-                  {fmtFecha(r.fecha)}
-                </td>
-                <td className="px-3 py-2.5 text-[#1a1a1a]">{r.worker_name}</td>
-                <td className="px-3 py-2.5 text-[#737373]">{r.customer_name ?? '—'}</td>
-                <td className="px-3 py-2.5">
-                  <span
-                    className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${meta.cls}`}
+    <>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-[#f5f4f1] text-left text-[11px] uppercase tracking-[.04em] text-[#a8a29e]">
+              <th className="px-5 py-2.5 font-medium">Fecha</th>
+              <th className="px-3 py-2.5 font-medium">Trabajador</th>
+              <th className="px-3 py-2.5 font-medium">Cliente</th>
+              <th className="px-3 py-2.5 font-medium">Método</th>
+              <th className="px-3 py-2.5 text-right font-medium">Total</th>
+              <th className="px-3 py-2.5 text-right font-medium">Trabajador</th>
+              {canManage && <th className="px-5 py-2.5" />}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#f5f4f1]">
+            {rows.map((r) => {
+              const meta = METHOD_META[r.metodo]
+              const anulada = !!r.reversed_at
+              return (
+                <tr
+                  key={r.id}
+                  className={anulada ? 'bg-[#fafaf9] text-[#a8a29e]' : 'hover:bg-[#fafaf9]'}
+                >
+                  <td className="whitespace-nowrap px-5 py-2.5 font-mono text-[13px]">
+                    {fmtFecha(r.fecha)}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <span className={anulada ? 'text-[#a8a29e]' : 'text-[#1a1a1a]'}>
+                      {r.worker_name}
+                    </span>
+                    {/* Traza visible: anulada (con fecha) o reasignada. */}
+                    {anulada && (
+                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-600 ring-1 ring-inset ring-red-200">
+                        Anulada · {r.reversed_at ? fmtTsDate(r.reversed_at) : ''}
+                      </span>
+                    )}
+                    {!anulada && r.reassigned_at && (
+                      <span
+                        className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-inset ring-amber-200"
+                        title={
+                          r.original_worker_name
+                            ? `Reasignada desde ${r.original_worker_name}`
+                            : 'Reasignada'
+                        }
+                      >
+                        Reasignada
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2.5 text-[#737373]">{r.customer_name ?? '—'}</td>
+                  <td className="px-3 py-2.5">
+                    <span
+                      className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${meta.cls} ${anulada ? 'opacity-60' : ''}`}
+                    >
+                      {meta.label}
+                    </span>
+                  </td>
+                  <td
+                    className={`whitespace-nowrap px-3 py-2.5 text-right font-mono ${anulada ? 'text-[#a8a29e] line-through' : 'text-[#525252]'}`}
                   >
-                    {meta.label}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono text-[#525252]">
-                  {fmtCOP(r.monto_total)}
-                </td>
-                <td className="whitespace-nowrap px-5 py-2.5 text-right font-mono font-semibold text-cyan-700">
-                  {fmtCOP(r.monto_trabajador)}
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+                    {fmtCOP(r.monto_total)}
+                  </td>
+                  <td
+                    className={`whitespace-nowrap px-3 py-2.5 text-right font-mono font-semibold ${anulada ? 'text-[#a8a29e] line-through' : 'text-cyan-700'}`}
+                  >
+                    {fmtCOP(r.monto_trabajador)}
+                  </td>
+                  {canManage && (
+                    <td className="whitespace-nowrap px-5 py-2.5 text-right">
+                      {!anulada && (
+                        <div className="flex justify-end gap-1">
+                          <button
+                            onClick={() => setReassigning(r)}
+                            className="rounded-md p-1.5 text-[#a8a29e] hover:bg-amber-50 hover:text-amber-700"
+                            title="Reasignar trabajador"
+                          >
+                            <UserCog size={15} />
+                          </button>
+                          {/* Anular solo si es reversible (consignación o
+                              efectivo con turno abierto). */}
+                          <button
+                            onClick={() => setReversing(r)}
+                            disabled={!r.reversible}
+                            className="rounded-md p-1.5 text-[#a8a29e] enabled:hover:bg-red-50 enabled:hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                            title={
+                              r.reversible
+                                ? 'Anular comisión'
+                                : 'No se puede anular: efectivo de un turno ya cerrado'
+                            }
+                          >
+                            <Ban size={15} />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {reversing && (
+        <ReverseCommissionModal commission={reversing} onClose={() => setReversing(null)} />
+      )}
+      {reassigning && (
+        <ReassignWorkerModal commission={reassigning} onClose={() => setReassigning(null)} />
+      )}
+    </>
   )
 }
