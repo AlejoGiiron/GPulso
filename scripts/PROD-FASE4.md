@@ -224,18 +224,19 @@ SELECT proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
 WHERE n.nspname='public' AND proname IN ('reverse_credit_commission','reassign_commission_worker')
 ORDER BY proname;
 -- La FRONTERA: reverse_credit_commission mira closed_at del turno (bloquea
--- efectivo de turno cerrado). Se ignoran comentarios.
-WITH code AS (
-  SELECT btrim(l) AS l
-  FROM regexp_split_to_table(pg_get_functiondef('public.reverse_credit_commission'::regproc), E'\n') AS l
-  WHERE btrim(l) NOT LIKE '--%'
-)
-SELECT EXISTS (SELECT 1 FROM code WHERE l ILIKE '%closed_at%' AND l ILIKE '%cash_shifts%') AS reverso_mira_turno;
+-- efectivo de turno cerrado) y lanza el RAISE correspondiente. Se comprueba sobre
+-- el CUERPO completo (no por línea: closed_at y cash_shifts caen en líneas
+-- adyacentes, un chequeo por-línea daría un falso negativo).
+SELECT
+  pg_get_functiondef('public.reverse_credit_commission'::regproc) ILIKE '%cash_shifts%'       AS ref_cash_shifts,
+  pg_get_functiondef('public.reverse_credit_commission'::regproc) ILIKE '%closed_at%'          AS ref_closed_at,
+  pg_get_functiondef('public.reverse_credit_commission'::regproc) ILIKE '%turno ya cerrado%'   AS raise_turno_cerrado;
 SQL
 ```
-**Esperado:** `cols` = las 5 columnas · las 2 RPCs (2 filas) · `reverso_mira_turno = t`.
-Si `reverso_mira_turno` diera `f`, el reverso NO bloquearía un efectivo de turno
-cerrado (reescribiría un cuadre settled): **re-aplica la 050 y detente si persiste**.
+**Esperado:** `cols` = las 5 columnas · las 2 RPCs (2 filas) · los tres booleanos
+`ref_cash_shifts / ref_closed_at / raise_turno_cerrado = t`. Si alguno diera `f`,
+el reverso NO bloquearía un efectivo de turno cerrado (reescribiría un cuadre
+settled): **re-aplica la 050 y detente si persiste**.
 
 ---
 
