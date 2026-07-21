@@ -4,9 +4,9 @@
 > del smoke test humano + este procedimiento. Prod tiene datos reales de
 > CelFashion.
 >
-> **Migraciones a aplicar:** `048` → `049` (las dos nuevas de la Fase 4). Prod ya
-> está en `047` (Fase 3). Es un **apply incremental sobre una BD CON datos**, NO
-> un replay desde cero.
+> **Migraciones a aplicar:** `048` → `049` → `050` (las tres nuevas de la Fase 4:
+> modelo+RPC, permiso, y corrección/reverso). Prod ya está en `047` (Fase 3). Es
+> un **apply incremental sobre una BD CON datos**, NO un replay desde cero.
 
 ---
 
@@ -79,7 +79,8 @@ d) SOLO si c) pasa: merge a develop  →  Vercel despliega el frontend
 ```bash
 set -e
 for f in 048_credit_commissions \
-         049_comisiones_permission; do
+         049_comisiones_permission \
+         050_credit_commission_reversal; do
   echo "▶ Aplicando $f …"
   { echo "SET check_function_bodies = false;"; cat "supabase/migrations/${f}.sql"; } \
     | MSYS_NO_PATHCONV=1 docker run --rm -i -e GPULSO_DB_URL postgres:17 \
@@ -91,7 +92,7 @@ echo "✔ 048→049 aplicadas."
 
 Notas:
 
-- **Ambas se auto-envuelven en `BEGIN;…COMMIT;`** (verificado). Con
+- **Las tres se auto-envuelven en `BEGIN;…COMMIT;`** (verificado). Con
   `ON_ERROR_STOP=1`, si una falla su transacción se revierte entera y el loop se
   detiene. No hay `ALTER TYPE … ADD VALUE` (el enum `commission_method` se CREA
   entero), así que **no** hay el caso aislado de la 043.
@@ -208,6 +209,34 @@ SQL
 Si el Administrador de CelFashion **no** tiene `comisiones.gestionar`, re-aplica
 solo la `049` (idempotente/self-healing) y repite. Si aun así falla, **detente**.
 
+### 3.6 Corrección/reverso (050): columnas + RPCs + la frontera del reverso
+
+```bash
+MSYS_NO_PATHCONV=1 docker run --rm -i -e GPULSO_DB_URL postgres:17 \
+  sh -c 'psql "$GPULSO_DB_URL"' <<'SQL'
+-- Columnas de traza
+SELECT string_agg(column_name, ', ' ORDER BY column_name) AS cols
+FROM information_schema.columns
+WHERE table_schema='public' AND table_name='credit_commissions'
+  AND column_name IN ('reversed_at','reversed_by','reassigned_at','reassigned_by','original_worker_id');
+-- Las 2 RPCs
+SELECT proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+WHERE n.nspname='public' AND proname IN ('reverse_credit_commission','reassign_commission_worker')
+ORDER BY proname;
+-- La FRONTERA: reverse_credit_commission mira closed_at del turno (bloquea
+-- efectivo de turno cerrado). Se ignoran comentarios.
+WITH code AS (
+  SELECT btrim(l) AS l
+  FROM regexp_split_to_table(pg_get_functiondef('public.reverse_credit_commission'::regproc), E'\n') AS l
+  WHERE btrim(l) NOT LIKE '--%'
+)
+SELECT EXISTS (SELECT 1 FROM code WHERE l ILIKE '%closed_at%' AND l ILIKE '%cash_shifts%') AS reverso_mira_turno;
+SQL
+```
+**Esperado:** `cols` = las 5 columnas · las 2 RPCs (2 filas) · `reverso_mira_turno = t`.
+Si `reverso_mira_turno` diera `f`, el reverso NO bloquearía un efectivo de turno
+cerrado (reescribiría un cuadre settled): **re-aplica la 050 y detente si persiste**.
+
 ---
 
 ## 4. Plan de contingencia (falla a mitad del chain)
@@ -216,6 +245,7 @@ solo la `049` (idempotente/self-healing) y repite. Si aun así falla, **detente*
 |----------|---------------------------|----------|
 | 048 | Sigue en `047` | Fix-forward: reintenta desde 048. |
 | 049 | En `048` (tabla + RPC ya viven, pero SIN permiso → módulo invisible para el Admin) | Fix-forward desde 049. **No deployes** hasta que §3.5 pase. |
+| 050 | En `049` (registro/lectura funcionan; falta la corrección/reverso) | Fix-forward desde 050. El registro ya sirve; sin 050 no hay anular/reasignar. |
 
 **Criterio DURO de no-deploy:** si CUALQUIER verificación del §3 —muy en especial
 §3.5 (CelFashion con `comisiones.gestionar`)— no da el esperado, **NO se mergea a
@@ -231,17 +261,21 @@ develop**.
 - [ ] Servidor confirmado en mayor 17.
 - [ ] Backup `pre-fase4` generado y verificado (`TABLE DATA` > 0).
 - [ ] Comando de restore de emergencia a la vista.
-- [ ] 048→049 aplicadas con el loop `ON_ERROR_STOP=1` (§2.1).
+- [ ] 048→050 aplicadas con el loop `ON_ERROR_STOP=1` (§2.1).
 - [ ] §3.1 tabla con RLS = t.
 - [ ] §3.2 RPC + enum + CHECK de coherencia.
 - [ ] §3.3 contenido: turno por tienda sin opened_by + exige permiso.
 - [ ] §3.4 RLS self-select del trabajador.
 - [ ] **§3.5 CelFashion Administrador con comisiones.gestionar.**
+- [ ] §3.6 columnas de traza + RPCs de reverso/reasignación + frontera del reverso.
 - [ ] TODO verde → merge a develop → Vercel despliega el frontend.
 - [ ] Smoke post-deploy: registrar una comisión en efectivo bajo turno abierto →
       aparece en el cuadre como "COMISIONES DE CRÉDITO" y sube el efectivo
       esperado; registrar una de consignación → NO toca la caja; ver el reporte
-      quincenal por trabajador.
+      quincenal por trabajador; ANULAR una efectivo del turno abierto → baja el
+      esperado y queda marcada; intentar anular una de un turno ya cerrado → se
+      rechaza; reasignar el trabajador de una cerrada → cambia el beneficiario
+      sin mover la caja.
 
 ---
 
@@ -268,13 +302,16 @@ para que quede en el cuadre del día en que efectivamente se paga.
 
 | Migración | Qué hace |
 |-----------|----------|
-| `048_credit_commissions` | enum `commission_method`; tabla `credit_commissions` (org por trigger, reparto con CHECK de coherencia, `shift_id` con CHECK efectivo⇒turno / consignación⇒NULL); índices; RLS (SELECT self-select del trabajador + gestionar; DELETE gestionar; sin INSERT/UPDATE directo); RPC `register_credit_commission` (atómica: valida permiso, reparto, org del trabajador/cliente, turno por tienda en efectivo). |
+| `048_credit_commissions` | enum `commission_method`; tabla `credit_commissions` (org por trigger, reparto con CHECK de coherencia, `shift_id` con CHECK efectivo⇒turno / consignación⇒NULL); índices; RLS **solo SELECT** (self-select del trabajador OR gestionar) — **sin INSERT/UPDATE/DELETE** → escritura RPC-only; RPC `register_credit_commission` (atómica: valida permiso, reparto, org del trabajador/cliente, turno por tienda en efectivo). |
 | `049_comisiones_permission` | `canonical_role_permissions` += `comisiones.gestionar` (Administrador; Dueño via *); reconciliación aditiva SIN filtro de org (alcanza a CelFashion). |
+| `050_credit_commission_reversal` | Columnas de traza (`reversed_at/by`, `reassigned_at/by`, `original_worker_id`); RPC `reverse_credit_commission` (ANULA con traza; gateada por turno: consignación y efectivo-turno-abierto sí, efectivo-turno-cerrado NO); RPC `reassign_commission_worker` (cambia beneficiario, permitido siempre, caja-safe). Las anuladas se excluyen de TODO cálculo. |
 
 Tests que respaldan la fase:
-- SQL (verde en lab): `scripts/test-credit-commission.sql` (atomicidad, turno,
-  consignación, reparto, permiso, RLS self-select).
-- Puros (Vitest): `src/lib/commissionCalc.test.ts` (reparto 50/50 y editable,
-  redondeo, corte quincenal) y los casos de comisión en
-  `src/lib/shiftCalc.test.ts` (efectivo sube el esperado sin inflar ventas;
-  invariante del cuadre).
+- SQL (verde en lab, 12 casos): `scripts/test-credit-commission.sql` (atomicidad,
+  turno, consignación, reparto, permiso, RLS self-select, escritura directa
+  rechazada; reverso abierto/cerrado/consignación, la anulada no cuenta al
+  cuadre, reasignación tras cierre sin cambiar el esperado, worker sin permiso no
+  revierte ni reasigna).
+- Puros (Vitest): `src/lib/commissionCalc.test.ts` (reparto, corte quincenal, y
+  que las anuladas NO sumen en reporte/totales) y los casos de comisión en
+  `src/lib/shiftCalc.test.ts` (efectivo sube el esperado sin inflar ventas).

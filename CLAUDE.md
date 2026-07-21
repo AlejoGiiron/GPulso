@@ -374,7 +374,7 @@ Sidebar agrupado en secciones colapsables (feature/12-caja-completa) ✅
 
 ## Estado actual del proyecto
 Última fase completada: Fase 4 — comisiones por crédito (BD+UI, gate verde;
-migraciones 048–049 PENDIENTES de aplicar en prod, ver scripts/PROD-FASE4.md)
+migraciones 048–050 PENDIENTES de aplicar en prod, ver scripts/PROD-FASE4.md)
 Previo: claridad del historial de ventas para el cuadre
 (tipo de venta + dinero real entrado por día)
 Previo: tarjeta de producto con marca, rango de precios y descripción
@@ -424,11 +424,28 @@ Fase 4 — Comisiones por crédito (feature/fase-4-comisiones) ✅
     ConfirmDeleteCommissionModal (aviso si efectivo afecta cuadre).
   - Pago al trabajador = EGRESO por la vía de gastos existente (no nómina);
     documentado en PROD-FASE4.md.
-  - Tests: commissionCalc.test.ts (9) + casos de comisión en shiftCalc.test.ts;
-    scripts/test-credit-commission.sql (atomicidad, turno, consignación, reparto,
-    permiso, RLS self-select). Gate verde: tsc + eslint + 291 tests + build.
-  - PENDIENTE: aplicar 048–049 en prod (scripts/PROD-FASE4.md) + re-deploy no
-    requiere Edge Functions (la RPC va por migración).
+  - SEGURIDAD (RPC-only): credit_commissions solo tiene política SELECT; sin
+    INSERT/UPDATE/DELETE → authenticated no escribe directo, la RPC (SECURITY
+    DEFINER) es la única vía. Cierra el bypass de las validaciones (turno/tienda).
+  - CORRECCIÓN / REVERSO (Migración 050): ledger append-only con traza.
+    · reverse_credit_commission ANULA con traza (reversed_at/by; la fila NO se
+      borra, sigue visible marcada). FRONTERA: "¿toca el expectedCash de un turno
+      CERRADO?" — consignación y efectivo-turno-ABIERTO se pueden anular;
+      efectivo-turno-CERRADO NO (no reescribir un cuadre settled; el monto/método
+      mal de una cerrada se corrige por ajuste en la caja de hoy).
+    · reassign_commission_worker cambia el beneficiario, permitido SIEMPRE (aun
+      con turno cerrado) porque es CAJA-SAFE (no toca expectedCash); deja traza
+      (reassigned_at/by + original_worker_id).
+    · Las ANULADAS se excluyen de TODO cálculo: shiftCommissions (expectedCash),
+      commissionCalc.summarizeByWorker/sumActive (reporte quincenal + totales) y
+      el recibo. En la UI la anulada se VE marcada (con fecha), no desaparece.
+  - Tests: commissionCalc.test.ts (reparto, quincena, anuladas no suman) + casos
+    de comisión en shiftCalc.test.ts; scripts/test-credit-commission.sql (12
+    casos: registro/turno/permiso/RLS/escritura-RPC-only + reverso gateado +
+    reasignación caja-safe, verde en lab). Gate verde: tsc + eslint + 295 tests +
+    build.
+  - PENDIENTE: aplicar 048–050 en prod (scripts/PROD-FASE4.md); no requiere Edge
+    Functions (todo va por migración).
 
 Claridad del historial de ventas (feature/sales-history-cash-clarity) ✅
   - PROBLEMA: el cuadre diario dolía porque el historial mostraba el TOTAL de
