@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, Plus, Package, Edit2, Layers } from 'lucide-react'
 import { useProducts, useCategories } from '@/hooks/useProducts'
 import { useVariants } from '@/hooks/useVariants'
-import { useVariantMutations } from '@/hooks/useVariantMutations'
 import ProductModal from '@/components/products/ProductModal'
 import VariantsPanel from '@/components/products/VariantsPanel'
 import { fmtCOP } from '@/lib/formatters'
@@ -158,12 +157,9 @@ function ProductHero({ product, variants, onEdit, onManageVariants }: ProductHer
 
 interface StockMatrixProps {
   variants: Variant[]
-  editingId: string | null
-  onEditStart: (id: string) => void
-  onEditCommit: (id: string, qty: number) => void
 }
 
-function StockMatrix({ variants, editingId, onEditStart, onEditCommit }: StockMatrixProps) {
+function StockMatrix({ variants }: StockMatrixProps) {
   const active = variants.filter((v) => v.is_active)
   const sizes = sortSizes([...new Set(active.map((v) => v.size).filter((s): s is string => s !== null))])
   const colors = [...new Set(active.map((v) => v.color).filter((c): c is string => c !== null))]
@@ -181,7 +177,9 @@ function StockMatrix({ variants, editingId, onEditStart, onEditCommit }: StockMa
           <h3 className="text-base font-semibold tracking-tight text-slate-900">
             Matriz de inventario
           </h3>
-          <p className="text-xs text-slate-400">Click en una celda para editar el stock</p>
+          <p className="text-xs text-slate-400">
+            El stock se ajusta desde Inventario (ajuste manual o compra)
+          </p>
         </div>
         <div className="flex gap-3 text-[11px] text-slate-500">
           {[
@@ -240,18 +238,10 @@ function StockMatrix({ variants, editingId, onEditStart, onEditCommit }: StockMa
                   const state = stockState(v.stock_qty, v.min_stock)
                   const bg = state === 'out' ? '#fee2e2' : state === 'low' ? '#fef3c7' : '#dcfce7'
                   const fg = state === 'out' ? '#b91c1c' : state === 'low' ? '#92400e' : '#166534'
-                  const isEditing = editingId === v.id
 
                   return (
                     <td key={size} className="p-0">
-                      <MatrixCell
-                        variant={v}
-                        bg={bg}
-                        fg={fg}
-                        isEditing={isEditing}
-                        onEditStart={() => onEditStart(v.id)}
-                        onEditCommit={(qty) => onEditCommit(v.id, qty)}
-                      />
+                      <MatrixCell variant={v} bg={bg} fg={fg} />
                     </td>
                   )
                 })}
@@ -268,51 +258,25 @@ interface MatrixCellProps {
   variant: Variant
   bg: string
   fg: string
-  isEditing: boolean
-  onEditStart: () => void
-  onEditCommit: (qty: number) => void
 }
 
-function MatrixCell({ variant, bg, fg, isEditing, onEditStart, onEditCommit }: MatrixCellProps) {
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    if (isEditing) inputRef.current?.focus()
-  }, [isEditing])
-
+// Solo lectura: el stock ya no se edita a mano desde la matriz. Se mueve por
+// compra / ajuste manual (Inventario) / venta / apertura, siempre con rastro.
+function MatrixCell({ variant, bg, fg }: MatrixCellProps) {
   return (
     <div
-      className="flex h-14 w-16 cursor-pointer flex-col items-center justify-center rounded-lg"
+      className="flex h-14 w-16 flex-col items-center justify-center rounded-lg"
       style={{ background: bg, border: `1px solid ${fg}33` }}
-      onClick={() => !isEditing && onEditStart()}
     >
-      {isEditing ? (
-        <input
-          ref={inputRef}
-          type="number"
-          defaultValue={variant.stock_qty}
-          min="0"
-          onBlur={(e) => onEditCommit(parseInt(e.target.value) || 0)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') e.currentTarget.blur()
-            if (e.key === 'Escape') onEditCommit(variant.stock_qty)
-          }}
-          className="w-12 rounded-md border-2 border-cyan-400 bg-white px-1 py-0.5 text-center text-sm font-bold outline-none"
-          style={{ boxShadow: '0 0 0 3px rgba(139,92,246,0.15)' }}
-        />
-      ) : (
-        <>
-          <span
-            className="font-mono text-lg font-bold leading-none tabular-nums"
-            style={{ color: fg }}
-          >
-            {variant.stock_qty}
-          </span>
-          <span className="mt-0.5 text-[9px] font-medium" style={{ color: fg, opacity: 0.7 }}>
-            {fmtCOP(variant.price).replace('$ ', '$')}
-          </span>
-        </>
-      )}
+      <span
+        className="font-mono text-lg font-bold leading-none tabular-nums"
+        style={{ color: fg }}
+      >
+        {variant.stock_qty}
+      </span>
+      <span className="mt-0.5 text-[9px] font-medium" style={{ color: fg, opacity: 0.7 }}>
+        {fmtCOP(variant.price).replace('$ ', '$')}
+      </span>
     </div>
   )
 }
@@ -434,7 +398,6 @@ export default function ProductsPage() {
   const [showNewProduct, setShowNewProduct] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [variantsPanelProduct, setVariantsPanelProduct] = useState<Product | null>(null)
-  const [editingStockId, setEditingStockId] = useState<string | null>(null)
 
   // Auto-select first product on initial load
   useEffect(() => {
@@ -445,7 +408,6 @@ export default function ProductsPage() {
   }, [products.length])
 
   const { data: variants = [], isLoading: isLoadingVariants } = useVariants(selectedId ?? '')
-  const { update: updateVariant } = useVariantMutations(selectedId ?? '')
 
   const selectedProduct = products.find((p) => p.id === selectedId)
 
@@ -463,11 +425,6 @@ export default function ProductsPage() {
     }
     return true
   })
-
-  function handleStockEdit(variantId: string, qty: number) {
-    setEditingStockId(null)
-    updateVariant.mutate({ id: variantId, stock_qty: qty })
-  }
 
   function handleProductSaved(product: Product) {
     setShowNewProduct(false)
@@ -639,12 +596,7 @@ export default function ProductsPage() {
                 </div>
               ) : (
                 <>
-                  <StockMatrix
-                    variants={variants}
-                    editingId={editingStockId}
-                    onEditStart={(id) => setEditingStockId(id)}
-                    onEditCommit={handleStockEdit}
-                  />
+                  <StockMatrix variants={variants} />
                   <VariantsTable
                     variants={variants}
                     onManageVariants={() => setVariantsPanelProduct(selectedProduct)}

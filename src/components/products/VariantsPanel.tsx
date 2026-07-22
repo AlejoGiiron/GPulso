@@ -119,6 +119,8 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
       const minStock = parseInt(form.min_stock) || 0
 
       if (editingId) {
+        // El stock NO se edita aquí: se mueve por compra / ajuste / venta /
+        // apertura (con rastro). Editar la variante solo cambia sus atributos.
         await update.mutateAsync({
           id: editingId,
           size: form.size || null,
@@ -127,7 +129,6 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
           ...(barcode !== null && { barcode }),
           price,
           cost_price: costPrice,
-          stock_qty: stockQty,
           min_stock: minStock,
         })
         toast.success('Variante actualizada')
@@ -329,15 +330,27 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                        Stock inicial
+                        {editingId ? 'Stock actual' : 'Stock inicial'}
                       </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={form.stock_qty}
-                        onChange={(e) => setField('stock_qty', e.target.value)}
-                        className="h-9 w-full rounded-lg border border-slate-200 px-2.5 font-mono text-sm outline-none focus:border-cyan-400"
-                      />
+                      {editingId ? (
+                        <>
+                          <div className="flex h-9 w-full items-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 font-mono text-sm text-slate-500">
+                            {form.stock_qty}
+                          </div>
+                          <p className="mt-1 text-[10.5px] leading-tight text-slate-400">
+                            El stock se ajusta desde Inventario → Ajuste manual (o
+                            por compra). No se edita a mano aquí.
+                          </p>
+                        </>
+                      ) : (
+                        <input
+                          type="number"
+                          min="0"
+                          value={form.stock_qty}
+                          onChange={(e) => setField('stock_qty', e.target.value)}
+                          className="h-9 w-full rounded-lg border border-slate-200 px-2.5 font-mono text-sm outline-none focus:border-cyan-400"
+                        />
+                      )}
                     </div>
                     <div>
                       <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">
