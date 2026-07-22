@@ -78,6 +78,7 @@ const MOV_TYPE_LABELS: Record<StockMovementType, string> = {
   adjustment: 'Ajuste',
   purchase: 'Compra',
   repair_consumption: 'Repuesto',
+  opening: 'Apertura',
 }
 
 function MovTypeBadge({ type }: { type: StockMovementType }) {
@@ -88,6 +89,7 @@ function MovTypeBadge({ type }: { type: StockMovementType }) {
     adjustment:         'bg-blue-50 text-blue-600 border border-blue-200',
     purchase:           'bg-cyan-50 text-cyan-600 border border-cyan-200',
     repair_consumption: 'bg-amber-50 text-amber-600 border border-amber-200',
+    opening:            'bg-violet-50 text-violet-600 border border-violet-200',
   }
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${styles[type]}`}>
@@ -1046,6 +1048,7 @@ export default function InventoryPage() {
                 <option value="return">Devolución</option>
                 <option value="adjustment">Ajuste</option>
                 <option value="purchase">Compra</option>
+                <option value="opening">Apertura</option>
               </select>
 
               <div className="flex items-center gap-2">

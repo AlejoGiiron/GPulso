@@ -82,6 +82,22 @@ Notas de diseño relevantes para portar:
 - **`stock_qty` es la única fuente de verdad del stock.** No se recalcula desde
   `stock_movements`; los movimientos son auditoría paralela. Se mantienen en
   sincronía porque el MISMO trigger que toca `stock_qty` inserta el movimiento.
+- **`stock_qty` NO se edita a mano.** (fix/inventory-lock-manual-stock) Sigue
+  siendo la fuente de verdad, pero solo lo mueven operaciones que dejan rastro en
+  `stock_movements`:
+  - **apertura** (`opening`, 051/052): el stock inicial capturado AL CREAR la
+    variante; el trigger `log_opening_stock_movement` lo registra.
+  - **compra** (`purchase`): entrada por factura de proveedor.
+  - **ajuste manual** (`adjustment`): corrección posterior (conteo, merma) desde
+    Inventario → Ajuste manual; actualiza `stock_qty` y registra el movimiento.
+  - **venta / devolución** (`sale`/`return`): operación del POS.
+  - **consumo de taller** (`repair_consumption`): pieza usada en una reparación.
+  El formulario de edición de producto/variante muestra el stock en SOLO LECTURA;
+  la matriz de inventario de la ficha de producto también es solo lectura. No hay
+  ninguna ruta de cliente que escriba `stock_qty` fuera de esas operaciones.
+- **Serializados:** su `stock_qty` es DERIVADO de `units` por el trigger de
+  sincronización (039); nunca se edita ni se abre a mano (la variante ancla nace
+  en 0 y las unidades llevan el conteo).
 - `CHECK (stock_qty >= 0)` previene stock negativo a nivel BD (red de seguridad
   contra sobreventa por carrera; ver §2.4).
 - `cost_price` es **nullable** (no siempre se conoce el costo). El cálculo de
@@ -92,7 +108,9 @@ Notas de diseño relevantes para portar:
 ### 1.2 Auditoría — `stock_movements` (la pieza más reutilizable)
 
 ```sql
-CREATE TYPE movement_type AS ENUM ('sale', 'return', 'adjustment', 'purchase');
+-- Valores agregados después: 'repair_consumption' (043), 'opening' (051).
+CREATE TYPE movement_type AS ENUM ('sale', 'return', 'adjustment', 'purchase',
+                                   'repair_consumption', 'opening');
 
 CREATE TABLE public.stock_movements (
   id           uuid          PRIMARY KEY DEFAULT uuid_generate_v4(),

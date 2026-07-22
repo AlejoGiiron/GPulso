@@ -17,12 +17,16 @@ type CreateVariantInput = {
   min_stock: number
 }
 
+// stock_qty NO es editable por esta vía: el stock solo se mueve por
+// compra / ajuste / venta / devolución / apertura (cada uno deja rastro en
+// stock_movements). El alta (create) sí fija el stock inicial → genera su
+// movimiento 'opening' (trigger 052). Editar una variante nunca toca el stock.
 type UpdateVariantInput = {
   id: string
 } & Partial<
   Pick<
     Variant,
-    'size' | 'color' | 'sku' | 'barcode' | 'price' | 'cost_price' | 'stock_qty' | 'min_stock' | 'is_active'
+    'size' | 'color' | 'sku' | 'barcode' | 'price' | 'cost_price' | 'min_stock' | 'is_active'
   >
 >
 

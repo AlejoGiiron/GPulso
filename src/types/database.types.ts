@@ -7,6 +7,9 @@ export type StockMovementType =
   | 'adjustment'
   | 'purchase'
   | 'repair_consumption'
+  // Stock inicial capturado al crear la variante (051/052). qty positivo,
+  // reference_id NULL. No es compra ni ajuste manual.
+  | 'opening'
 export type ReturnType = 'return' | 'exchange'
 export type ReturnStatus = 'pending' | 'completed'
 export type ReturnAction = 'refund' | 'exchange'
