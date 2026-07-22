@@ -14,23 +14,43 @@
 -- ║                                                                            ║
 -- ║  ⛔ EXIGE BACKUP PREVIO. No hay papelera. Una vez COMMIT, no se deshace.    ║
 -- ║     En prod: Supabase → Database → Backups (o pg_dump). Ver PROD-FASE*.md.  ║
+-- ║                                                                            ║
+-- ║  ⛔ NUNCA correr con el store_id de una tienda EN OPERACIÓN. Verifica el     ║
+-- ║     store_id contra la tienda de PRUEBAS antes de ejecutar. Este script     ║
+-- ║     borraría ventas, inventario y caja reales sin más preguntas.            ║
+-- ║                                                                            ║
+-- ║  🔒 GUARDA DE CONFIRMACIÓN (doble, obligatoria): el script ABORTA sin borrar ║
+-- ║     nada salvo que se pasen AMBOS:                                          ║
+-- ║       -v i_understand=YES            (acuse consciente, literal 'YES')       ║
+-- ║       -v confirm_store_name='<nombre EXACTO de la tienda>'                   ║
+-- ║     El nombre debe COINCIDIR con el de la tienda del store_id. Así, borrar   ║
+-- ║     en serio exige una acción consciente y atada al objetivo — no se puede   ║
+-- ║     disparar por accidente ni copiando-pegando un comando viejo.            ║
 -- ╚══════════════════════════════════════════════════════════════════════════╝
 --
 -- USO (psql / docker, el patrón de los PROD-FASE*.md):
---   psql "$DB_URL" -v ON_ERROR_STOP=1 -v store_id='<UUID-DE-LA-TIENDA>' \
+--   psql "$DB_URL" -v ON_ERROR_STOP=1 \
+--        -v store_id='<UUID-DE-LA-TIENDA-DE-PRUEBAS>' \
+--        -v i_understand=YES \
+--        -v confirm_store_name='<nombre EXACTO de esa tienda>' \
 --        -f scripts/reset-test-data.sql
 --
 --   Contenedorizado:
---     { echo "SET x=1;"; cat scripts/reset-test-data.sql; }  # (ejemplo)
 --     MSYS_NO_PATHCONV=1 docker run --rm -i -e GPULSO_DB_URL postgres:17 \
---       sh -c 'psql "$GPULSO_DB_URL" -v ON_ERROR_STOP=1 -v store_id='"'"'<UUID>'"'"' -f -' \
+--       sh -c 'psql "$GPULSO_DB_URL" -v ON_ERROR_STOP=1 \
+--                 -v store_id='"'"'<UUID>'"'"' \
+--                 -v i_understand=YES \
+--                 -v confirm_store_name='"'"'<nombre exacto>'"'"' -f -' \
 --       < scripts/reset-test-data.sql
 --
---   En el SQL Editor de Supabase (sin -v): reemplaza la línea marcada "EDITAR"
---   más abajo por el UUID literal y corre todo el bloque de una.
+--   En el SQL Editor de Supabase (sin -v): reemplaza los tres literales marcados
+--   "EDITAR" más abajo (store_id, i_understand, confirm_store_name).
 --
 -- GARANTÍAS:
 --   · Recibe store_id como PARÁMETRO (-v store_id=…), sin UUID hardcodeado.
+--   · GUARDA DE CONFIRMACIÓN doble: aborta sin borrar nada salvo que
+--       i_understand='YES' (literal) Y confirm_store_name = nombre real de la
+--       tienda del store_id. Impide un borrado accidental o por copiar-pegar.
 --   · Va en UNA transacción (BEGIN…COMMIT): si algo falla, ROLLBACK total.
 --   · ABORTA si el store_id no existe (RAISE EXCEPTION → revierte).
 --   · Respeta el orden de las FK (ver mapa abajo) — sin CASCADE sorpresa.
@@ -63,31 +83,58 @@
 
 \set ON_ERROR_STOP on
 
+-- Presencia de los 3 parámetros (falla segura ANTES de abrir transacción).
 \if :{?store_id} \else
-  \echo '✗ ERROR: falta -v store_id="<uuid-de-la-tienda>".'
+  \echo '✗ ERROR: falta -v store_id="<uuid-de-la-tienda-de-PRUEBAS>".'
+  \quit 1
+\endif
+\if :{?i_understand} \else
+  \echo '✗ ABORTADO: falta la guarda -v i_understand=YES (acuse consciente).'
+  \quit 1
+\endif
+\if :{?confirm_store_name} \else
+  \echo '✗ ABORTADO: falta -v confirm_store_name="<nombre EXACTO de la tienda>".'
   \quit 1
 \endif
 
 BEGIN;
 
--- Parámetro → GUC transaccional (los psql :vars NO entran a un bloque DO;
--- el DO lo lee con current_setting). is_local=true → muere con la transacción.
--- ── EDITAR (solo si corres en el SQL Editor sin -v): cambia :'store_id' por
---    '<uuid>' literal en la línea siguiente. ─────────────────────────────────
-SELECT set_config('gpulso.reset_store_id', :'store_id', true);
+-- Parámetros → GUCs transaccionales (los psql :vars NO entran a un bloque DO;
+-- el DO los lee con current_setting). is_local=true → mueren con la transacción.
+-- ── EDITAR (solo si corres en el SQL Editor sin -v): cambia los tres literales
+--    (store_id, i_understand, confirm_store_name) en las 3 líneas siguientes. ──
+SELECT set_config('gpulso.reset_store_id',    :'store_id',           true);
+SELECT set_config('gpulso.reset_ack',         :'i_understand',       true);
+SELECT set_config('gpulso.reset_confirm_name', :'confirm_store_name', true);
 
 DO $$
 DECLARE
-  v_store uuid := current_setting('gpulso.reset_store_id')::uuid;
-  v_name  text;
-  n       bigint;
-  total   bigint := 0;
+  v_store   uuid := current_setting('gpulso.reset_store_id')::uuid;
+  v_name    text;
+  v_ack     text := current_setting('gpulso.reset_ack');
+  v_confirm text := current_setting('gpulso.reset_confirm_name');
+  n         bigint;
+  total     bigint := 0;
 BEGIN
+  -- 🔒 GUARDA 1 — acuse consciente. Debe ser exactamente 'YES'.
+  IF v_ack <> 'YES' THEN
+    RAISE EXCEPTION 'ABORTADO: la guarda i_understand debe ser exactamente YES (recibido: %). No se borró nada.', quote_literal(v_ack);
+  END IF;
+
   -- Validación: la tienda debe existir. Si no, aborta y revierte TODO.
   SELECT name INTO v_name FROM public.stores WHERE id = v_store;
   IF v_name IS NULL THEN
-    RAISE EXCEPTION 'ABORTADO: no existe ninguna tienda con id %', v_store;
+    RAISE EXCEPTION 'ABORTADO: no existe ninguna tienda con id %. No se borró nada.', v_store;
   END IF;
+
+  -- 🔒 GUARDA 2 — el nombre confirmado debe COINCIDIR con el real de la tienda.
+  -- Ata la confirmación al objetivo: un comando viejo con OTRO store_id no
+  -- coincidiría con el nombre y aborta. Debe ser el nombre de la tienda de PRUEBAS.
+  IF v_confirm IS DISTINCT FROM v_name THEN
+    RAISE EXCEPTION 'ABORTADO: confirm_store_name (%) NO coincide con el nombre real de la tienda del store_id (%). Verifica que apuntas a la tienda de PRUEBAS. No se borró nada.',
+      quote_literal(v_confirm), quote_literal(v_name);
+  END IF;
+
   RAISE NOTICE '>>> Reset de datos de PRUEBA — tienda: % (%)', v_name, v_store;
   RAISE NOTICE '    (conserva org, tiendas, usuarios, roles y suppliers)';
 
