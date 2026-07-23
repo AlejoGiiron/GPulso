@@ -56,6 +56,24 @@ atacan en este proyecto.
    qué ventas/abonos/gastos caen en la ventana de un turno.
    **Pendiente:** unificar en una sola fuente (idealmente una vista o RPC).
 
+5. **Separados de equipos serializados: RPCs listas, UI sin cablear.**
+   Las RPCs `reserve_unit` / `release_reserved_unit` / `complete_reserved_unit`
+   existen y están testeadas desde la migración `039` (ciclo reservar→cancelar→
+   completar por unidad), pero la UI de separados (`NewLayawayModal`,
+   `useLayawayMutations`) **nunca las cableó**: creaba `layaway_items` por variante
+   sin reservar la unidad. Riesgo (detectado en el rediseño de serializados,
+   Fase B): separar un celular NO lo marcaba reservado → seguía 'disponible',
+   otra venta se lo llevaba y al completar el separado no había unidad que
+   entregar (sobreventa de un equipo caro).
+   **MITIGADO (bloqueo, no cableado):** migración `054_block_serialized_layaway`
+   rechaza en servidor (BEFORE INSERT en `layaway_items`) cualquier línea de
+   separado sobre una variante serializada; `NewLayawayModal` los oculta del
+   selector y `handleLayawayFromPOS` los rechaza con mensaje. Los accesorios
+   siguen separándose igual.
+   **Pendiente (fase posterior):** cablear las RPCs en la UI de separados
+   (reservar la unidad al crear, liberar al cancelar/expirar, marcar vendida al
+   completar) y quitar el bloqueo de la `054`.
+
 ## Migraciones específicas de G-Pulso (NO portables a G-Mura)
 
 Migraciones nuevas que solo tienen sentido en G-Pulso y **jamás** deben aplicarse

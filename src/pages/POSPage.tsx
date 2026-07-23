@@ -2072,6 +2072,12 @@ export default function POSPage() {
       return
     }
     if (items.length === 0) return
+    // Los equipos serializados (IMEI) no se pueden separar todavía (la reserva
+    // por unidad no está cableada → sobreventa). Se bloquea antes de prellenar.
+    if (items.some((it) => it.unit_id)) {
+      toast.error('Los equipos con IMEI aún no se pueden separar. Quítalos del carrito para crear un separado.')
+      return
+    }
     const draftItems: DraftItem[] = items.map((it) => ({
       variant_id: it.variant_id,
       product_id: it.product_id,
