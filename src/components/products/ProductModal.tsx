@@ -5,21 +5,33 @@ import { useCategories } from '@/hooks/useProducts'
 import { useProductMutations } from '@/hooks/useProductMutations'
 import { useConfigMutations } from '@/hooks/useConfigMutations'
 import { useResolvedConfig } from '@/hooks/useConfig'
+import {
+  useCreateEquipmentWithUnit,
+  useSerializedTemplateSearch,
+  useVariantLabelSuggestions,
+  type SerializedTemplate,
+} from '@/hooks/useEquipment'
 import { DEFAULT_SIZE_TYPE_ID, findSizeType, isUniqueSizeType } from '@/lib/sizeTypes'
 import { fmtCOP } from '@/lib/formatters'
+import { supabase } from '@/lib/supabase'
 import type { Product } from '@/types/database.types'
 
 interface ProductModalProps {
   product?: Product | null
   // Nombre inicial sugerido al crear (ej. el término de búsqueda de la factura).
   initialName?: string
+  // Puerta 1 (Productos): si viene, la búsqueda previa ofrece agregarle una unidad
+  // a una plantilla serializada existente en vez de crear una nueva.
+  onAddUnitToExisting?: (template: SerializedTemplate) => void
   onClose: () => void
   onSaved: (product: Product) => void
 }
 
-export default function ProductModal({ product, initialName, onClose, onSaved }: ProductModalProps) {
+export default function ProductModal({ product, initialName, onAddUnitToExisting, onClose, onSaved }: ProductModalProps) {
   const { data: categories = [] } = useCategories()
   const { create, createSimple, update, uploadImage } = useProductMutations()
+  const createEquipment = useCreateEquipmentWithUnit()
+  const { data: labelSuggestions = [] } = useVariantLabelSuggestions()
   const config = useResolvedConfig()
   const sizeTypes = config.size_types
   const brands = config.brands
@@ -37,9 +49,21 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
   const [costPrice, setCostPrice] = useState('')
   const [initialStock, setInitialStock] = useState('')
 
+  // Fase C — plantilla serializada: precio sugerido + primera unidad.
+  const [suggested, setSuggested] = useState('')
+  const [serial, setSerial] = useState('')
+  const [unitCost, setUnitCost] = useState('')
+  const [unitLabel, setUnitLabel] = useState('')
+
   // Producto de variante "Única" al CREAR → formulario de un paso.
   const isUnique = isUniqueSizeType(sizeType)
-  const isSimpleCreate = !product && isUnique
+  // Crear un EQUIPO serializado (plantilla + primera unidad, atómico vía RPC).
+  const isSerializedCreate = !product && isSerialized
+  const isSimpleCreate = !product && isUnique && !isSerialized
+
+  // Búsqueda previa de plantillas serializadas (dedup): al escribir el nombre,
+  // ofrecerlas antes de crear una nueva.
+  const { data: templateMatches = [] } = useSerializedTemplateSearch(name, isSerializedCreate)
 
   // Si el producto tiene un tipo de talla que ya no existe en la config
   // (ej. fue eliminado o renombrado), lo agregamos como opción extra para
@@ -103,6 +127,36 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
       let saved: Product
       if (isEdit) {
         saved = await update.mutateAsync({ id: product.id, ...payload })
+      } else if (isSerializedCreate) {
+        // Puerta 1: plantilla + primera unidad, atómico vía RPC.
+        const suggestedNum = Math.round(parseFloat(suggested) || 0)
+        if (suggestedNum <= 0) {
+          toast.error('El precio sugerido es obligatorio y debe ser mayor que 0')
+          setSubmitting(false)
+          return
+        }
+        if (!serial.trim()) {
+          toast.error('El serial/IMEI de la primera unidad es obligatorio')
+          setSubmitting(false)
+          return
+        }
+        const res = await createEquipment.mutateAsync({
+          name: name.trim(),
+          brand: brand.trim() || null,
+          category_id: categoryId || null,
+          description: description.trim() || null,
+          suggested_price: suggestedNum,
+          serial,
+          unit_cost: unitCost ? Math.round(parseFloat(unitCost)) : null,
+          variant_label: unitLabel || null,
+          unit_price: null,
+        })
+        // La RPC no maneja imagen; si se subió, se estampa aparte.
+        if (finalImageUrl) {
+          await supabase.from('products').update({ image_url: finalImageUrl } as never).eq('id' as never, res.product_id)
+        }
+        const { data: prod } = await supabase.from('products').select().eq('id' as never, res.product_id).single()
+        saved = prod as unknown as Product
       } else if (isSimpleCreate) {
         const priceNum = Math.round(parseFloat(price) || 0)
         if (priceNum <= 0) {
@@ -252,7 +306,8 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
             </div>
           </div>
 
-          {/* Size type */}
+          {/* Size type (oculto para equipos serializados: usan variante ancla) */}
+          {!isSerializedCreate && (
           <div>
             <label className="mb-1.5 block text-xs font-medium text-slate-600">
               Tipo de variante
@@ -274,6 +329,7 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
                 : 'Define qué valores de variante estarán disponibles al agregar variantes.'}
             </p>
           </div>
+          )}
 
           {/* Serializado (se fija al crear) */}
           {!isEdit && (
@@ -292,6 +348,95 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
                 no por cantidad. No se puede cambiar luego de tener unidades o ventas.
               </span>
             </label>
+          )}
+
+          {/* Equipo serializado: dedup + sugerido + primera unidad */}
+          {isSerializedCreate && (
+            <>
+              {templateMatches.length > 0 && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+                  <p className="mb-1.5 text-[12px] font-semibold text-amber-800">
+                    Ya existe un equipo parecido — ¿es alguno de estos?
+                  </p>
+                  <div className="space-y-1">
+                    {templateMatches.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => onAddUnitToExisting?.(t)}
+                        disabled={!onAddUnitToExisting}
+                        className="flex w-full items-center gap-2 rounded-lg border border-amber-200 bg-white px-2.5 py-1.5 text-left text-[12.5px] hover:border-amber-400 disabled:cursor-default disabled:opacity-70"
+                      >
+                        <span className="font-medium text-slate-800">{t.name}</span>
+                        {t.brand && <span className="text-[11px] text-slate-400">{t.brand}</span>}
+                        {onAddUnitToExisting && (
+                          <span className="ml-auto text-[11px] font-medium text-cyan-600">
+                            Agregar unidad →
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-amber-700">
+                    Agrégale la unidad a la ficha existente en vez de crear otro modelo.
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                  Precio sugerido *
+                </label>
+                <input
+                  inputMode="numeric"
+                  value={suggested}
+                  onChange={(e) => setSuggested(e.target.value.replace(/[^\d]/g, ''))}
+                  placeholder="0"
+                  className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm tabular-nums outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
+                />
+                {suggested && (
+                  <p className="mt-1 text-[11px] text-slate-400">{fmtCOP(parseFloat(suggested) || 0)}</p>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="mb-2 text-[12px] font-semibold text-slate-700">Primera unidad</p>
+                <div className="mb-2">
+                  <label className="mb-1 block text-[11px] font-medium text-slate-600">Serial / IMEI *</label>
+                  <input
+                    value={serial}
+                    onChange={(e) => setSerial(e.target.value)}
+                    placeholder="Escanea o escribe el serial"
+                    className="h-9 w-full rounded-lg border border-slate-200 px-2.5 font-mono text-sm outline-none focus:border-cyan-400"
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="mb-1 block text-[11px] font-medium text-slate-600">Variante (opcional)</label>
+                  <input
+                    value={unitLabel}
+                    onChange={(e) => setUnitLabel(e.target.value)}
+                    list="product-unit-label-options"
+                    placeholder="Ej: 128GB Azul"
+                    className="h-9 w-full rounded-lg border border-slate-200 px-2.5 text-sm outline-none focus:border-cyan-400"
+                  />
+                  <datalist id="product-unit-label-options">
+                    {labelSuggestions.map((s) => (
+                      <option key={s} value={s} />
+                    ))}
+                  </datalist>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] font-medium text-slate-600">Costo (opcional)</label>
+                  <input
+                    inputMode="numeric"
+                    value={unitCost}
+                    onChange={(e) => setUnitCost(e.target.value.replace(/[^\d]/g, ''))}
+                    placeholder="0"
+                    className="h-9 w-full rounded-lg border border-slate-200 px-2.5 text-sm tabular-nums outline-none focus:border-cyan-400"
+                  />
+                </div>
+              </div>
+            </>
           )}
 
           {/* Única en un paso: precio + stock inicial */}
@@ -373,16 +518,23 @@ export default function ProductModal({ product, initialName, onClose, onSaved }:
             </button>
             <button
               type="submit"
-              disabled={submitting || !name.trim() || (isSimpleCreate && !price)}
+              disabled={
+                submitting ||
+                !name.trim() ||
+                (isSimpleCreate && !price) ||
+                (isSerializedCreate && (!suggested || !serial.trim()))
+              }
               className="h-11 flex-[2] rounded-lg bg-cyan-500 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(6,182,212,0.35)] hover:bg-cyan-600 disabled:opacity-50"
             >
               {submitting
                 ? 'Guardando…'
                 : isEdit
                   ? 'Guardar cambios'
-                  : isUnique
-                    ? 'Crear producto'
-                    : 'Crear y agregar variantes'}
+                  : isSerializedCreate
+                    ? 'Crear equipo y primera unidad'
+                    : isUnique
+                      ? 'Crear producto'
+                      : 'Crear y agregar variantes'}
             </button>
           </div>
         </form>
