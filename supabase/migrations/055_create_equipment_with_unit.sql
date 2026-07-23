@@ -18,6 +18,11 @@
 --   · suggested_price OBLIGATORIO y > 0 (decisión aprobada: mitiga R1, ninguna
 --     plantilla sin precio).
 --   · serial no vacío; costo/precio de unidad no negativos si vienen.
+--   · ANTI-DUPLICADO DE PLANTILLA: rechaza si ya existe un producto serializado
+--     ACTIVO en la tienda con el mismo nombre normalizado (lower + btrim).
+--     Rechazo duro (sin p_force): dos modelos distintos se distinguen en el nombre.
+--   · ANTI-DUPLICADO DE SERIAL con mensaje humano ("Ese IMEI ya está registrado
+--     en el sistema") antes del INSERT; el UNIQUE(org, serial) es la red final.
 --   · La categoría (si viene) es de MI tienda.
 --
 -- MODELO (Opción A): la unidad cuelga de la variante ancla (size/color NULL). El
@@ -91,6 +96,33 @@ BEGIN
   END IF;
   IF p_unit_price IS NOT NULL AND p_unit_price < 0 THEN
     RAISE EXCEPTION 'El precio de la unidad no puede ser negativo.' USING ERRCODE = 'check_violation';
+  END IF;
+
+  -- Anti-duplicado de PLANTILLA: no crear un 2do producto serializado ACTIVO con
+  -- el mismo nombre normalizado (lower + btrim) en la tienda. Rechazo DURO: si de
+  -- verdad son dos modelos distintos, que los distingan en el nombre. Evita
+  -- inventario fragmentado y reportes partidos (la queja del cliente).
+  IF EXISTS (
+    SELECT 1 FROM public.products
+     WHERE store_id = v_store
+       AND is_serialized = true
+       AND is_active = true
+       AND lower(btrim(name)) = lower(btrim(p_name))
+  ) THEN
+    RAISE EXCEPTION 'Ya existe un equipo con ese nombre; agrégale la unidad desde su ficha.'
+      USING ERRCODE = 'check_violation';
+  END IF;
+
+  -- Anti-duplicado de SERIAL con MENSAJE HUMANO (mismo criterio que el panel de
+  -- ráfaga). El serial vive una vez por organización; el UNIQUE(org, serial) queda
+  -- como red final para la carrera.
+  IF EXISTS (
+    SELECT 1 FROM public.units
+     WHERE organization_id = get_my_organization_id()
+       AND serial = btrim(p_serial)
+  ) THEN
+    RAISE EXCEPTION 'Ese IMEI ya está registrado en el sistema.'
+      USING ERRCODE = 'check_violation';
   END IF;
 
   -- La categoría, si viene, debe ser de MI tienda (SECURITY DEFINER → chequeo explícito).

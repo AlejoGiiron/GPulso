@@ -98,7 +98,7 @@ BEGIN
   RAISE NOTICE 'T3 OK: serial vacío rechazado.';
 END $$;
 
--- ── T5 — R5: serial duplicado aborta TODO (sin plantilla huérfana) ──────────
+-- ── T5 — serial duplicado: mensaje humano + sin plantilla huérfana (R5) ─────
 DO $$
 DECLARE ok boolean := false; n_before int; n_after int;
 BEGIN
@@ -106,17 +106,44 @@ BEGIN
   BEGIN
     -- Nombre NUEVO pero serial DUPLICADO ('IMEI-EQ-1' ya existe por T1).
     PERFORM public.create_equipment_with_unit('iPhone Dup', NULL, NULL, NULL, 999000, 'IMEI-EQ-1', NULL, NULL, NULL);
-  EXCEPTION WHEN unique_violation THEN ok := true;
+  EXCEPTION WHEN check_violation THEN
+    ok := true;
+    IF SQLERRM NOT LIKE '%IMEI ya está registrado%' THEN
+      RAISE EXCEPTION 'T5 FALLO: se bloqueó el serial pero con otro mensaje: %', SQLERRM;
+    END IF;
   END;
   IF NOT ok THEN RAISE EXCEPTION 'T5 FALLO: se permitió un serial duplicado.'; END IF;
   SELECT count(*) INTO n_after FROM public.products WHERE store_id=(SELECT id FROM public.stores WHERE name='StoreEQ');
-  IF n_after <> n_before THEN
+  IF n_after <> n_before OR EXISTS (SELECT 1 FROM public.products WHERE name='iPhone Dup') THEN
     RAISE EXCEPTION 'T5 FALLO: quedó una plantilla HUÉRFANA tras el fallo (% -> %).', n_before, n_after;
   END IF;
-  IF EXISTS (SELECT 1 FROM public.products WHERE name='iPhone Dup') THEN
-    RAISE EXCEPTION 'T5 FALLO: la plantilla iPhone Dup no se revirtió.';
+  RAISE NOTICE 'T5 OK: serial duplicado → mensaje humano ("Ese IMEI ya está registrado") + sin huérfana (R5).';
+END $$;
+
+-- ── T7 — nombre de plantilla duplicado (dedup) → rechazado sin huérfana ─────
+DO $$
+DECLARE ok boolean := false; n_before int; n_after int; n_iphone15 int;
+BEGIN
+  SELECT count(*) INTO n_before FROM public.products WHERE store_id=(SELECT id FROM public.stores WHERE name='StoreEQ');
+  BEGIN
+    -- 'iPhone 15' ya existe (T1); variando mayúsculas/espacios debe seguir chocando.
+    PERFORM public.create_equipment_with_unit('  IPHONE 15  ', 'Apple', NULL, NULL, 1700000, 'IMEI-EQ-7', NULL, NULL, NULL);
+  EXCEPTION WHEN check_violation THEN
+    ok := true;
+    IF SQLERRM NOT LIKE '%Ya existe un equipo con ese nombre%' THEN
+      RAISE EXCEPTION 'T7 FALLO: se bloqueó el nombre pero con otro mensaje: %', SQLERRM;
+    END IF;
+  END;
+  IF NOT ok THEN RAISE EXCEPTION 'T7 FALLO: se permitió una plantilla con nombre duplicado.'; END IF;
+  SELECT count(*) INTO n_after FROM public.products WHERE store_id=(SELECT id FROM public.stores WHERE name='StoreEQ');
+  SELECT count(*) INTO n_iphone15 FROM public.products WHERE lower(btrim(name))='iphone 15' AND store_id=(SELECT id FROM public.stores WHERE name='StoreEQ');
+  IF n_after <> n_before THEN
+    RAISE EXCEPTION 'T7 FALLO: quedó una plantilla HUÉRFANA tras el fallo (% -> %).', n_before, n_after;
   END IF;
-  RAISE NOTICE 'T5 OK: serial duplicado → aborta TODO, sin plantilla huérfana (R5).';
+  IF n_iphone15 <> 1 THEN
+    RAISE EXCEPTION 'T7 FALLO: debería seguir habiendo exactamente 1 iPhone 15 (=%).', n_iphone15;
+  END IF;
+  RAISE NOTICE 'T7 OK: nombre normalizado duplicado (lower+trim) rechazado; sigue habiendo 1 sola plantilla.';
 END $$;
 
 -- ── T6 — categoría de otra tienda rechazada ─────────────────────────────────
