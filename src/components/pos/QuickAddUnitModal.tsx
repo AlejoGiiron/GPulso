@@ -87,8 +87,8 @@ export default function QuickAddUnitModal({
         product_id: product.id,
         name: product.name,
         brand: product.brand,
-        size: variant.size,
-        color: variant.color,
+        // Fase C capturará variant_label en este modal; por ahora sin etiqueta.
+        variant_label: null,
         price: priceNum,
         status: 'disponible',
       })

@@ -224,12 +224,15 @@ function SaleDetailRow({ detail }: { detail: SaleDetail }) {
         brand: it.brand,
         size: it.size,
         color: it.color,
+        // Serializado: etiqueta + IMEI de la(s) unidad(es) de esta línea (E3).
+        variant_label: unitsByItem[it.id]?.variant_label ?? null,
+        serial: (unitsByItem[it.id]?.serials ?? [])[0] ?? null,
         qty: it.qty,
         unit_price: it.unit_price,
         list_price: it.list_price,
       })),
     }),
-    [detail],
+    [detail, unitsByItem],
   )
 
   function handleReprint() {
@@ -269,11 +272,13 @@ function SaleDetailRow({ detail }: { detail: SaleDetail }) {
                     {item.product_name}
                   </p>
                   <p className="text-xs text-[#737373]">
-                    {[item.size, item.color].filter(Boolean).join(' · ')}
-                    {(item.size || item.color) && ' · '}
+                    {[item.size, item.color, unitsByItem[item.id]?.variant_label]
+                      .filter(Boolean)
+                      .join(' · ')}
+                    {(item.size || item.color || unitsByItem[item.id]?.variant_label) && ' · '}
                     {fmtCOP(item.unit_price)} c/u
                   </p>
-                  {(unitsByItem[item.id] ?? []).map((serial) => (
+                  {(unitsByItem[item.id]?.serials ?? []).map((serial) => (
                     <span
                       key={serial}
                       className="mt-0.5 mr-1 inline-block rounded bg-cyan-50 px-1.5 py-0.5 font-mono text-[11px] text-cyan-700"

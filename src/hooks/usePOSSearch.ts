@@ -30,6 +30,9 @@ export interface POSProduct {
   brand: string | null
   image_url: string | null
   is_serialized: boolean
+  // Fase B: precio sugerido de la plantilla serializada (null en accesorios).
+  // Fuente del precio mostrado y semilla del precio de una unidad nueva.
+  suggested_price: number | null
   category: Pick<Category, 'id' | 'name' | 'color'> | null
   variants: POSVariant[]
 }
@@ -52,6 +55,7 @@ interface RawProduct {
   brand: string | null
   image_url: string | null
   is_serialized: boolean
+  suggested_price: number | null
   categories: { id: string; name: string; color: string | null } | null
   variants: RawVariant[]
 }
@@ -66,7 +70,7 @@ export function usePOSProducts() {
       const { data, error } = await supabase
         .from('products')
         .select(
-          'id, name, brand, image_url, is_serialized, categories(id, name, color), variants(id, size, color, price, stock_qty, reserved_qty, barcode, sku, is_active)',
+          'id, name, brand, image_url, is_serialized, suggested_price, categories(id, name, color), variants(id, size, color, price, stock_qty, reserved_qty, barcode, sku, is_active)',
         )
         .eq('store_id' as never, storeId)
         .eq('is_active' as never, true)
@@ -83,6 +87,7 @@ export function usePOSProducts() {
           brand: r.brand,
           image_url: r.image_url,
           is_serialized: r.is_serialized,
+          suggested_price: r.suggested_price,
           category: r.categories,
           variants: (r.variants ?? [])
             .filter((v) => v.is_active)

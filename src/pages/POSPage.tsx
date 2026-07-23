@@ -1030,6 +1030,8 @@ function TicketModal({
       brand: it.brand,
       size: it.size,
       color: it.color,
+      variant_label: it.variant_label,
+      serial: it.serial,
       qty: it.qty,
       unit_price: it.unit_price,
       list_price: it.list_price,
@@ -1147,7 +1149,12 @@ function cardAccent(seed: string): { bg: string; fg: string } {
 
 function ProductCard({ product, onClick }: ProductCardProps) {
   const sizes = [...new Set(product.variants.map((v) => v.size).filter(Boolean))] as string[]
-  const minPrice = Math.min(...product.variants.map((v) => v.price))
+  // Serializado: el precio de la card es el SUGERIDO de la plantilla, no el de la
+  // variante ancla (Fase B). Accesorio: mínimo de sus variantes, como siempre.
+  const minPrice =
+    product.is_serialized && product.suggested_price != null
+      ? product.suggested_price
+      : Math.min(...product.variants.map((v) => v.price))
   const totalStock = product.variants.reduce((s, v) => s + v.stock_qty, 0)
   const extraSizes = sizes.length - 3
   const accent = cardAccent(product.id)
@@ -1543,6 +1550,10 @@ function CartLine({
                 {[item.size, item.color].filter(Boolean).join(' · ')}
               </p>
             )}
+            {/* Serializado: etiqueta de variante en texto libre (reemplaza size/color). */}
+            {item.variant_label && (
+              <p className="truncate text-[12px] text-slate-500">{item.variant_label}</p>
+            )}
             {/* Equipo serializado: chip con el IMEI/serial en JetBrains Mono. */}
             {isEquipment && item.serial && (
               <span className="mt-1 inline-flex items-center gap-1 rounded-md bg-cyan-50 px-1.5 py-0.5 font-mono text-[11px] font-medium text-cyan-700">
@@ -1849,8 +1860,10 @@ export default function POSPage() {
         product_id: unit.product_id,
         name: unit.name,
         brand: unit.brand,
-        size: unit.size,
-        color: unit.color,
+        // Serializado: sin size/color; su variante es texto libre (variant_label).
+        size: null,
+        color: null,
+        variant_label: unit.variant_label,
         unit_price: unit.price,
         list_price: unit.price,
         stock_qty: 1,

@@ -19,6 +19,7 @@ function item(
     brand: fields.brand ?? null,
     size: fields.size ?? null,
     color: fields.color ?? null,
+    variant_label: fields.variant_label ?? null,
     unit_id: fields.unit_id ?? null,
     serial: fields.serial ?? null,
     // Por defecto sin descuento: unit_price = list_price.
