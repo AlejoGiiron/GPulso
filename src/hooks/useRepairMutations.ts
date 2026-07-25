@@ -158,26 +158,50 @@ export function useUpdateRepair() {
 
 // ── Avanzar estado (recibido → en_reparacion → listo) ─────────────────────────
 
+// Mensaje único de la regla precio-para-listo, compartido por la mutación y por
+// la guarda de cliente (RepairDetailModal) para no tener dos variantes del texto.
+export const REPAIR_READY_PRICE_ERROR = 'Define el precio antes de marcar como listo'
+
+type RepairsDbClient = typeof supabase
+
+/**
+ * Avanza el estado de una reparación. Para pasar a 'listo' el precio debe estar
+ * definido (se cobra al entregar). La fuente de verdad es la BD, NO el llamador:
+ * releemos el precio real de la orden y validamos ESE valor, para que la regla no
+ * dependa de que cada punto de avance (modal, kanban, o uno futuro) recuerde
+ * pasarlo. Recibe el client como parámetro para poder testearse sin red.
+ *
+ * NOTA (deuda, ver FORKED_FROM.md): el avance de estado es un UPDATE plano sin
+ * RPC; esta guarda vive solo en cliente y es saltable por API directa.
+ */
+export async function advanceRepairStatus(
+  client: RepairsDbClient,
+  id: string,
+  status: RepairStatus,
+): Promise<void> {
+  if (status === 'listo') {
+    const { data, error: readErr } = await client
+      .from('repair_orders')
+      .select('precio')
+      .eq('id' as never, id as never)
+      .single()
+    if (readErr) throw readErr
+    if ((data as { precio: number | null } | null)?.precio == null) {
+      throw new Error(REPAIR_READY_PRICE_ERROR)
+    }
+  }
+  const { error } = await client
+    .from('repair_orders')
+    .update({ status } as never)
+    .eq('id' as never, id as never)
+  if (error) throw error
+}
+
 export function useAdvanceRepairStatus() {
   const invalidate = useInvalidateRepairs()
   return useMutation({
-    mutationFn: async (params: {
-      id: string
-      status: RepairStatus
-      precio?: number | null
-    }): Promise<void> => {
-      // Para pasar a 'listo' el precio debe estar definido (se cobra al entregar).
-      if (params.status === 'listo' && (params.precio === null || params.precio === undefined)) {
-        throw new Error('Define el precio antes de marcar como listo.')
-      }
-      const patch: Record<string, unknown> = { status: params.status }
-      if (params.precio !== undefined) patch.precio = params.precio
-      const { error } = await supabase
-        .from('repair_orders')
-        .update(patch as never)
-        .eq('id' as never, params.id as never)
-      if (error) throw error
-    },
+    mutationFn: ({ id, status }: { id: string; status: RepairStatus }): Promise<void> =>
+      advanceRepairStatus(supabase, id, status),
     onSuccess: () => {
       invalidate()
       toast.success('Estado actualizado')

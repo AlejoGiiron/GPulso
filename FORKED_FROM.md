@@ -56,6 +56,16 @@ atacan en este proyecto.
    qué ventas/abonos/gastos caen en la ventana de un turno.
    **Pendiente:** unificar en una sola fuente (idealmente una vista o RPC).
 
+6. **Avance de estado de reparaciones sin guard de servidor** (NATIVA de G-Pulso,
+   Fase 3 — no heredada; se anota aquí para no perderla de vista, misma familia
+   que la deuda #2). `useAdvanceRepairStatus` hace un `UPDATE repair_orders SET
+   status` plano (no RPC). La regla "no marcar 'listo' sin precio" vive **solo en
+   cliente**: la mutación relee `repair_orders.precio` de la BD y valida antes de
+   escribir (fix `fix/repair-ready-price-validation`), pero es saltable por API
+   directa (poner `status='listo'` con `precio` null). **Pendiente:** mover la
+   regla a una RPC/trigger cuando se endurezca el taller (fuera del alcance del
+   hotfix).
+
 ## Migraciones específicas de G-Pulso (NO portables a G-Mura)
 
 Migraciones nuevas que solo tienen sentido en G-Pulso y **jamás** deben aplicarse
