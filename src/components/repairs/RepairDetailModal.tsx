@@ -17,6 +17,7 @@ import {
   useAdvanceRepairStatus,
   useUpdateRepair,
   useRemoveRepairPart,
+  REPAIR_READY_PRICE_ERROR,
 } from '@/hooks/useRepairMutations'
 import { usePermissions } from '@/hooks/usePermissions'
 import { fmtCOP } from '@/lib/formatters'
@@ -79,7 +80,7 @@ export function RepairDetailModal({ repairId, onClose }: { repairId: string; onC
   const doAdvance = async () => {
     if (!next) return
     if (next === 'listo' && repair.precio === null) {
-      return toast.error('Define el precio antes de marcar como listo')
+      return toast.error(REPAIR_READY_PRICE_ERROR)
     }
     await advance.mutateAsync({ id: repair.id, status: next })
   }
