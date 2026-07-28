@@ -3,7 +3,7 @@ description: Genera el scaffold completo de un módulo: página, hooks de datos 
 argument-hint: <nombre-modulo>
 ---
 
-Crea un módulo nuevo llamado **$ARGUMENTS** en el proyecto gmura:
+Crea un módulo nuevo llamado **$ARGUMENTS** en el proyecto G-Pulso:
 
 ## 1. Página — `src/pages/{Nombre}Page.tsx`
 
@@ -23,7 +23,10 @@ Con React Query (`useQuery`) que:
 - Tipado estrictamente con los tipos de `src/types/database.types.ts`
 - Sin `any`
 
-## 3. Hook de mutaciones — `src/hooks/use{Nombre}Mutaciones.ts`
+## 3. Hook de mutaciones — `src/hooks/use{Nombre}Mutations.ts`
+
+> Sufijo `Mutations` en inglés — es la convención real del proyecto
+> (`useRepairMutations`, `useConfigMutations`, `useCashShiftMutations`…).
 
 Archivo separado con `useMutation` que exponga:
 - `crear(data: TablesInsert<'nombre_tabla'>)` — inserta e invalida la query
@@ -36,12 +39,29 @@ Archivo separado con `useMutation` que exponga:
 
 Añade la ruta `/nombre-en-kebab-case` dentro del bloque
 `<ProtectedRoute>` → `<AppLayout>` existente.
-Si es solo admin, anídalo en `<ProtectedRoute allowedRoles={['admin']}>`.
+
+El acceso se controla por **permiso RBAC**, no por el enum de rol:
+`<ProtectedRoute permission="modulo.gestionar">`. No existe `allowedRoles`.
 
 ## 5. Sidebar — `src/components/layout/Sidebar.tsx`
 
-Agrega la entrada a `NAV_ITEMS` con el ícono de lucide-react más apropiado
-y el label en español. Si es admin-only, marca `adminOnly: true`.
+Agrega la entrada al grupo correspondiente de `NAV_GROUPS` (el sidebar está
+agrupado en secciones colapsables: Operación / Inventario / Compras / Clientes /
+Análisis y admin), con el ícono de lucide-react más apropiado y el label en
+español.
+
+La visibilidad la decide el campo `permission: 'modulo.gestionar'` vía `can()`.
+Un ítem sin `permission` es visible para cualquier usuario autenticado. No uses
+`adminOnly`.
+
+## 6. Permiso nuevo (si el módulo lo necesita)
+
+Si introduces un permiso que no existe, hay que darlo de alta en los tres
+lugares — ver el procedimiento en `CLAUDE.md` § RBAC:
+1. El array del rol en `canonical_role_permissions()` (migración 035).
+2. Una migración de reconciliación **aditiva, SIN filtro de organización**
+   (patrón 034/035). Nunca filtrar por `organizations.name = '...'`.
+3. `src/lib/permissionsCatalog.ts` (catálogo de la UI).
 
 ## Convenciones obligatorias
 - TypeScript strict — sin `any`

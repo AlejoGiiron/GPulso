@@ -3,7 +3,7 @@ description: Genera el SQL, los tipos TypeScript y los helpers de Supabase para 
 argument-hint: <nombre_tabla> [descripcion-breve]
 ---
 
-Añade la tabla **$ARGUMENTS** al proyecto gmura generando los tres artefactos:
+Añade la tabla **$ARGUMENTS** al proyecto G-Pulso generando los tres artefactos:
 
 ## 1. SQL — `supabase/migrations/`
 
@@ -16,8 +16,15 @@ Crea un nuevo archivo de migración con número secuencial (ej. `002_nombre.sql`
 - Constraints CHECK donde corresponda (valores no negativos, etc.)
 - `CREATE INDEX` sobre `store_id` y cualquier FK adicional
 - RLS habilitado con políticas coherentes con el schema:
-  usuarios solo ven registros de su `store_id`,
-  solo admins pueden crear/editar si aplica
+  · Aislamiento de datos: `store_id = get_my_store_id()` (devuelve la tienda
+    ACTIVA del usuario — modelo multi-store, ver migración 013/015).
+  · Autorización: por **permiso RBAC** con `has_permission('modulo.gestionar')`,
+    NO por el enum `profiles.role`. El enum ('admin' | 'seller') es legacy y ni
+    siquiera cubre al Técnico; la verdad la da `profiles.role_id` → `roles`.
+  · Si la tabla es sensible (dinero, inventario), considera **RPC-only**: sin
+    políticas INSERT/UPDATE y una función `SECURITY DEFINER` como única vía,
+    para que las validaciones (turno abierto, tienda) no se puedan saltar.
+    Patrón en la migración 048 (`register_credit_commission`).
 - Trigger `updated_at` usando la función `set_updated_at()` ya existente
 
 ## 2. Tipos TypeScript — `src/types/database.types.ts`

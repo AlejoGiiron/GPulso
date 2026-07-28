@@ -19,6 +19,12 @@
 -- ║     store_id contra la tienda de PRUEBAS antes de ejecutar. Este script     ║
 -- ║     borraría ventas, inventario y caja reales sin más preguntas.            ║
 -- ║                                                                            ║
+-- ║  🔒 GUARDA 0 — DE BASE (no saltable, sin parámetro): el script ABORTA si la ║
+-- ║     base no es G-Pulso. Exige objetos exclusivos (units, repair_orders,     ║
+-- ║     credit_commissions) Y la org 'CelFashion'. Corre ANTES de leer nada.    ║
+-- ║     Protege contra la BASE equivocada; las guardas 1-2 solo protegen contra ║
+-- ║     la TIENDA equivocada dentro de la base correcta. Ver FORKED_FROM.md.    ║
+-- ║                                                                            ║
 -- ║  🔒 GUARDA DE CONFIRMACIÓN (doble, obligatoria): el script ABORTA sin borrar ║
 -- ║     nada salvo que se pasen AMBOS:                                          ║
 -- ║       -v i_understand=YES            (acuse consciente, literal 'YES')       ║
@@ -82,6 +88,72 @@
 -- ════════════════════════════════════════════════════════════════════════════
 
 \set ON_ERROR_STOP on
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- 🔒🔒 GUARDA 0 — ¿ESTA BASE ES G-PULSO?  (la guarda MÁS importante)
+--
+-- POR QUÉ EXISTE (incidente 2026-07-28, ver FORKED_FROM.md):
+--   Las guardas 1 y 2 (i_understand + confirm_store_name) protegen contra la
+--   TIENDA equivocada DENTRO de la base correcta. NO protegen contra la BASE
+--   equivocada. El toolchain de backup se heredó del fork apuntando a G-MURA
+--   producción (otro cliente, La Bodega del Jeans): con un store_id y un nombre
+--   de tienda de ESA base, las guardas 1 y 2 habrían pasado limpias y este
+--   script habría borrado producción de un cliente ajeno al proyecto.
+--
+-- CRITERIO (doble, ambas condiciones obligatorias):
+--   a) Objetos ESTRUCTURALES exclusivos de G-Pulso, que G-Mura no tiene:
+--        public.units               (Fase 2 — unidades serializadas / IMEI)
+--        public.repair_orders       (Fase 3 — taller de reparaciones)
+--        public.credit_commissions  (Fase 4 — comisiones por crédito)
+--   b) El TENANT esperado: debe existir la organización 'CelFashion'.
+--
+--   (a) descarta cualquier base con esquema de G-Mura aunque le crearan una org
+--   homónima; (b) descarta una base de G-Pulso virgen/ajena sin el tenant real.
+--
+-- NO ES SALTABLE POR PARÁMETRO: no lee ningún :var ni GUC. Para "saltarla" hay
+--   que editar este archivo — un acto consciente y visible en el diff.
+--
+-- Corre ANTES de abrir la transacción y ANTES de leer nada: si aborta, no se
+--   ejecutó ni un SELECT sobre datos.
+-- ════════════════════════════════════════════════════════════════════════════
+DO $guarda_base$
+DECLARE
+  v_faltan text[] := '{}';
+  v_orgs   int;
+BEGIN
+  -- (a) Objetos estructurales exclusivos de G-Pulso.
+  IF to_regclass('public.units') IS NULL THEN
+    v_faltan := array_append(v_faltan, 'tabla public.units (Fase 2 — serializados)');
+  END IF;
+  IF to_regclass('public.repair_orders') IS NULL THEN
+    v_faltan := array_append(v_faltan, 'tabla public.repair_orders (Fase 3 — taller)');
+  END IF;
+  IF to_regclass('public.credit_commissions') IS NULL THEN
+    v_faltan := array_append(v_faltan, 'tabla public.credit_commissions (Fase 4 — comisiones)');
+  END IF;
+
+  -- (b) El tenant esperado de G-Pulso.
+  IF to_regclass('public.organizations') IS NULL THEN
+    v_faltan := array_append(v_faltan, 'tabla public.organizations');
+  ELSE
+    SELECT count(*) INTO v_orgs FROM public.organizations WHERE name = 'CelFashion';
+    IF v_orgs = 0 THEN
+      v_faltan := array_append(v_faltan, 'organización ''CelFashion''');
+    END IF;
+  END IF;
+
+  IF array_length(v_faltan, 1) IS NOT NULL THEN
+    RAISE EXCEPTION E'ABORTADO: esta base NO es gpulso-prod.\n'
+      '  Falta: %\n'
+      '  NO se leyó ni se borró NADA.\n'
+      '  Verifica a qué proyecto Supabase apunta tu cadena de conexión antes de reintentar.\n'
+      '  (Recordatorio: la BD de G-Mura / La Bodega del Jeans es OTRO cliente — ver FORKED_FROM.md)',
+      array_to_string(v_faltan, ' · ');
+  END IF;
+
+  RAISE NOTICE '🔒 GUARDA 0 OK: la base es G-Pulso (units + repair_orders + credit_commissions + org CelFashion).';
+END
+$guarda_base$;
 
 -- Presencia de los 3 parámetros (falla segura ANTES de abrir transacción).
 \if :{?store_id} \else

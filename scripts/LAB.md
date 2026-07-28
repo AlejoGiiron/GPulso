@@ -1,4 +1,4 @@
-# Laboratorio local de G-Mura (Supabase + Docker)
+# Laboratorio local de G-Pulso (Supabase + Docker)
 
 Entorno **espejo de producción** que corre 100% en tu máquina con Docker.
 Sirve para **probar migraciones y cambios contra datos reales sin tocar
@@ -54,8 +54,8 @@ SERVICE_ROLE_KEY:
 Para apuntar la app al lab, en tu `.env.local`:
 
 ```
-VITE_GMURA_SUPABASE_URL=http://127.0.0.1:54321
-VITE_GMURA_SUPABASE_ANON_KEY=<el ANON_KEY de arriba>
+VITE_GPULSO_SUPABASE_URL=http://127.0.0.1:54321
+VITE_GPULSO_SUPABASE_ANON_KEY=<el ANON_KEY de arriba>
 ```
 
 > Si tu CLI imprime las llaves en formato nuevo (`sb_publishable_…` / `sb_secret_…`),
@@ -85,7 +85,7 @@ VITE_GMURA_SUPABASE_ANON_KEY=<el ANON_KEY de arriba>
 
 ```bash
 ./scripts/lab-restore.sh                       # el .dump más reciente de backups/
-./scripts/lab-restore.sh backups/gmura_X.dump  # uno específico
+./scripts/lab-restore.sh backups/gpulso_X.dump  # uno específico
 ```
 
 Restaura el `schema public` (estructura + datos + FKs + RLS + funciones) y los
@@ -106,7 +106,7 @@ La aplica con `psql ON_ERROR_STOP=1` y dice si corrió **LIMPIO** o **FALLÓ**.
 - Studio → SQL Editor: corre tus `SELECT` de comprobación.
 - O por terminal:
   ```bash
-  MSYS_NO_PATHCONV=1 docker exec supabase_db_gmura \
+  MSYS_NO_PATHCONV=1 docker exec supabase_db_gpulso \
     psql -U postgres -d postgres -c "\dt public.*"
   ```
 

@@ -9,7 +9,7 @@
 -- aplicadas. Todo va en una transacción con ROLLBACK final → no deja rastro.
 --
 -- Uso:
---   docker exec -i supabase_db_gmura psql -U postgres -d postgres \
+--   docker exec -i supabase_db_gpulso psql -U postgres -d postgres \
 --     -v ON_ERROR_STOP=1 < scripts/test-active-user-rls.sql
 --
 -- Si TODOS los asserts pasan, imprime "✔ TEST 037 OK" y hace ROLLBACK.
