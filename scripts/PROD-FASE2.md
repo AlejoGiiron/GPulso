@@ -148,10 +148,11 @@ MSYS_NO_PATHCONV=1 docker run --rm -v "$(pwd -W)/backups":/backups -e DUMP_NAME 
 Si el conteo de `TABLE DATA` es **0** → el dump es inservible: **detente**, borra
 el archivo y repite. No sigas con un backup falso.
 
-> `./scripts/backup-db.sh` hace esto mismo (version-check + verificación +
-> registro) pero **asume `pg_dump` local** y lee `GMURA_DB_URL` de `.env.backup`;
-> no aplica a este operador (sin tooling local). Usa los comandos Docker de arriba
-> con `$GPULSO_DB_URL` en la sesión, **sin** escribir la cadena en ningún archivo.
+> `./scripts/backup-db.sh` hace esto mismo (version-check + verificación de
+> identidad de la base + registro) pero **asume `pg_dump` local** y lee
+> `GPULSO_DB_URL` de `.env.backup`. Si no tienes tooling local, usa los comandos
+> Docker de arriba con `$GPULSO_DB_URL` exportado en la sesión, **sin** escribir
+> la cadena en ningún archivo.
 
 ### 1.4 Restore de emergencia (documentado ANTES, no se improvisa a las 11pm)
 

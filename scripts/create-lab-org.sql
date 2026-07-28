@@ -29,7 +29,7 @@
 -- Parámetros ajustables (podés sobreescribir con -v en la línea de comandos)
 \if :{?org_name}    \else \set org_name    'Laboratorio G-Mura'        \endif
 \if :{?store_name}  \else \set store_name  'Lab — Tienda 1'            \endif
-\if :{?owner_email} \else \set owner_email 'lab-owner@gmura.test'      \endif
+\if :{?owner_email} \else \set owner_email 'lab-owner@gpulso.test'      \endif
 \if :{?owner_name}  \else \set owner_name  'Dueño Laboratorio'         \endif
 
 BEGIN;

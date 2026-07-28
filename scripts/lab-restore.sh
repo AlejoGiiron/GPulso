@@ -4,7 +4,7 @@
 #
 # Uso:
 #   ./scripts/lab-restore.sh                      # usa el .dump más reciente de backups/
-#   ./scripts/lab-restore.sh backups/gmura_X.dump # usa un dump específico
+#   ./scripts/lab-restore.sh backups/gpulso_X.dump # usa un dump específico
 #
 # Qué restaura (espejo fiel de producción, SIN tocar producción):
 #   - schema public       : estructura + datos + FKs + RLS + funciones + triggers

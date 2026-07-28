@@ -110,7 +110,7 @@ $guarda_base$;
 -- │ SECCIÓN 0 — PARÁMETRO: store_id objetivo (definir UNA sola vez aquí)       │
 -- ╰──────────────────────────────────────────────────────────────────────────╯
 -- Cambia SOLO este UUID. Todas las secciones lo leen vía
--- current_setting('gmura.reset_store_id'). El parámetro vive a nivel de sesión
+-- current_setting('gpulso.reset_store_id'). El parámetro vive a nivel de sesión
 -- (is_local = false), así que persiste mientras corras todo el script de una.
 --
 --   ⚠ Ejecuta el script COMPLETO de una sola vez (o al menos esta línea junto
@@ -118,14 +118,14 @@ $guarda_base$;
 --     esta línea, fallará con "unrecognized configuration parameter" — falla
 --     segura, no borra nada.
 
-SELECT set_config('gmura.reset_store_id',
+SELECT set_config('gpulso.reset_store_id',
                   'PEGA-AQUI-EL-UUID-DE-LA-TIENDA',  -- ← ÚNICO lugar a editar
                   false);
 
 -- Validación de seguridad: aborta si el UUID no corresponde a una tienda real.
 DO $$
 DECLARE
-  v_store uuid := current_setting('gmura.reset_store_id')::uuid;
+  v_store uuid := current_setting('gpulso.reset_store_id')::uuid;
   v_name  text;
 BEGIN
   SELECT name INTO v_name FROM public.stores WHERE id = v_store;
@@ -147,16 +147,16 @@ END $$;
 DELETE FROM public.purchase_invoice_items
  WHERE invoice_id IN (
    SELECT id FROM public.purchase_invoices
-    WHERE store_id = current_setting('gmura.reset_store_id')::uuid
+    WHERE store_id = current_setting('gpulso.reset_store_id')::uuid
  );
 
 -- E.2 — Pagos a proveedor (store_id directo). Al borrarse no afecta suppliers.
 DELETE FROM public.supplier_payments
- WHERE store_id = current_setting('gmura.reset_store_id')::uuid;
+ WHERE store_id = current_setting('gpulso.reset_store_id')::uuid;
 
 -- E.3 — Cabeceras de factura (store_id directo)
 DELETE FROM public.purchase_invoices
- WHERE store_id = current_setting('gmura.reset_store_id')::uuid;
+ WHERE store_id = current_setting('gpulso.reset_store_id')::uuid;
 
 
 -- ╭──────────────────────────────────────────────────────────────────────────╮
@@ -171,12 +171,12 @@ DELETE FROM public.purchase_invoices
 DELETE FROM public.return_items
  WHERE return_id IN (
    SELECT id FROM public.returns
-    WHERE store_id = current_setting('gmura.reset_store_id')::uuid
+    WHERE store_id = current_setting('gpulso.reset_store_id')::uuid
  );
 
 -- C.2 — Cabeceras de devolución (store_id directo)
 DELETE FROM public.returns
- WHERE store_id = current_setting('gmura.reset_store_id')::uuid;
+ WHERE store_id = current_setting('gpulso.reset_store_id')::uuid;
 
 
 -- ╭──────────────────────────────────────────────────────────────────────────╮
@@ -190,16 +190,16 @@ DELETE FROM public.returns
 DELETE FROM public.layaway_items
  WHERE layaway_id IN (
    SELECT id FROM public.layaways
-    WHERE store_id = current_setting('gmura.reset_store_id')::uuid
+    WHERE store_id = current_setting('gpulso.reset_store_id')::uuid
  );
 
 -- B.2 — Abonos del separado (store_id directo). Deben morir antes que layaways.
 DELETE FROM public.layaway_payments
- WHERE store_id = current_setting('gmura.reset_store_id')::uuid;
+ WHERE store_id = current_setting('gpulso.reset_store_id')::uuid;
 
 -- B.3 — Cabeceras de separado (store_id directo)
 DELETE FROM public.layaways
- WHERE store_id = current_setting('gmura.reset_store_id')::uuid;
+ WHERE store_id = current_setting('gpulso.reset_store_id')::uuid;
 
 
 -- ╭──────────────────────────────────────────────────────────────────────────╮
@@ -216,12 +216,12 @@ DELETE FROM public.layaways
 DELETE FROM public.order_items
  WHERE order_id IN (
    SELECT id FROM public.orders
-    WHERE store_id = current_setting('gmura.reset_store_id')::uuid
+    WHERE store_id = current_setting('gpulso.reset_store_id')::uuid
  );
 
 -- A.2 — Cabeceras de venta (store_id directo)
 DELETE FROM public.orders
- WHERE store_id = current_setting('gmura.reset_store_id')::uuid;
+ WHERE store_id = current_setting('gpulso.reset_store_id')::uuid;
 
 
 -- ╭──────────────────────────────────────────────────────────────────────────╮
@@ -234,11 +234,11 @@ DELETE FROM public.orders
 
 -- D.1 — Egresos del turno (store_id directo; incluye kind='expense' y 'return')
 DELETE FROM public.cash_expenses
- WHERE store_id = current_setting('gmura.reset_store_id')::uuid;
+ WHERE store_id = current_setting('gpulso.reset_store_id')::uuid;
 
 -- D.2 — Turnos de caja (store_id directo)
 DELETE FROM public.cash_shifts
- WHERE store_id = current_setting('gmura.reset_store_id')::uuid;
+ WHERE store_id = current_setting('gpulso.reset_store_id')::uuid;
 
 
 -- ╭──────────────────────────────────────────────────────────────────────────╮
@@ -250,7 +250,7 @@ DELETE FROM public.cash_shifts
 -- ╰──────────────────────────────────────────────────────────────────────────╯
 
 DELETE FROM public.customers
- WHERE store_id = current_setting('gmura.reset_store_id')::uuid;
+ WHERE store_id = current_setting('gpulso.reset_store_id')::uuid;
 
 
 -- ╭──────────────────────────────────────────────────────────────────────────╮
@@ -271,29 +271,29 @@ DELETE FROM public.customers
 --       ya no existen. Idempotente.
 UPDATE public.variants
    SET reserved_qty = 0
- WHERE store_id = current_setting('gmura.reset_store_id')::uuid
+ WHERE store_id = current_setting('gpulso.reset_store_id')::uuid
    AND reserved_qty <> 0;
 
 -- G.2 — Historial de movimientos de stock (store_id directo).
 DELETE FROM public.stock_movements
- WHERE store_id = current_setting('gmura.reset_store_id')::uuid;
+ WHERE store_id = current_setting('gpulso.reset_store_id')::uuid;
 
 -- G.3 — ⚠ VARIANTES (BORRA EL CATÁLOGO). Descomenta SOLO si quieres un wipe total.
 --       Requiere que A, B, C, E y G.2 ya estén corridas para esta tienda.
 -- DELETE FROM public.variants
---  WHERE store_id = current_setting('gmura.reset_store_id')::uuid;
+--  WHERE store_id = current_setting('gpulso.reset_store_id')::uuid;
 
 -- G.4 — ⚠ PRODUCTOS (BORRA EL CATÁLOGO). Descomenta junto con G.3 para wipe total.
 --       (Borrar productos haría CASCADE sobre variants, pero G.3 ya las borra
 --        explícitamente para respetar el orden y los RESTRICT de las líneas.)
 -- DELETE FROM public.products
---  WHERE store_id = current_setting('gmura.reset_store_id')::uuid;
+--  WHERE store_id = current_setting('gpulso.reset_store_id')::uuid;
 
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- LIMPIEZA DEL PARÁMETRO DE SESIÓN (opcional)
 -- ════════════════════════════════════════════════════════════════════════════
--- SELECT set_config('gmura.reset_store_id', '', false);
+-- SELECT set_config('gpulso.reset_store_id', '', false);
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- NOTA — correr dentro de una transacción para poder abortar:
