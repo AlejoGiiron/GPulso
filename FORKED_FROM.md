@@ -94,6 +94,62 @@ momento que la BD local de G-Mura NO tenía objetos de G-Pulso (`units`,
 `repair_orders`, `is_service`, etc.) → el escape nunca llegó a contaminar sus
 datos espejo, solo hacía que G-Pulso leyera los de G-Mura.
 
+### Aislamiento del TOOLCHAIN de backup/reset — INCIDENTE 2026-07-28
+
+**Segundo escape del aislamiento de la Fase 1, misma familia que el `project_id`
+de arriba: el aislamiento cubrió el CÓDIGO y los SERVICIOS, pero no las
+HERRAMIENTAS de operación.**
+
+**Qué pasó.** Con el cliente ya operando en producción desde el 2026-07-25, se
+pidió un reset de la tienda de CelFashion. Al ir a tomar el backup previo se
+descubrió que `.env.backup` definía `GMURA_DB_URL` apuntando al proyecto Supabase
+de **G-Mura producción** (ref `ouzdjs…`, org `La Bodega del Jeans`, 2 tiendas
+reales). Todo el toolchain heredado leía esa variable:
+
+- `scripts/backup-db.sh` — respaldaba G-Mura creyendo respaldar G-Pulso; generaba
+  dumps con prefijo `gmura_`.
+- `backups/REGISTRO.md` — titulado "BD producción G-Mura", con el historial de
+  backups del OTRO cliente.
+- `scripts/lab-restore.sh` / `lab-apply-migration.sh` — con fallback ciego al
+  primer contenedor `supabase_db_*` que estuviera corriendo. Al probarlo, el
+  único lab levantado en la máquina era **`supabase_db_gmura`**: el restore
+  (que dropea y recarga el schema `public`) habría caído sobre el lab de G-Mura.
+
+**Qué NO protegía.** `reset-test-data.sql` ya tenía una doble guarda
+(`i_understand=YES` + `confirm_store_name`), pero ambas validan la **tienda
+dentro de la base**, no la **base**. Con un `store_id` y el nombre exacto de una
+tienda de G-Mura, las dos guardas habrían pasado limpias y el script habría
+borrado ventas, caja e inventario reales de un cliente ajeno al proyecto.
+
+**Cómo se detectó.** No por las guardas: por verificar a mano qué organizaciones
+existían en la base antes de ejecutar. El `SELECT` devolvió `La Bodega del Jeans`
+en vez de `CelFashion`.
+
+**Fix (rama `fix/db-tooling-isolation`).**
+
+| Script | Guarda añadida |
+|--------|----------------|
+| `reset-test-data.sql` | **GUARDA 0** de base, antes de leer nada y sin parámetro que la salte |
+| `reset-store-data.sql` | Misma GUARDA 0 |
+| `backup-db.sh` | `GPULSO_DB_URL` (aborta si encuentra `GMURA_DB_URL`) + verificación de identidad: advierte y exige confirmación interactiva |
+| `apply-migrations-fresh.sh` | Guarda **inversa**: aborta si el destino ya tiene un tenant ajeno |
+| `lab-restore.sh`, `lab-apply-migration.sh` | Eliminado el fallback ciego de contenedor; override consciente vía `LAB_DB_CONTAINER` |
+
+Criterio de la GUARDA 0 (doble, ambas obligatorias): objetos **estructurales**
+exclusivos de G-Pulso (`units`, `repair_orders`, `credit_commissions`) **Y** la
+organización `CelFashion`. El primero descarta una base con esquema de G-Mura
+aunque le crearan una org homónima; el segundo descarta una base de G-Pulso
+virgen o ajena. Verificado con una matriz de 4 casos contra bases reales.
+
+**Lección (la que importa para el próximo fork).** El aislamiento de un fork no
+termina en el repo, el proyecto Supabase y el Vercel. Hay que auditar
+explícitamente **todo lo que sostiene una credencial o un identificador del
+proyecto de origen**: variables de entorno, scripts de backup y restore,
+registros de backups, `project_id` del stack local, nombres de contenedor y
+prefijos de archivo. Y las guardas de un script destructivo deben validar
+**primero la base y después el objetivo dentro de ella** — una guarda sobre el
+objetivo da una falsa sensación de seguridad cuando la conexión es la equivocada.
+
 ## Hallazgos a reportar a G-Mura (porteo de conocimiento inverso)
 
 Cosas descubiertas trabajando en G-Pulso que le sirven a G-Mura.

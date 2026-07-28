@@ -58,6 +58,55 @@
 
 
 -- ╭──────────────────────────────────────────────────────────────────────────╮
+-- │ 🔒🔒 GUARDA 0 — ¿ESTA BASE ES G-PULSO?  (no saltable, sin parámetro)        │
+-- ╰──────────────────────────────────────────────────────────────────────────╯
+-- Incidente 2026-07-28 (ver FORKED_FROM.md): el toolchain de backup del repo se
+-- heredó del fork apuntando a G-MURA producción (otro cliente). Validar solo el
+-- store_id NO protege: un UUID de esa base es "una tienda real" y este script
+-- habría borrado producción ajena. Esta guarda valida la BASE, no la tienda.
+--
+-- Criterio doble: objetos exclusivos de G-Pulso (units / repair_orders /
+-- credit_commissions, que G-Mura no tiene) Y la organización 'CelFashion'.
+-- Corre ANTES del set_config y de cualquier lectura o DELETE.
+DO $guarda_base$
+DECLARE
+  v_faltan text[] := '{}';
+  v_orgs   int;
+BEGIN
+  IF to_regclass('public.units') IS NULL THEN
+    v_faltan := array_append(v_faltan, 'tabla public.units (Fase 2 — serializados)');
+  END IF;
+  IF to_regclass('public.repair_orders') IS NULL THEN
+    v_faltan := array_append(v_faltan, 'tabla public.repair_orders (Fase 3 — taller)');
+  END IF;
+  IF to_regclass('public.credit_commissions') IS NULL THEN
+    v_faltan := array_append(v_faltan, 'tabla public.credit_commissions (Fase 4 — comisiones)');
+  END IF;
+
+  IF to_regclass('public.organizations') IS NULL THEN
+    v_faltan := array_append(v_faltan, 'tabla public.organizations');
+  ELSE
+    SELECT count(*) INTO v_orgs FROM public.organizations WHERE name = 'CelFashion';
+    IF v_orgs = 0 THEN
+      v_faltan := array_append(v_faltan, 'organización ''CelFashion''');
+    END IF;
+  END IF;
+
+  IF array_length(v_faltan, 1) IS NOT NULL THEN
+    RAISE EXCEPTION E'ABORTADO: esta base NO es gpulso-prod.\n'
+      '  Falta: %\n'
+      '  NO se leyó ni se borró NADA.\n'
+      '  Verifica a qué proyecto Supabase apunta tu conexión antes de reintentar.\n'
+      '  (La BD de G-Mura / La Bodega del Jeans es OTRO cliente — ver FORKED_FROM.md)',
+      array_to_string(v_faltan, ' · ');
+  END IF;
+
+  RAISE NOTICE '🔒 GUARDA 0 OK: la base es G-Pulso.';
+END
+$guarda_base$;
+
+
+-- ╭──────────────────────────────────────────────────────────────────────────╮
 -- │ SECCIÓN 0 — PARÁMETRO: store_id objetivo (definir UNA sola vez aquí)       │
 -- ╰──────────────────────────────────────────────────────────────────────────╯
 -- Cambia SOLO este UUID. Todas las secciones lo leen vía
