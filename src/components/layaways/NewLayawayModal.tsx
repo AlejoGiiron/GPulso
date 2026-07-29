@@ -498,9 +498,21 @@ function ItemsStep({
   const [pickerProduct, setPickerProduct] = useState<POSProduct | null>(null)
   const { data: results = [], isLoading } = usePOSSearch(query)
 
-  const displayed = useMemo(() => results.slice(0, 12), [results])
+  // Los equipos serializados (IMEI) NO se pueden separar todavía: la UI de
+  // separados no cablea la reserva por unidad (reserve_unit), así que separarlos
+  // dejaría el equipo 'disponible' → sobreventa. Se ocultan del selector.
+  const displayed = useMemo(
+    () => results.filter((p) => !p.is_serialized).slice(0, 12),
+    [results],
+  )
 
   function handleAddVariant(product: POSProduct, variant: POSVariant) {
+    // Defensa por si un serializado llega por otro camino.
+    if (product.is_serialized) {
+      toast.error('Los equipos con IMEI aún no se pueden separar.')
+      setPickerProduct(null)
+      return
+    }
     onAdd({
       variant_id: variant.id,
       product_id: product.id,

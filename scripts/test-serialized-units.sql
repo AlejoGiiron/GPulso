@@ -202,7 +202,7 @@ BEGIN
   BEGIN
     PERFORM public.claim_unit(
       (SELECT id FROM public.units WHERE serial='IMEI-003'),
-      (SELECT id FROM public.order_items WHERE variant_id=(SELECT id FROM public.variants WHERE size='256GB')));
+      (SELECT id FROM public.order_items WHERE variant_id=(SELECT id FROM public.variants WHERE size='256GB' AND store_id=(SELECT id FROM public.stores WHERE name='StoreSER'))));
   EXCEPTION WHEN check_violation THEN v_blocked := true;
   END;
   IF NOT v_blocked THEN RAISE EXCEPTION 'T9 FALLO: se permitió claim con order_item de otra variante.'; END IF;
@@ -237,7 +237,7 @@ BEGIN
   BEGIN
     PERFORM public.complete_reserved_unit(
       (SELECT id FROM public.units WHERE serial='IMEI-003'),
-      (SELECT id FROM public.order_items WHERE variant_id=(SELECT id FROM public.variants WHERE size='256GB')));
+      (SELECT id FROM public.order_items WHERE variant_id=(SELECT id FROM public.variants WHERE size='256GB' AND store_id=(SELECT id FROM public.stores WHERE name='StoreSER'))));
   EXCEPTION WHEN check_violation THEN v_a := true; END;
   BEGIN
     PERFORM public.complete_reserved_unit(
@@ -256,16 +256,16 @@ INSERT INTO public.units (store_id, variant_id, serial) VALUES (:'store', :'vser
 DO $$
 DECLARE v_ser_before int; v_ser2_before int;
 BEGIN
-  SELECT stock_qty INTO v_ser_before  FROM public.variants WHERE id=(SELECT id FROM public.variants WHERE size='128GB');
-  SELECT stock_qty INTO v_ser2_before FROM public.variants WHERE id=(SELECT id FROM public.variants WHERE size='256GB');
+  SELECT stock_qty INTO v_ser_before  FROM public.variants WHERE id=(SELECT id FROM public.variants WHERE size='128GB' AND store_id=(SELECT id FROM public.stores WHERE name='StoreSER'));
+  SELECT stock_qty INTO v_ser2_before FROM public.variants WHERE id=(SELECT id FROM public.variants WHERE size='256GB' AND store_id=(SELECT id FROM public.stores WHERE name='StoreSER'));
 
-  UPDATE public.units SET variant_id=(SELECT id FROM public.variants WHERE size='256GB')
+  UPDATE public.units SET variant_id=(SELECT id FROM public.variants WHERE size='256GB' AND store_id=(SELECT id FROM public.stores WHERE name='StoreSER'))
    WHERE serial='IMEI-004';
 
-  IF (SELECT stock_qty FROM public.variants WHERE size='128GB') <> v_ser_before - 1 THEN
+  IF (SELECT stock_qty FROM public.variants WHERE size='128GB' AND store_id=(SELECT id FROM public.stores WHERE name='StoreSER')) <> v_ser_before - 1 THEN
     RAISE EXCEPTION 'T12 FALLO: la variante VIEJA quedó con stock fantasma.';
   END IF;
-  IF (SELECT stock_qty FROM public.variants WHERE size='256GB') <> v_ser2_before + 1 THEN
+  IF (SELECT stock_qty FROM public.variants WHERE size='256GB' AND store_id=(SELECT id FROM public.stores WHERE name='StoreSER')) <> v_ser2_before + 1 THEN
     RAISE EXCEPTION 'T12 FALLO: la variante NUEVA no sumó la unidad.';
   END IF;
   RAISE NOTICE 'T12 OK: cambio de variante recalcula AMBAS (vieja -1, nueva +1).';

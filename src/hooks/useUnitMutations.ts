@@ -16,6 +16,10 @@ type AddManualUnitInput = {
   variant_id: string
   serial: string
   cost: number | null
+  // Fase C: precio de la unidad (NULL = usar suggested_price al leer) y etiqueta
+  // de variante en texto libre ("128GB Azul").
+  price: number | null
+  variant_label: string | null
   notas: string | null
 }
 
@@ -28,6 +32,11 @@ export function useUnitMutations() {
     void queryClient.invalidateQueries({ queryKey: ['units'] })
     void queryClient.invalidateQueries({ queryKey: ['inventory'] })
     void queryClient.invalidateQueries({ queryKey: ['products', storeId] })
+    // El selector del POS ("Registrar y vender") lee ['pos-products', storeId];
+    // sin esto, una unidad nueva no refresca el stock del POS → riesgo de vender
+    // contra datos viejos.
+    void queryClient.invalidateQueries({ queryKey: ['pos-products', storeId] })
+    void queryClient.invalidateQueries({ queryKey: ['stock-movements'] })
     void queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] })
     if (variantId) void queryClient.invalidateQueries({ queryKey: ['variants', variantId] })
   }
@@ -36,7 +45,7 @@ export function useUnitMutations() {
   // trigger de sincronización pone stock_qty) + un stock_movement 'adjustment'
   // como los ajustes actuales. purchase_invoice_item_id NULL es válido aquí.
   const addManualUnit = useMutation({
-    mutationFn: async ({ variant_id, serial, cost, notas }: AddManualUnitInput) => {
+    mutationFn: async ({ variant_id, serial, cost, price, variant_label, notas }: AddManualUnitInput) => {
       const trimmed = serial.trim()
       if (!trimmed) throw new Error('El serial no puede estar vacío.')
 
@@ -47,6 +56,8 @@ export function useUnitMutations() {
           variant_id,
           serial: trimmed,
           cost,
+          price,
+          variant_label: variant_label?.trim() || null,
           notas: notas?.trim() || null,
         } as never)
         .select()

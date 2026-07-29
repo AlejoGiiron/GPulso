@@ -49,6 +49,9 @@ export default function UnitList({
             <span className="font-mono text-[13px] font-medium tracking-tight text-[#1a1a1a]">
               {u.serial}
             </span>
+            {u.variant_label && (
+              <span className="text-[11px] text-[#737373]">{u.variant_label}</span>
+            )}
             <span
               className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${meta.badge}`}
             >

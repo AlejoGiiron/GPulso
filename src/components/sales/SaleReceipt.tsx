@@ -17,6 +17,10 @@ export interface SaleReceiptItem {
   brand: string | null
   size: string | null
   color: string | null
+  // Fase B serializados: etiqueta de variante en texto libre + IMEI/serial de la
+  // unidad. En accesorios ambos van null y se muestran size/color.
+  variant_label: string | null
+  serial: string | null
   qty: number
   // unit_price = precio FINAL vendido; list_price = catálogo (para el tachado).
   unit_price: number
@@ -152,7 +156,7 @@ export function SaleReceipt({ sale, storeName, printedAt }: SaleReceiptProps) {
       <div style={sectionStyle}>
         <div style={{ fontWeight: 700, marginBottom: 2 }}>ÍTEMS</div>
         {sale.items.map((it) => (
-          <div key={it.variant_id} style={{ marginBottom: 2 }}>
+          <div key={it.serial ?? it.variant_id} style={{ marginBottom: 2 }}>
             {it.brand && (
               <div
                 style={{
@@ -173,6 +177,9 @@ export function SaleReceipt({ sale, storeName, printedAt }: SaleReceiptProps) {
                   .join(' ')}
               </div>
             )}
+            {/* Serializado: etiqueta de variante libre + IMEI/serial. */}
+            {it.variant_label && <div style={monoLight}>{it.variant_label}</div>}
+            {it.serial && <div style={monoLight}>IMEI: {it.serial}</div>}
             {it.list_price > it.unit_price && (
               <div style={{ ...monoLight, fontSize: 9 }}>
                 Antes:{' '}

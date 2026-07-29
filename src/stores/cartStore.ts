@@ -8,6 +8,10 @@ export interface CartItem {
   brand: string | null
   size: string | null
   color: string | null
+  // Fase B rediseño serializados: etiqueta de variante en texto libre de la
+  // unidad ("128GB Azul"). Solo en líneas serializadas; null en accesorios (que
+  // muestran size/color). La usan el carrito y los recibos.
+  variant_label: string | null
   // Fase 2: línea de EQUIPO serializado. unit_id/serial identifican la unidad
   // EXACTA vendida. Para accesorios ambos van null. Una unidad = una línea
   // (qty fija en 1, sin stepper). La identidad de línea es lineKey().
@@ -67,7 +71,13 @@ interface CartStore {
       | 'unit_id'
       | 'serial'
       | 'unit_price'
-    > & { unit_id?: string | null; serial?: string | null; unit_price?: number },
+      | 'variant_label'
+    > & {
+      unit_id?: string | null
+      serial?: string | null
+      unit_price?: number
+      variant_label?: string | null
+    },
   ) => void
   // Todas las mutaciones de línea reciben la CLAVE de línea (lineKey): variant_id
   // para accesorios, unit_id para equipos.
@@ -111,6 +121,7 @@ export const useCartStore = create<CartStore>((set) => ({
               ...newItem,
               unit_id,
               serial,
+              variant_label: newItem.variant_label ?? null,
               unit_price: newItem.list_price,
               qty: 1,
               stock_qty: 1, // una unidad; el stepper no aplica
@@ -144,6 +155,7 @@ export const useCartStore = create<CartStore>((set) => ({
             ...newItem,
             unit_id: null,
             serial: null,
+            variant_label: newItem.variant_label ?? null,
             unit_price: newItem.list_price,
             qty: 1,
             isGift: false,

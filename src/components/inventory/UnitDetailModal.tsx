@@ -36,7 +36,7 @@ export default function UnitDetailModal({ unitId, canSeeCost, onClose }: UnitDet
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  const variantLabel = unit ? [unit.size, unit.color].filter(Boolean).join(' · ') : ''
+  const variantLabel = unit?.variant_label ?? ''
 
   return (
     <div
@@ -92,6 +92,11 @@ export default function UnitDetailModal({ unitId, canSeeCost, onClose }: UnitDet
                     </span>
                   </Field>
                 )}
+                <Field label="Precio">
+                  <span className="font-mono text-sm text-slate-700">
+                    {unit.price != null ? fmtCOP(unit.price) : '—'}
+                  </span>
+                </Field>
                 <Field label="Origen">
                   <span className="text-sm text-slate-700">{unit.origin ?? '—'}</span>
                 </Field>

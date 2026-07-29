@@ -650,7 +650,7 @@ function EquiposTabContent({ customerId }: { customerId: string }) {
   return (
     <div>
       {units.map((u) => {
-        const label = [u.size, u.color].filter(Boolean).join(' · ')
+        const label = u.variant_label ?? ''
         return (
           <button
             key={u.unit_id}

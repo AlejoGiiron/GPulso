@@ -23,7 +23,7 @@ INSERT INTO auth.users (id,email) VALUES ('00000000-0000-0000-0000-0000000000b2'
 INSERT INTO public.profiles (id,email,full_name,role,role_id,organization_id,store_id,current_store_id,is_active)
 VALUES ('00000000-0000-0000-0000-0000000000b2','seller@rec.test','Seller REC','seller',:'role_seller',:'org',:'store',:'store',true);
 
-INSERT INTO public.products (name, store_id, is_serialized) VALUES ('iPhone REC', :'store', true) RETURNING id AS prod \gset
+INSERT INTO public.products (name, store_id, is_serialized, suggested_price) VALUES ('iPhone REC', :'store', true, 1000000) RETURNING id AS prod \gset
 INSERT INTO public.variants (product_id, store_id, price) VALUES (:'prod', :'store', 1000000) RETURNING id AS vser \gset
 INSERT INTO public.suppliers (store_id, name) VALUES (:'store', 'Proveedor REC') RETURNING id AS sup \gset
 INSERT INTO public.purchase_invoices (invoice_number, store_id, supplier_id, created_by, invoice_date, total)
@@ -62,6 +62,21 @@ BEGIN
   IF (SELECT stock_qty FROM public.variants v JOIN public.products p ON p.id=v.product_id WHERE p.name='iPhone REC') <> 3
     THEN RAISE EXCEPTION 'T2 FALLO: stock_qty no es 3.'; END IF;
   RAISE NOTICE 'T2 OK: completado 3/3, pendiente=0, stock_qty=3.';
+END $$;
+
+-- ── T2b — precio sembrado del sugerido, costo de la línea (056, decisión #4) ─
+DO $$
+DECLARE v_bad int;
+BEGIN
+  SELECT count(*) INTO v_bad
+    FROM public.units u
+    JOIN public.variants v ON v.id=u.variant_id
+    JOIN public.products p ON p.id=v.product_id
+   WHERE p.name='iPhone REC' AND (u.price IS DISTINCT FROM 1000000 OR u.cost IS NULL);
+  IF v_bad > 0 THEN
+    RAISE EXCEPTION 'T2b FALLO: % unidades sin price=suggested(1.000.000) o sin costo de la línea.', v_bad;
+  END IF;
+  RAISE NOTICE 'T2b OK: unidades recibidas con price=suggested (1.000.000) y cost de la factura.';
 END $$;
 
 -- ── T3 — Intento de exceder N → rechazado ───────────────────────────────────

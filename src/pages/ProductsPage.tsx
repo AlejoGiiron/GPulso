@@ -3,6 +3,8 @@ import { Search, Plus, Package, Edit2, Layers } from 'lucide-react'
 import { useProducts, useCategories } from '@/hooks/useProducts'
 import { useVariants } from '@/hooks/useVariants'
 import ProductModal from '@/components/products/ProductModal'
+import AddUnitModal from '@/components/inventory/AddUnitModal'
+import type { SerializedTemplate } from '@/hooks/useEquipment'
 import VariantsPanel from '@/components/products/VariantsPanel'
 import { fmtCOP } from '@/lib/formatters'
 import { getColorHex, sortSizes, stockState, priceRange } from '@/lib/products'
@@ -398,6 +400,8 @@ export default function ProductsPage() {
   const [showNewProduct, setShowNewProduct] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [variantsPanelProduct, setVariantsPanelProduct] = useState<Product | null>(null)
+  // Puerta 3 desde el dedup de la puerta 1: agregar unidad a una plantilla existente.
+  const [addUnitTarget, setAddUnitTarget] = useState<SerializedTemplate | null>(null)
 
   // Auto-select first product on initial load
   useEffect(() => {
@@ -618,6 +622,20 @@ export default function ProductsPage() {
             setEditingProduct(null)
           }}
           onSaved={handleProductSaved}
+          onAddUnitToExisting={(t) => {
+            // Cierra la creación y abre "agregar unidad" (puerta 3) a la plantilla.
+            setShowNewProduct(false)
+            setEditingProduct(null)
+            setAddUnitTarget(t)
+          }}
+        />
+      )}
+
+      {addUnitTarget && (
+        <AddUnitModal
+          variantId={addUnitTarget.variant_id}
+          productName={addUnitTarget.name}
+          onClose={() => setAddUnitTarget(null)}
         />
       )}
 

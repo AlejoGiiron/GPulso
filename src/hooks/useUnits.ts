@@ -4,7 +4,7 @@ import { useAuth } from './useAuth'
 import { getActiveStoreId } from './useActiveStoreId'
 import type { Unit, UnitStatus } from '@/types/database.types'
 
-// Forma plana de una unidad para vender en el POS (con precio de la variante).
+// Forma plana de una unidad para vender en el POS.
 export interface UnitForSale {
   unit_id: string
   serial: string
@@ -12,8 +12,10 @@ export interface UnitForSale {
   product_id: string
   name: string
   brand: string | null
-  size: string | null
-  color: string | null
+  // Fase B: etiqueta de variante en texto libre de la unidad ("128GB Azul"),
+  // reemplaza size/color para serializados. Puede ser null.
+  variant_label: string | null
+  // Fase B: precio resuelto de la unidad = unit.price ?? product.suggested_price.
   price: number
   status: UnitStatus
 }
@@ -29,8 +31,8 @@ export async function lookupUnitBySerial(
   const { data, error } = await supabase
     .from('units')
     .select(
-      `id, serial, status, variant_id,
-       variants!inner(price, size, color, product_id, products!inner(id, name, brand))`,
+      `id, serial, status, variant_id, price, variant_label,
+       variants!inner(product_id, products!inner(id, name, brand, suggested_price))`,
     )
     .eq('store_id' as never, storeId)
     .eq('serial' as never, term)
@@ -41,12 +43,11 @@ export async function lookupUnitBySerial(
     serial: string
     status: UnitStatus
     variant_id: string
+    price: number | null
+    variant_label: string | null
     variants: {
-      price: number
-      size: string | null
-      color: string | null
       product_id: string
-      products: { id: string; name: string; brand: string | null }
+      products: { id: string; name: string; brand: string | null; suggested_price: number | null }
     }
   }
   return {
@@ -56,9 +57,9 @@ export async function lookupUnitBySerial(
     product_id: u.variants.product_id,
     name: u.variants.products.name,
     brand: u.variants.products.brand,
-    size: u.variants.size,
-    color: u.variants.color,
-    price: u.variants.price,
+    variant_label: u.variant_label,
+    // Regla única serializados: precio de la unidad, o el sugerido del producto.
+    price: u.price ?? u.variants.products.suggested_price ?? 0,
     status: u.status,
   }
 }
@@ -120,8 +121,8 @@ export function useUnitsForVariants(variantIds: string[], enabled = true) {
       const { data, error } = await supabase
         .from('units')
         .select(
-          `id, serial, status, variant_id,
-           variants!inner(price, size, color, product_id, products!inner(name, brand))`,
+          `id, serial, status, variant_id, price, variant_label,
+           variants!inner(product_id, products!inner(name, brand, suggested_price))`,
         )
         .eq('store_id' as never, storeId)
         .in('variant_id' as never, variantIds as never)
@@ -130,9 +131,10 @@ export function useUnitsForVariants(variantIds: string[], enabled = true) {
       if (error) throw error
       type Raw = {
         id: string; serial: string; status: UnitStatus; variant_id: string
+        price: number | null; variant_label: string | null
         variants: {
-          price: number; size: string | null; color: string | null; product_id: string
-          products: { name: string; brand: string | null }
+          product_id: string
+          products: { name: string; brand: string | null; suggested_price: number | null }
         }
       }
       return ((data ?? []) as unknown as Raw[]).map((u) => ({
@@ -142,9 +144,8 @@ export function useUnitsForVariants(variantIds: string[], enabled = true) {
         product_id: u.variants.product_id,
         name: u.variants.products.name,
         brand: u.variants.products.brand,
-        size: u.variants.size,
-        color: u.variants.color,
-        price: u.variants.price,
+        variant_label: u.variant_label,
+        price: u.price ?? u.variants.products.suggested_price ?? 0,
         status: u.status,
       }))
     },
@@ -160,16 +161,22 @@ export function useOrderItemUnits(itemIds: string[]) {
 
   return useQuery({
     queryKey: ['units', 'by-order-items', [...itemIds].sort()],
-    queryFn: async (): Promise<Record<string, string[]>> => {
+    queryFn: async (): Promise<Record<string, { serials: string[]; variant_label: string | null }>> => {
       const { data, error } = await supabase
         .from('units')
-        .select('serial, order_item_id')
+        .select('serial, variant_label, order_item_id')
         .eq('store_id' as never, storeId)
         .in('order_item_id' as never, itemIds as never)
       if (error) throw error
-      const map: Record<string, string[]> = {}
-      for (const u of (data ?? []) as { serial: string; order_item_id: string | null }[]) {
-        if (u.order_item_id) (map[u.order_item_id] ??= []).push(u.serial)
+      const map: Record<string, { serials: string[]; variant_label: string | null }> = {}
+      for (const u of (data ?? []) as {
+        serial: string; variant_label: string | null; order_item_id: string | null
+      }[]) {
+        if (u.order_item_id) {
+          const entry = (map[u.order_item_id] ??= { serials: [], variant_label: null })
+          entry.serials.push(u.serial)
+          if (u.variant_label && !entry.variant_label) entry.variant_label = u.variant_label
+        }
       }
       return map
     },
@@ -184,8 +191,7 @@ export interface CustomerUnit {
   serial: string
   name: string
   brand: string | null
-  size: string | null
-  color: string | null
+  variant_label: string | null
   order_number: number | null
   bought_at: string
 }
@@ -220,13 +226,13 @@ export function useCustomerUnits(customerId: string | null) {
 
       const { data: unitsData } = await supabase
         .from('units')
-        .select('id, serial, order_item_id, variants!inner(size, color, products!inner(name, brand))')
+        .select('id, serial, order_item_id, variant_label, variants!inner(products!inner(name, brand))')
         .eq('store_id' as never, storeId)
         .eq('status' as never, 'vendida')
         .in('order_item_id' as never, items.map((it) => it.id) as never)
       const units = (unitsData ?? []) as unknown as {
-        id: string; serial: string; order_item_id: string | null
-        variants: { size: string | null; color: string | null; products: { name: string; brand: string | null } }
+        id: string; serial: string; order_item_id: string | null; variant_label: string | null
+        variants: { products: { name: string; brand: string | null } }
       }[]
 
       return units.map((u) => {
@@ -237,8 +243,7 @@ export function useCustomerUnits(customerId: string | null) {
           serial: u.serial,
           name: u.variants.products.name,
           brand: u.variants.products.brand,
-          size: u.variants.size,
-          color: u.variants.color,
+          variant_label: u.variant_label,
           order_number: o?.order_number ?? null,
           bought_at: o?.created_at ?? '',
         }
@@ -261,10 +266,11 @@ export interface UnitDetail {
   serial: string
   status: UnitStatus
   cost: number | null
+  // Fase B: precio resuelto de la unidad (unit.price ?? suggested_price).
+  price: number | null
   name: string
   brand: string | null
-  size: string | null
-  color: string | null
+  variant_label: string | null
   origin: string | null
   events: UnitTimelineEvent[]
 }
@@ -281,8 +287,8 @@ export function useUnitDetail(unitId: string | null) {
       const { data: uData, error: uErr } = await supabase
         .from('units')
         .select(
-          `id, serial, status, cost, created_at, notas,
-           variants!inner(size, color, products!inner(name, brand)),
+          `id, serial, status, cost, price, variant_label, created_at, notas,
+           variants!inner(products!inner(name, brand, suggested_price)),
            purchase_invoice_items(purchase_invoices(invoice_number))`,
         )
         .eq('id' as never, unitId as never)
@@ -291,8 +297,9 @@ export function useUnitDetail(unitId: string | null) {
       if (uErr || !uData) return null
       const u = uData as unknown as {
         id: string; serial: string; status: UnitStatus; cost: number | null
+        price: number | null; variant_label: string | null
         created_at: string; notas: string | null
-        variants: { size: string | null; color: string | null; products: { name: string; brand: string | null } }
+        variants: { products: { name: string; brand: string | null; suggested_price: number | null } }
         purchase_invoice_items: { purchase_invoices: { invoice_number: string } | null } | null
       }
 
@@ -351,10 +358,10 @@ export function useUnitDetail(unitId: string | null) {
         serial: u.serial,
         status: u.status,
         cost: u.cost,
+        price: u.price ?? u.variants.products.suggested_price ?? null,
         name: u.variants.products.name,
         brand: u.variants.products.brand,
-        size: u.variants.size,
-        color: u.variants.color,
+        variant_label: u.variant_label,
         origin,
         events,
       }

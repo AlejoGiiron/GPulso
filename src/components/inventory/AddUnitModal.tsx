@@ -1,16 +1,19 @@
 import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { X } from 'lucide-react'
 import { useUnitMutations } from '@/hooks/useUnitMutations'
+import { useVariantLabelSuggestions } from '@/hooks/useEquipment'
 
 interface AddUnitModalProps {
   variantId: string
   productName: string
-  /** Precio/etiqueta de la variante para contexto (ej. "128GB · Azul" o el nombre). */
+  /** Contexto del producto (ej. el nombre del modelo). */
   variantLabel?: string
   onClose: () => void
 }
 
-// C2b — ingreso manual de una unidad suelta a una variante serializada.
+// Puerta 3 — agregar OTRA unidad a un equipo (plantilla) que YA existe. Siempre
+// pre-atada a la variante ancla (variantId), sin buscador de producto: se entra
+// desde la ficha del equipo. Captura serial, costo, etiqueta libre y precio.
 export default function AddUnitModal({
   variantId,
   productName,
@@ -18,8 +21,11 @@ export default function AddUnitModal({
   onClose,
 }: AddUnitModalProps) {
   const { addManualUnit } = useUnitMutations()
+  const { data: labelSuggestions = [] } = useVariantLabelSuggestions()
   const [serial, setSerial] = useState('')
   const [cost, setCost] = useState('')
+  const [unitLabel, setUnitLabel] = useState('')
+  const [price, setPrice] = useState('')
   const [notas, setNotas] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -40,6 +46,8 @@ export default function AddUnitModal({
         variant_id: variantId,
         serial,
         cost: cost ? Math.round(parseFloat(cost)) : null,
+        price: price ? Math.round(parseFloat(price)) : null,
+        variant_label: unitLabel || null,
         notas: notas || null,
       })
       onClose()
@@ -86,15 +94,46 @@ export default function AddUnitModal({
           </div>
           <div>
             <label className="mb-1.5 block text-xs font-medium text-slate-600">
-              Costo (opcional)
+              Variante (opcional)
             </label>
             <input
-              inputMode="numeric"
-              value={cost}
-              onChange={(e) => setCost(e.target.value.replace(/[^\d]/g, ''))}
-              placeholder="0"
-              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm tabular-nums outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
+              value={unitLabel}
+              onChange={(e) => setUnitLabel(e.target.value)}
+              list="unit-variant-label-options"
+              placeholder="Ej: 128GB Azul"
+              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             />
+            <datalist id="unit-variant-label-options">
+              {labelSuggestions.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                Costo (opcional)
+              </label>
+              <input
+                inputMode="numeric"
+                value={cost}
+                onChange={(e) => setCost(e.target.value.replace(/[^\d]/g, ''))}
+                placeholder="0"
+                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm tabular-nums outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                Precio (opcional)
+              </label>
+              <input
+                inputMode="numeric"
+                value={price}
+                onChange={(e) => setPrice(e.target.value.replace(/[^\d]/g, ''))}
+                placeholder="Sugerido"
+                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm tabular-nums outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
+              />
+            </div>
           </div>
           <div>
             <label className="mb-1.5 block text-xs font-medium text-slate-600">

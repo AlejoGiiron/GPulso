@@ -99,6 +99,9 @@ export interface Product {
   category_id: string | null
   size_type: string
   is_serialized: boolean
+  // Fase A rediseño serializados (053): precio sugerido de la plantilla
+  // serializada. NULL para accesorios. Nadie lo lee aún (Fase B).
+  suggested_price: number | null
   // Fase 3 — producto de servicio (ej. "Servicio de reparación"): se vende sin
   // descontar stock; excluido de inventario/POS. Lo crea/usa deliver_repair.
   is_service: boolean
@@ -118,6 +121,11 @@ export interface Unit {
   serial: string
   status: UnitStatus
   cost: number | null
+  // Fase A rediseño serializados (053): precio de venta de la unidad (NULL =
+  // usar products.suggested_price) y etiqueta de variante en texto libre. Nadie
+  // los lee aún (Fase B).
+  price: number | null
+  variant_label: string | null
   purchase_invoice_item_id: string | null
   order_item_id: string | null
   layaway_id: string | null
@@ -655,13 +663,19 @@ export interface Database {
         Row: Product
         Insert: Omit<
           Product,
-          'id' | 'created_at' | 'image_url' | 'is_serialized' | 'is_service'
+          | 'id'
+          | 'created_at'
+          | 'image_url'
+          | 'is_serialized'
+          | 'is_service'
+          | 'suggested_price'
         > & {
           id?: string
           created_at?: string
           image_url?: string | null
           is_serialized?: boolean
           is_service?: boolean
+          suggested_price?: number | null
         }
         Update: Partial<Omit<Product, 'id'>>
       }
@@ -680,13 +694,21 @@ export interface Database {
         // tienen default.
         Insert: Omit<
           Unit,
-          'id' | 'organization_id' | 'status' | 'created_at' | 'updated_at'
+          | 'id'
+          | 'organization_id'
+          | 'status'
+          | 'created_at'
+          | 'updated_at'
+          | 'price'
+          | 'variant_label'
         > & {
           id?: string
           organization_id?: string
           status?: UnitStatus
           created_at?: string
           updated_at?: string
+          price?: number | null
+          variant_label?: string | null
         }
         Update: Partial<Omit<Unit, 'id' | 'organization_id'>>
       }

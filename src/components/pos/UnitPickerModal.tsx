@@ -86,7 +86,7 @@ export default function UnitPickerModal({ product, onPick, onClose }: UnitPicker
               {filtered.map((u) => {
                 const meta = unitStatusMeta(u.status)
                 const pickable = u.status === 'disponible'
-                const label = [u.size, u.color].filter(Boolean).join(' · ')
+                const label = u.variant_label ?? ''
                 return (
                   <button
                     key={u.unit_id}
