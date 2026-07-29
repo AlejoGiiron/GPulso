@@ -103,6 +103,19 @@ VITE_GPULSO_SUPABASE_ANON_KEY=
 - Commits en Conventional Commits
 - Un commit por funcionalidad completa
 
+## Numeración de migraciones
+- **Hasta la 056: numeración secuencial** (`056_nombre.sql`). Congelada, no se
+  renumera nada de lo existente.
+- **De ahí en adelante: prefijo de timestamp** `AAAAMMDD_HHMM_nombre.sql`
+  (ej. `20260728_1630_repair_status_rpc_only.sql`).
+- **Por qué:** con ramas largas en paralelo, dos features toman el mismo número
+  siguiente y colisionan al mergear (pasó el 2026-07-28: el rediseño de
+  serializados tenía 053–056 y otra rama creó su propia 053). El timestamp hace
+  la colisión imposible y el orden refleja el momento real de creación.
+- Los dos formatos **conviven sin tocar nada**: ordenan bien lexicográficamente
+  (`0…` < `2…`), así que el glob de `apply-migrations-fresh.sh` aplica primero
+  todas las secuenciales y después las de timestamp. Verificado.
+
 ## Estado actual del proyecto
 Última fase completada: 07 - Configuración ✅ + hotfix/qa-pre-deploy ✅
   - src/types/config.types.ts: StoreConfig, StoreColorConfig, LabelFields, LabelFormat
