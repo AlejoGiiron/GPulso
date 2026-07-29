@@ -152,59 +152,77 @@ export function useUpdateRepair() {
       if (error) throw error
     },
     onSuccess: () => invalidate(),
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => {
+      // El CHECK repair_orders_precio_required_when_ready (migración
+      // 20260728_1630) impide dejar el precio en NULL con la orden ya en
+      // 'listo'/'entregado'. Postgres lo reporta con el nombre de la constraint,
+      // que no le dice nada al usuario: traducimos SOLO este caso.
+      if (err.message.includes('repair_orders_precio_required_when_ready')) {
+        return toast.error('Una reparación lista o entregada no puede quedar sin precio.')
+      }
+      toast.error(err.message)
+    },
   })
 }
 
-// ── Avanzar estado (recibido → en_reparacion → listo) ─────────────────────────
+// ── Avanzar / retroceder estado — RPC atómica ─────────────────────────────────
 
-// Mensaje único de la regla precio-para-listo, compartido por la mutación y por
-// la guarda de cliente (RepairDetailModal) para no tener dos variantes del texto.
-export const REPAIR_READY_PRICE_ERROR = 'Define el precio antes de marcar como listo'
+// Mensaje de la regla precio-para-listo usado como PRE-chequeo de cliente (evita
+// un viaje a la BD cuando ya sabemos que falta el precio). Es el mismo texto que
+// devuelve la RPC, para que el usuario no vea dos redacciones de la misma regla.
+export const REPAIR_READY_PRICE_ERROR = 'Define el precio antes de marcar como listo.'
 
 type RepairsDbClient = typeof supabase
 
 /**
- * Avanza el estado de una reparación. Para pasar a 'listo' el precio debe estar
- * definido (se cobra al entregar). La fuente de verdad es la BD, NO el llamador:
- * releemos el precio real de la orden y validamos ESE valor, para que la regla no
- * dependa de que cada punto de avance (modal, kanban, o uno futuro) recuerde
- * pasarlo. Recibe el client como parámetro para poder testearse sin red.
+ * Mueve el estado de una reparación llamando a la RPC `advance_repair_status`
+ * (migración 20260728_1630). TODA la validación vive en la BD:
+ *   · permiso reparaciones.gestionar y orden de la tienda activa
+ *   · transición válida: recibido → en_reparacion → listo, más el retroceso
+ *     listo → en_reparacion. Sin saltos.
+ *   · precio obligatorio para 'listo' (releído de la BD, no del llamador)
+ *   · 'entregado' RECHAZADO: eso lo hace deliver_repair, que crea la venta y el
+ *     pago. Antes se podía escribir el estado directo y saltarse el cobro.
  *
- * NOTA (deuda, ver FORKED_FROM.md): el avance de estado es un UPDATE plano sin
- * RPC; esta guarda vive solo en cliente y es saltable por API directa.
+ * Los errores se propagan TAL CUAL: los mensajes de la RPC están redactados para
+ * el usuario final (el de 'entregado' lo manda a "Entregar y cobrar", el de
+ * transición explica el flujo). Envolverlos en un genérico perdería esa guía.
+ *
+ * Recibe el client como parámetro para poder testearse sin red.
  */
 export async function advanceRepairStatus(
   client: RepairsDbClient,
   id: string,
   status: RepairStatus,
 ): Promise<void> {
-  if (status === 'listo') {
-    const { data, error: readErr } = await client
-      .from('repair_orders')
-      .select('precio')
-      .eq('id' as never, id as never)
-      .single()
-    if (readErr) throw readErr
-    if ((data as { precio: number | null } | null)?.precio == null) {
-      throw new Error(REPAIR_READY_PRICE_ERROR)
-    }
-  }
-  const { error } = await client
-    .from('repair_orders')
-    .update({ status } as never)
-    .eq('id' as never, id as never)
+  const { error } = await client.rpc('advance_repair_status' as never, {
+    p_repair_id: id,
+    p_new_status: status,
+  } as never)
   if (error) throw error
+}
+
+export interface AdvanceRepairInput {
+  id: string
+  status: RepairStatus
+  /**
+   * Estado de origen. Solo se usa para elegir el texto del toast: `en_reparacion`
+   * se alcanza tanto avanzando (desde 'recibido') como retrocediendo (desde
+   * 'listo'), y decir "Estado actualizado" en un retroceso lo haría pasar
+   * inadvertido. La validación real de la transición es de la BD, no de esto.
+   */
+  from?: RepairStatus
 }
 
 export function useAdvanceRepairStatus() {
   const invalidate = useInvalidateRepairs()
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: RepairStatus }): Promise<void> =>
+    mutationFn: ({ id, status }: AdvanceRepairInput): Promise<void> =>
       advanceRepairStatus(supabase, id, status),
-    onSuccess: () => {
+    onSuccess: (_data, { status, from }) => {
       invalidate()
-      toast.success('Estado actualizado')
+      const isRevert = from === 'listo' && status === 'en_reparacion'
+      toast.success(isRevert ? 'Devuelta a reparación' : 'Estado actualizado')
     },
     onError: (err: Error) => toast.error(err.message),
   })

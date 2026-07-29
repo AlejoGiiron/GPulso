@@ -56,7 +56,7 @@ export default function RepairsPage() {
       openDetail(card.id)
       return
     }
-    advance.mutate({ id: card.id, status: next })
+    advance.mutate({ id: card.id, status: next, from: card.status })
   }
 
   return (
