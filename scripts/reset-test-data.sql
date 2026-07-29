@@ -52,6 +52,25 @@
 --   En el SQL Editor de Supabase (sin -v): reemplaza los tres literales marcados
 --   "EDITAR" más abajo (store_id, i_understand, confirm_store_name).
 --
+-- ⚠ WINDOWS + NOMBRES CON ACENTOS O RAYA LARGA (—): NO pasar confirm_store_name
+--   por línea de comandos. Windows convierte los argumentos de UTF-8 al codepage
+--   ANSI, así que una raya larga (U+2014, bytes e2 80 94) llega como 0x97 y psql
+--   la rechaza con «invalid byte sequence for encoding "UTF8"». La GUARDA 2
+--   aborta —o el script revienta a mitad— aunque el nombre sea el correcto.
+--   (Detectado el 2026-07-28 con la tienda 'CelFashion — Principal'.)
+--
+--   SOLUCIÓN: pasar los parámetros por ARCHIVO, que no atraviesa argv. Crea un
+--   wrapper .sql en UTF-8 y ejecútalo con psql -f:
+--
+--       \set store_id 'UUID-DE-LA-TIENDA'
+--       \set i_understand YES
+--       \set confirm_store_name 'CelFashion — Principal'
+--       \i scripts/reset-test-data.sql
+--
+--   Comprobación previa (solo lectura) de que el literal coincide byte a byte:
+--       SELECT (name = :'confirm_store_name') FROM public.stores WHERE id = :'store_id';
+--   Debe dar t ANTES de ejecutar el reset.
+--
 -- GARANTÍAS:
 --   · Recibe store_id como PARÁMETRO (-v store_id=…), sin UUID hardcodeado.
 --   · GUARDA DE CONFIRMACIÓN doble: aborta sin borrar nada salvo que

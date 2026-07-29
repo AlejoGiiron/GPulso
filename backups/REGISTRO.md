@@ -37,3 +37,5 @@ reset**.
 | 2026-07-22 18:35 | `pre-inventory-lock` | `gpulso_20260722_1835_pre-inventory-lock.dump` | 502KB | `n/a` |
 | 2026-07-25 17:12 | `pre-reset-pruebas` | `gpulso_20260725_1712_pre-reset-pruebas.dump` | 510KB | `n/a` |
 | 2026-07-28 16:13 | `gpulso-prod-verificado` | `gpulso_20260728_1612_gpulso-prod-verificado.dump` | 502KB | `c5521b0b39a5` |
+| 2026-07-28 21:03 | `pre-repair-status-rpc` | `gpulso_20260728_2102_pre-repair-status-rpc.dump` | 505KB | `0021d3ea83ae` |
+| 2026-07-28 21:11 | `pre-reset-arranque-cliente` | `gpulso_20260728_2111_pre-reset-arranque-cliente.dump` | 512KB | `74f1422a0996` |
