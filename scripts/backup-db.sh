@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 #
-# backup-db.sh — Backup de la BD de producción de G-Mura (Supabase / PostgreSQL)
+# backup-db.sh — Backup de la BD de producción de G-PULSO (Supabase / PostgreSQL)
+#
+# Lee GPULSO_DB_URL de .env.backup y verifica que la base SEA G-Pulso antes de
+# respaldar (ver sección 4b). NO usar la credencial de G-Mura acá: es otro
+# cliente, otro proyecto Supabase. Ver FORKED_FROM.md § incidente 2026-07-28.
 #
 # Uso:
 #   ./scripts/backup-db.sh <etiqueta>
@@ -67,7 +71,14 @@ set -a
 source "$ENV_FILE"
 set +a
 
-[[ -n "${GMURA_DB_URL:-}" ]] || die "GMURA_DB_URL no está definida en $ENV_FILE."
+[[ -n "${GPULSO_DB_URL:-}" ]] || {
+  if [[ -n "${GMURA_DB_URL:-}" ]]; then
+    die "$ENV_FILE define GMURA_DB_URL (variable de OTRO proyecto: G-Mura / La Bodega del Jeans).
+     En este repo la variable es GPULSO_DB_URL y debe apuntar a gpulso-prod.
+     Renómbrala a mano en $ENV_FILE y pega la cadena de gpulso-prod. Ver scripts/BACKUP.md."
+  fi
+  die "GPULSO_DB_URL no está definida en $ENV_FILE. Copia .env.backup.example y pega la cadena de gpulso-prod."
+}
 
 # ----------------------------------------------------------------------------
 # 4. Verificación de versión de pg_dump vs. servidor
@@ -81,7 +92,7 @@ info "Cliente pg_dump: versión mayor ${BOLD}$CLIENT_VER${RESET}"
 # Versión mayor del servidor (best-effort; no aborta si no se puede consultar)
 SERVER_VER=""
 if command -v psql >/dev/null 2>&1; then
-  SERVER_VER="$(psql "$GMURA_DB_URL" -tAc 'SHOW server_version_num;' 2>/dev/null | tr -d '[:space:]' || true)"
+  SERVER_VER="$(psql "$GPULSO_DB_URL" -tAc 'SHOW server_version_num;' 2>/dev/null | tr -d '[:space:]' || true)"
   if [[ -n "$SERVER_VER" ]]; then
     # server_version_num: 150004 -> 15 ; 160002 -> 16
     SERVER_MAJOR="$(( SERVER_VER / 10000 ))"
@@ -104,12 +115,73 @@ else
 fi
 
 # ----------------------------------------------------------------------------
+# 4b. 🔒 VERIFICACIÓN DE IDENTIDAD DE LA BASE — ¿es G-Pulso?
+#
+# Incidente 2026-07-28 (ver FORKED_FROM.md): este script se heredó del fork
+# leyendo GMURA_DB_URL y apuntando a la producción de G-MURA (otro cliente).
+# Un backup de la base equivocada no destruye nada, pero SÍ genera un dump mal
+# rotulado que después alguien toma por bueno — que es exactamente como se
+# encadenó el incidente.
+#
+# Criterio idéntico al de los scripts de reset: objetos exclusivos de G-Pulso
+# (units / repair_orders / credit_commissions) + la organización 'CelFashion'.
+#
+# Es SOLO LECTURA, así que ADVIERTE y pide confirmación en vez de abortar en
+# seco (a veces querrás respaldar el lab o una base ajena a propósito). Sin
+# terminal interactiva (CI, pipe) ABORTA: nadie puede confirmar.
+# ----------------------------------------------------------------------------
+IDENTITY="desconocida"
+if command -v psql >/dev/null 2>&1; then
+  # to_regclass nunca lanza error si la tabla no existe → consulta segura.
+  TABLES_PRESENT="$(psql "$GPULSO_DB_URL" -tAc "
+    SELECT (to_regclass('public.units')              IS NOT NULL)::int
+         + (to_regclass('public.repair_orders')      IS NOT NULL)::int
+         + (to_regclass('public.credit_commissions') IS NOT NULL)::int
+         + (to_regclass('public.organizations')      IS NOT NULL)::int;" 2>/dev/null | tr -d '[:space:]' || true)"
+
+  if [[ "$TABLES_PRESENT" == "4" ]]; then
+    ORG_PRESENT="$(psql "$GPULSO_DB_URL" -tAc \
+      "SELECT count(*) FROM public.organizations WHERE name = 'CelFashion';" 2>/dev/null | tr -d '[:space:]' || true)"
+    [[ "${ORG_PRESENT:-0}" -ge 1 ]] && IDENTITY="gpulso" || IDENTITY="ajena"
+  elif [[ -n "$TABLES_PRESENT" ]]; then
+    IDENTITY="ajena"
+  fi
+fi
+
+case "$IDENTITY" in
+  gpulso)
+    ok "Identidad verificada: la base ES G-Pulso (units + repair_orders + credit_commissions + org CelFashion)."
+    ;;
+  ajena|desconocida)
+    warn "${BOLD}Esta base NO se identifica como G-Pulso.${RESET}"
+    if [[ "$IDENTITY" == "ajena" ]]; then
+      # Pista de a quién pertenece, sin exponer la credencial.
+      OTHER_ORGS="$(psql "$GPULSO_DB_URL" -tAc \
+        "SELECT string_agg(name, ', ' ORDER BY name) FROM public.organizations;" 2>/dev/null | tr -d '\r' || true)"
+      [[ -n "$OTHER_ORGS" ]] && warn "Organizaciones encontradas: ${BOLD}${OTHER_ORGS}${RESET}"
+      warn "Faltan objetos propios de G-Pulso y/o la org 'CelFashion'."
+    else
+      warn "No se pudo consultar la base (¿psql, red o credencial?)."
+    fi
+    warn "Si esperabas gpulso-prod, ${BOLD}revisa GPULSO_DB_URL en $ENV_FILE${RESET} antes de continuar."
+    if [[ -t 0 ]]; then
+      printf '%s' "${YELLOW}¿Respaldar esta base de todos modos? [y/N] ${RESET}"
+      read -r answer
+      [[ "$answer" =~ ^[yY]$ ]] || die "Abortado: la base no es G-Pulso y no se confirmó."
+      warn "Continuando por confirmación explícita. El dump NO es de G-Pulso: rotúlalo como corresponde."
+    else
+      die "Sin terminal interactiva para confirmar y la base no es G-Pulso. Abortado."
+    fi
+    ;;
+esac
+
+# ----------------------------------------------------------------------------
 # 5. Ejecutar el backup
 # ----------------------------------------------------------------------------
 mkdir -p "$BACKUP_DIR"
 
 STAMP="$(date +%Y%m%d_%H%M)"
-DUMP_NAME="gmura_${STAMP}_${SAFE_LABEL}.dump"
+DUMP_NAME="gpulso_${STAMP}_${SAFE_LABEL}.dump"
 DUMP_PATH="$BACKUP_DIR/$DUMP_NAME"
 
 info "Generando backup: ${BOLD}$DUMP_NAME${RESET}"
@@ -117,7 +189,7 @@ info "Esto puede tardar según el tamaño de la BD…"
 
 # -F c  => formato custom (restaurable con pg_restore, comprimido)
 # --no-owner / --no-acl => portable entre entornos (no depende de roles de prod)
-if ! pg_dump --no-owner --no-acl -F c -f "$DUMP_PATH" "$GMURA_DB_URL"; then
+if ! pg_dump --no-owner --no-acl -F c -f "$DUMP_PATH" "$GPULSO_DB_URL"; then
   # Limpia un dump parcial si quedó algo escrito
   [[ -f "$DUMP_PATH" ]] && rm -f "$DUMP_PATH"
   die "pg_dump falló. No se generó backup."

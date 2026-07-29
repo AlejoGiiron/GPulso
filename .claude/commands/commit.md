@@ -3,7 +3,7 @@ description: Crea un commit en formato Conventional Commits con el mensaje aprop
 argument-hint: [mensaje-opcional]
 ---
 
-Crea un commit en el proyecto gmura siguiendo el flujo:
+Crea un commit en el proyecto G-Pulso siguiendo el flujo:
 
 ## 1. Verificar estado
 
@@ -27,8 +27,9 @@ cambios staged y genera el mensaje más apropiado.
 - `chore` — tareas de mantenimiento, deps, config
 - `docs` — documentación
 
-**Scopes:** auth, products, variants, pos, inventory,
-barcode, returns, customers, reports, config, db, layout
+**Scopes:** auth, products, variants, pos, inventory, barcode, returns,
+customers, reports, config, db, layout, layaways, suppliers, cash, repairs,
+commissions, credit, rbac, tooling, fork
 
 ## 3. Confirmar antes de commitear
 

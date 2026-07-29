@@ -4,7 +4,7 @@
 #
 # Uso:
 #   ./scripts/lab-restore.sh                      # usa el .dump más reciente de backups/
-#   ./scripts/lab-restore.sh backups/gmura_X.dump # usa un dump específico
+#   ./scripts/lab-restore.sh backups/gpulso_X.dump # usa un dump específico
 #
 # Qué restaura (espejo fiel de producción, SIN tocar producción):
 #   - schema public       : estructura + datos + FKs + RLS + funciones + triggers
@@ -58,8 +58,17 @@ if [[ -n "$DUMP_ARG" ]]; then
   DUMP_PATH="$DUMP_ARG"
   [[ -f "$DUMP_PATH" ]] || die "No existe el dump indicado: $DUMP_PATH"
 else
-  DUMP_PATH="$(ls -t "$BACKUP_DIR"/*.dump 2>/dev/null | head -n1 || true)"
-  [[ -n "$DUMP_PATH" ]] || die "No hay ningún .dump en $BACKUP_DIR. Genera uno con backup-db.sh o pasa la ruta como argumento."
+  # 🔒 Solo autoselecciona dumps de G-PULSO (prefijo gpulso_). Antes tomaba el
+  # *.dump más reciente sin mirar el prefijo: con un dump ajeno en backups/ (ej.
+  # gmura_*.dump) el lab se cargaba con datos del otro cliente sin avisar.
+  # Ver FORKED_FROM.md § incidente 2026-07-28.
+  DUMP_PATH="$(ls -t "$BACKUP_DIR"/gpulso_*.dump 2>/dev/null | head -n1 || true)"
+  if [[ -z "$DUMP_PATH" ]]; then
+    OTHERS="$(ls -t "$BACKUP_DIR"/*.dump 2>/dev/null | head -n3 | xargs -r -n1 basename | paste -sd', ' - || true)"
+    die "No hay ningún dump de G-Pulso (gpulso_*.dump) en $BACKUP_DIR.
+     ${OTHERS:+Sí hay dumps de otro origen: $OTHERS — NO se autoseleccionan.}
+     Genera uno con ./scripts/backup-db.sh <etiqueta>, o pasa la ruta explícita como argumento."
+  fi
 fi
 info "Dump a restaurar: ${BOLD}$DUMP_PATH${RESET}"
 
@@ -71,12 +80,25 @@ docker info >/dev/null 2>&1 || die "El daemon de Docker no responde. Abre Docker
 
 PROJECT_ID="$(grep -E '^project_id' "$CONFIG_TOML" 2>/dev/null | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' || true)"
 DB_CONTAINER="supabase_db_${PROJECT_ID}"
-if ! docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER"; then
-  # Fallback: primer contenedor supabase_db_* que esté corriendo
-  DB_CONTAINER="$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | head -n1 || true)"
+
+# 🔒 Sin fallback ciego. El fallback anterior tomaba el PRIMER supabase_db_* que
+# estuviera corriendo: con el lab de G-Mura levantado, este restore (que DROPEA y
+# recarga el schema public) se lo habría llevado por delante. Mismo patrón que el
+# incidente 2026-07-28 con la base de prod — ver FORKED_FROM.md.
+# Override consciente: LAB_DB_CONTAINER=<nombre> ./scripts/lab-restore.sh
+if [[ -n "${LAB_DB_CONTAINER:-}" ]]; then
+  DB_CONTAINER="$LAB_DB_CONTAINER"
+  warn "Usando contenedor forzado por LAB_DB_CONTAINER: ${BOLD}$DB_CONTAINER${RESET}"
 fi
-[[ -n "$DB_CONTAINER" ]] && docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER" \
-  || die "No encuentro el contenedor de la BD local (supabase_db_*). ¿Corriste 'supabase start'?"
+
+if ! docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER"; then
+  RUNNING="$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | paste -sd', ' - || true)"
+  die "No está corriendo el contenedor del lab de G-Pulso (${BOLD}$DB_CONTAINER${RESET}).
+     Contenedores supabase_db_* activos: ${RUNNING:-ninguno}
+     Corre 'supabase start' en ESTE repo. Si ves un lab de otro proyecto (ej. supabase_db_gmura),
+     apágalo primero: docker stop \$(docker ps -q --filter name=_gmura)
+     NO se restaura sobre un lab ajeno: este script dropea y recarga el schema public."
+fi
 info "Contenedor de la BD: ${BOLD}$DB_CONTAINER${RESET}"
 
 # Helper: psql como postgres, abortando al primer error SQL

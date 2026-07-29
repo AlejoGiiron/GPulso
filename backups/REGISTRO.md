@@ -1,4 +1,4 @@
-# Registro de backups — BD producción G-Mura
+# Registro de backups — BD producción G-Pulso (`gpulso-prod`)
 
 > Este archivo SÍ se versiona en el repo. Los archivos `.dump` NO (contienen
 > datos reales del cliente). Cada fila se agrega automáticamente al correr
@@ -6,23 +6,36 @@
 
 ## Contexto
 
-La Bodega del Jeans está en **producción**. Se toma un backup antes de cada
-fase que toque la base de datos (especialmente la migración a multi-tenancy).
+**CelFashion** está en producción desde el 2026-07-25. Se toma un backup antes
+de cada fase que toque la base de datos y **obligatoriamente antes de cualquier
+reset**.
 
 - Cliente para dump: `pg_dump` (formato custom `-F c`, `--no-owner --no-acl`)
 - Restauración: ver [scripts/BACKUP.md](../scripts/BACKUP.md)
 - Los `.dump` viven en `backups/` (ignorado por git). Guárdalos también fuera
   de la máquina (almacenamiento cifrado) — son datos de cliente.
 
+> 🔒 **Solo G-Pulso.** Este registro es del proyecto `gpulso-prod` (org
+> `CelFashion`). Los dumps de G-Mura / La Bodega del Jeans **no van acá**: son
+> de otro cliente y otro repo. El historial heredado del fork y el dump tomado
+> por error se movieron a [`_ajenos-gmura/`](_ajenos-gmura/LEEME.md).
+> Ver el incidente 2026-07-28 en [`FORKED_FROM.md`](../FORKED_FROM.md).
+
+> ℹ️ Las filas anteriores al 2026-07-28 se reconstruyeron a partir de los
+> archivos presentes en `backups/`: el registro heredado llevaba el historial de
+> **G-Mura**, no el de G-Pulso, y estos backups nunca quedaron anotados. Sin
+> checksum porque se calculó después del hecho; los nuevos sí lo traen.
+
 ## Historial
 
 | Fecha | Etiqueta | Archivo | Tamaño | SHA-256 (12) |
 |-------|----------|---------|--------|--------------|
 <!-- El script agrega una fila aquí por cada backup. No editar manualmente las filas generadas. -->
-| 2026-06-29 12:00 | `pre-multitenancy` | `gmura_20260629_1159_pre-multitenancy.dump` | 423KB | `f7d6e794f4bc` |
-| 2026-07-09 23:33 | `pre-deploy-020-030` | `gmura_20260709_2333_pre-deploy-020-030.dump` | 489KB | `e8b98311e7c2` |
-| 2026-07-10 08:42 | `pre-lab-org` | `gmura_20260710_0841_pre-lab-org.dump` | 522KB | `8bbd512919ee` |
-| 2026-07-10 17:48 | `pre-031-layaway-terms` | `gmura_20260710_1747_pre-031-layaway-terms.dump` | 535KB | `a8bdbbf523c8` |
-| 2026-07-11 10:13 | `pre-032-033-mixed-payments` | `gmura_20260711_1013_pre-032-033-mixed-payments.dump` | 538KB | `0df7626de4cc` |
-| 2026-07-13 19:26 | `pre-034-historial` | `gmura_20260713_1925_pre-034-historial.dump` | 567KB | `9d5250e5b88c` |
-| 2026-07-13 19:52 | `pre-035-org-seeding` | `gmura_20260713_1952_pre-035-org-seeding.dump` | 567KB | `0f4cf2fda1d9` |
+| 2026-07-20 17:09 | `pre-fase2` | `gpulso_20260720_1709_pre-fase2.dump` | 435KB | `n/a` |
+| 2026-07-21 09:21 | `pre-fase3` | `gpulso_20260721_0921_pre-fase3.dump` | 434KB | `n/a` |
+| 2026-07-21 18:22 | `pre-fase4` | `gpulso_20260721_1822_pre-fase4.dump` | 474KB | `n/a` |
+| 2026-07-22 18:35 | `pre-inventory-lock` | `gpulso_20260722_1835_pre-inventory-lock.dump` | 502KB | `n/a` |
+| 2026-07-25 17:12 | `pre-reset-pruebas` | `gpulso_20260725_1712_pre-reset-pruebas.dump` | 510KB | `n/a` |
+| 2026-07-28 16:13 | `gpulso-prod-verificado` | `gpulso_20260728_1612_gpulso-prod-verificado.dump` | 502KB | `c5521b0b39a5` |
+| 2026-07-28 21:03 | `pre-repair-status-rpc` | `gpulso_20260728_2102_pre-repair-status-rpc.dump` | 505KB | `0021d3ea83ae` |
+| 2026-07-28 21:11 | `pre-reset-arranque-cliente` | `gpulso_20260728_2111_pre-reset-arranque-cliente.dump` | 512KB | `74f1422a0996` |

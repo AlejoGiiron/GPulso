@@ -66,11 +66,22 @@ docker info >/dev/null 2>&1 || die "El daemon de Docker no responde. Abre Docker
 
 PROJECT_ID="$(grep -E '^project_id' "$CONFIG_TOML" 2>/dev/null | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' || true)"
 DB_CONTAINER="supabase_db_${PROJECT_ID}"
-if ! docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER"; then
-  DB_CONTAINER="$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | head -n1 || true)"
+
+# 🔒 Sin fallback ciego (mismo criterio que lab-restore.sh): no aplicar una
+# migración de G-Pulso sobre el lab de otro proyecto. Ver FORKED_FROM.md.
+# Override consciente: LAB_DB_CONTAINER=<nombre> ./scripts/lab-apply-migration.sh …
+if [[ -n "${LAB_DB_CONTAINER:-}" ]]; then
+  DB_CONTAINER="$LAB_DB_CONTAINER"
+  warn "Usando contenedor forzado por LAB_DB_CONTAINER: ${BOLD}$DB_CONTAINER${RESET}"
 fi
-[[ -n "$DB_CONTAINER" ]] && docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER" \
-  || die "No encuentro el contenedor de la BD local (supabase_db_*). ¿Corriste 'supabase start'?"
+
+if ! docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER"; then
+  RUNNING="$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | paste -sd', ' - || true)"
+  die "No está corriendo el contenedor del lab de G-Pulso (${BOLD}$DB_CONTAINER${RESET}).
+     Contenedores supabase_db_* activos: ${RUNNING:-ninguno}
+     Corre 'supabase start' en ESTE repo. Si hay un lab de otro proyecto levantado
+     (ej. supabase_db_gmura), apágalo: docker stop \$(docker ps -q --filter name=_gmura)"
+fi
 
 # ----------------------------------------------------------------------------
 # 3. Copiar y aplicar la migración

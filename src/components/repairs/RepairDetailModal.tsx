@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   Wrench,
   Check,
+  RotateCcw,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRepairDetail } from '@/hooks/useRepairs'
@@ -17,6 +18,7 @@ import {
   useAdvanceRepairStatus,
   useUpdateRepair,
   useRemoveRepairPart,
+  REPAIR_READY_PRICE_ERROR,
 } from '@/hooks/useRepairMutations'
 import { usePermissions } from '@/hooks/usePermissions'
 import { fmtCOP } from '@/lib/formatters'
@@ -31,6 +33,44 @@ import type { RepairDetailPart } from '@/hooks/useRepairs'
 import { ModalShell } from './ReceptionModal'
 import { AddPartModal } from './AddPartModal'
 import { DeliverModal } from './DeliverModal'
+
+/**
+ * Confirmación del retroceso listo → en_reparacion. Corta a propósito: el
+ * usuario ya decidió al pulsar el botón; esto solo evita el clic accidental y
+ * le dice que la vuelta atrás deja rastro.
+ */
+function ConfirmRevertModal({
+  pending,
+  onConfirm,
+  onClose,
+}: {
+  pending: boolean
+  onConfirm: () => void
+  onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
+        <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+          <RotateCcw size={16} className="text-amber-600" />
+          Devolver a reparación
+        </div>
+        <p className="mt-2.5 text-sm leading-relaxed text-gray-600">
+          Esta orden volverá a <strong className="font-medium text-gray-900">En reparación</strong>.
+          Quedará registrado en el historial.
+        </p>
+        <div className="mt-5 flex justify-end gap-2">
+          <button onClick={onClose} disabled={pending} className="btn-secondary py-2 disabled:opacity-40">
+            Cancelar
+          </button>
+          <button onClick={onConfirm} disabled={pending} className="btn-primary py-2 disabled:opacity-40">
+            {pending ? 'Devolviendo…' : 'Devolver'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function fmtDateTime(iso: string): string {
   return new Intl.DateTimeFormat('es-CO', {
@@ -53,6 +93,7 @@ export function RepairDetailModal({ repairId, onClose }: { repairId: string; onC
   const [priceInput, setPriceInput] = useState('')
   const [showAddPart, setShowAddPart] = useState(false)
   const [showDeliver, setShowDeliver] = useState(false)
+  const [showRevert, setShowRevert] = useState(false)
 
   if (isLoading || !repair) {
     return (
@@ -78,10 +119,24 @@ export function RepairDetailModal({ repairId, onClose }: { repairId: string; onC
 
   const doAdvance = async () => {
     if (!next) return
+    // Pre-chequeo de cliente: evita el viaje a la BD cuando ya sabemos que falta
+    // el precio. La regla la impone igual la RPC (la BD es la fuente de verdad).
     if (next === 'listo' && repair.precio === null) {
-      return toast.error('Define el precio antes de marcar como listo')
+      return toast.error(REPAIR_READY_PRICE_ERROR)
     }
-    await advance.mutateAsync({ id: repair.id, status: next })
+    await advance.mutateAsync({ id: repair.id, status: next, from: repair.status })
+  }
+
+  // Retroceso listo → en_reparacion. Es una ACCIÓN EXPLÍCITA y confirmada, no un
+  // arrastre: devolver una orden ya terminada debe ser una decisión, no un
+  // resbalón. Queda registrado en el historial (trigger de la 044).
+  const doRevert = async () => {
+    await advance.mutateAsync({
+      id: repair.id,
+      status: 'en_reparacion',
+      from: repair.status,
+    })
+    setShowRevert(false)
   }
 
   return (
@@ -220,6 +275,14 @@ export function RepairDetailModal({ repairId, onClose }: { repairId: string; onC
             <button onClick={doAdvance} disabled={advance.isPending} className="btn-secondary inline-flex items-center gap-1.5 disabled:opacity-40">
               Pasar a {REPAIR_STATUS_META[next].label} <ArrowRight size={14} />
             </button>
+          ) : repair.status === 'listo' ? (
+            <button
+              onClick={() => setShowRevert(true)}
+              disabled={advance.isPending}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 disabled:opacity-40"
+            >
+              <RotateCcw size={14} /> Devolver a reparación
+            </button>
           ) : <span />}
 
           {repair.status === 'listo' && canSell && (
@@ -228,6 +291,14 @@ export function RepairDetailModal({ repairId, onClose }: { repairId: string; onC
             </button>
           )}
         </div>
+      )}
+
+      {showRevert && (
+        <ConfirmRevertModal
+          pending={advance.isPending}
+          onConfirm={doRevert}
+          onClose={() => setShowRevert(false)}
+        />
       )}
 
       {showAddPart && <AddPartModal repairId={repair.id} onClose={() => setShowAddPart(false)} />}

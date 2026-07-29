@@ -3,7 +3,7 @@ description: Crea un componente React siguiendo las convenciones del proyecto (T
 argument-hint: <NombreComponente> [descripcion-breve]
 ---
 
-Crea el componente **$ARGUMENTS** en el proyecto gmura.
+Crea el componente **$ARGUMENTS** en el proyecto G-Pulso.
 
 ## Ubicación
 
@@ -11,7 +11,8 @@ Determina la carpeta correcta según el tipo:
 - Componente de UI genérico reutilizable → `src/components/ui/`
 - Componente de layout → `src/components/layout/`
 - Específico de un módulo → `src/components/{modulo}/`
-  (pos/, products/, inventory/, returns/, customers/)
+  (pos/, products/, inventory/, sales/, layaways/, credit/, cash/,
+  suppliers/, repairs/, commissions/, config/)
 
 ## Requisitos del componente
 
@@ -20,7 +21,11 @@ Determina la carpeta correcta según el tipo:
 - Exportación nombrada (no `export default`)
 - Íconos de `lucide-react` si se necesitan
 - Clases de Tailwind CSS — paleta coherente con el proyecto:
-  sidebar slate-900, acento violeta #8b5cf6, fondo blanco/gris claro
+  sidebar slate-900, **acento cian #06b6d4** (`cyan-500/600`, hover/activos
+  `cyan-600` #0891b2, fondos suaves `cyan-50` #ecfeff, borde `cyan-200` #a5f3fc),
+  fondo blanco/gris claro. **No usar violeta**: es la paleta de G-Mura, de donde
+  se forkeó el proyecto.
+- Tipografía: IBM Plex Sans en UI; **JetBrains Mono** en IMEI/seriales y precios
 - Strings de UI en español (Colombia)
 - Precios en COP con `Intl.NumberFormat('es-CO')`
 - Sin comentarios que expliquen qué hace el código —

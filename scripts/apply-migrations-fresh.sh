@@ -66,6 +66,38 @@ command -v psql >/dev/null 2>&1 || { echo "✗ psql no está en el PATH." >&2; e
 
 PSQL=(psql "$DB_URL" -v ON_ERROR_STOP=1 -q)
 
+# ----------------------------------------------------------------------------
+# 🔒 GUARDA DE BASE — no aplicar el set de G-Pulso sobre la base de otro proyecto
+#
+# Incidente 2026-07-28 (ver FORKED_FROM.md): el toolchain del repo apuntaba a la
+# producción de G-MURA. Este script aplica las 50+ migraciones desde la 001; si
+# se dispara contra la base del otro cliente el daño es severo (entre ellas va
+# la 038, que borra la org 'La Bodega del Jeans' — el tenant REAL de G-Mura).
+#
+# La guarda es la INVERSA de la de los resets: este script corre sobre una base
+# VIRGEN, así que no puede exigir que exista CelFashion. Lo que hace es abortar
+# si la base ya tiene un TENANT AJENO (cualquier organización que no sea
+# CelFashion) — ahí seguro no es una base virgen de G-Pulso.
+#
+# Casos:  base vacía (sin organizations) → PASA · solo CelFashion → PASA
+#         cualquier otra org presente     → ABORTA
+# ----------------------------------------------------------------------------
+FOREIGN_ORGS="$(psql "$DB_URL" -tAc "
+  SELECT CASE WHEN to_regclass('public.organizations') IS NULL THEN ''
+              ELSE coalesce((SELECT string_agg(name, ', ' ORDER BY name)
+                               FROM public.organizations
+                              WHERE name <> 'CelFashion'), '') END;" 2>/dev/null | tr -d '\r' || true)"
+
+if [[ -n "$FOREIGN_ORGS" ]]; then
+  echo "✗ ABORTADO: la base destino contiene organizaciones que NO son de G-Pulso." >&2
+  echo "  Encontradas: $FOREIGN_ORGS" >&2
+  echo "  Este script aplica TODAS las migraciones desde la 001 y está pensado para una BD VIRGEN." >&2
+  echo "  Si esto es la base de G-Mura (La Bodega del Jeans), es OTRO cliente: verifica --db-url." >&2
+  echo "  No se aplicó ninguna migración." >&2
+  exit 1
+fi
+
+echo "🔒 Guarda de base OK: sin tenants ajenos en el destino."
 echo "▶ Aplicando migraciones sobre: $DB_URL"
 
 for f in "$MIG_DIR"/*.sql; do
@@ -90,6 +122,30 @@ if [[ "$WITH_GRANTS" -eq 1 ]]; then
     -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;" \
     -c "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;" >/dev/null
   echo "  ✔ grants aplicados"
+
+  # ⚠ El GRANT de arriba es sobre ALL TABLES: PISA las restricciones por columna
+  # que aplican algunas migraciones. Hay que RE-APLICARLAS después, o el grant
+  # las anula en silencio y se reabre el hueco que cerraron.
+  #
+  #     · 20260728_1630 — repair_orders.status deja de ser escribible por authenticated
+  #     (se mueve solo por advance_repair_status / deliver_repair).
+  #
+  # Al agregar una migración nueva con privilegios por columna, añádela acá.
+  echo "▶ Re-aplicando restricciones por columna (las pisa el GRANT de arriba)…"
+  "${PSQL[@]}" \
+    -c "REVOKE UPDATE ON public.repair_orders FROM authenticated;" \
+    -c "GRANT UPDATE (marca, modelo, imei_serial, color, falla_reportada, checklist,
+                      observaciones, accesorios, password_equipo, precio)
+        ON public.repair_orders TO authenticated;" >/dev/null
+
+  # Verificación: si esto falla, el hueco quedó abierto y hay que saberlo YA.
+  if "${PSQL[@]}" -tAc \
+      "SELECT has_column_privilege('authenticated','public.repair_orders','status','UPDATE');" \
+      | grep -qx 't'; then
+    echo "✗ ERROR: authenticated todavía puede escribir repair_orders.status (ver migración 20260728_1630)." >&2
+    exit 1
+  fi
+  echo "  ✔ restricciones por columna re-aplicadas y verificadas"
 fi
 
 echo "✔ Migraciones aplicadas. Auditá RLS con:"
