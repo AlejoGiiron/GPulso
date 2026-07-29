@@ -34,6 +34,9 @@ export function useProductMutations() {
 
   function invalidate() {
     void queryClient.invalidateQueries({ queryKey: ['products', storeId] })
+    // El POS ("Registrar y vender" / búsqueda) lee ['pos-products', storeId]:
+    // un producto nuevo o editado debe aparecer/refrescarse ahí sin esperar staleTime.
+    void queryClient.invalidateQueries({ queryKey: ['pos-products', storeId] })
   }
 
   const create = useMutation({

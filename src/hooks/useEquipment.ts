@@ -61,6 +61,7 @@ export function useCreateEquipmentWithUnit() {
       void queryClient.invalidateQueries({ queryKey: ['pos-products', storeId] })
       void queryClient.invalidateQueries({ queryKey: ['units'] })
       void queryClient.invalidateQueries({ queryKey: ['inventory'] })
+      void queryClient.invalidateQueries({ queryKey: ['stock-movements'] })
     },
     onError: (err) => toast.error(humanizeEquipmentError(err)),
   })

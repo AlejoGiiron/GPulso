@@ -32,6 +32,11 @@ export function useUnitMutations() {
     void queryClient.invalidateQueries({ queryKey: ['units'] })
     void queryClient.invalidateQueries({ queryKey: ['inventory'] })
     void queryClient.invalidateQueries({ queryKey: ['products', storeId] })
+    // El selector del POS ("Registrar y vender") lee ['pos-products', storeId];
+    // sin esto, una unidad nueva no refresca el stock del POS → riesgo de vender
+    // contra datos viejos.
+    void queryClient.invalidateQueries({ queryKey: ['pos-products', storeId] })
+    void queryClient.invalidateQueries({ queryKey: ['stock-movements'] })
     void queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] })
     if (variantId) void queryClient.invalidateQueries({ queryKey: ['variants', variantId] })
   }
