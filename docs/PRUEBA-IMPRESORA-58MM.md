@@ -36,10 +36,23 @@ Según los vendedores y el tutorial de instalación de este modelo, la PT-260 La
 Maker usa un **driver de etiquetas TSC** (Seagull), no el POS58 de recibos. Al
 instalarlo, la impresora aparece como **"TSC DA200"**.
 
-> No hay ficha ni driver oficial del fabricante. El driver circula en
-> `Label_Print_PT-260_Driver.zip`, enlazado desde un tutorial de YouTube
-> (https://www.youtube.com/watch?v=DvD76sC6vwI). **Pásalo por el antivirus
-> antes de ejecutarlo.**
+**De dónde sacar el driver, en este orden.** No hay ficha ni driver oficial del
+fabricante en la web, así que:
+
+1. **El CD o el código QR que venga en la caja de la impresora.**
+2. **El enlace del vendedor** que la vendió (página del producto, chat o correo
+   de la compra).
+3. **Solo como último recurso**, el zip que enlaza un tutorial de YouTube
+   (`Label_Print_PT-260_Driver.zip`, https://www.youtube.com/watch?v=DvD76sC6vwI).
+   Antes de ejecutar nada, **súbelo a https://www.virustotal.com** (el zip y,
+   si pasa, el `DriverWizard.exe`). No basta con el antivirus local. Si algún
+   motor lo marca como malicioso, no lo ejecutes y avísame.
+
+Si el driver de la caja o del vendedor no es el TSC, los menús tendrán otros
+nombres. Lo que importa es lo mismo: un **tamaño de papel igual a la etiqueta**
+y el **tipo de rollo** (con separación o continuo).
+
+**Instalación (driver TSC):**
 
 1. Conecta la impresora por USB y enciéndela. Si Windows abre un asistente para
    instalar el dispositivo, **cancélalo**.
