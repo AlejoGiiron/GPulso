@@ -64,7 +64,7 @@ export function DeliverModal({ repair, customerName, onClose, onDelivered }: Pro
     return (
       <ModalShell title={`Entrega cobrada · #${repair.order_number}`} onClose={onClose}>
         <div className="flex-1 overflow-y-auto p-5">
-          <div className="mx-auto max-w-[300px] rounded-lg border border-gray-200 bg-white shadow-sm">
+          <div className="mx-auto w-fit rounded-lg border border-gray-200 bg-white shadow-sm">
             <RepairDeliveryReceipt data={receiptData} storeName={storeName} printedAt={new Date()} />
           </div>
           <RepairDeliveryReceiptPrint data={receiptData} storeName={storeName} printedAt={new Date()} />

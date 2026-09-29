@@ -7,7 +7,7 @@ servido), no el de memoria o de docs anteriores.
 
 Deudas numeradas (#2, #3…) = las de [`FORKED_FROM.md`](FORKED_FROM.md).
 
-**Leyenda:** ✅ hecho · 🟡 parcial / mitigado · ⬜ pendiente · 🔍 en análisis · ❓ sin verificar
+**Leyenda:** ✅ hecho · 🟡 parcial / mitigado · ⬜ pendiente · 🚧 en construcción · 🧪 en prueba con el cliente · 🔍 en análisis · ❓ sin verificar
 
 ## Punto de partida verificado (2026-09-28)
 
@@ -32,7 +32,7 @@ Deudas numeradas (#2, #3…) = las de [`FORKED_FROM.md`](FORKED_FROM.md).
 | ⬜ | **Usuarios reales de CelFashion; desactivar los QA** | Hoy hay 4 perfiles activos: el Dueño (login `alejogiiron@gmail.com`) y 3 QA (`qa.admin`, `qa.vendedor`, `qa.tecnico`). **La tienda operó julio–agosto con `qa.admin`**: crear las cuentas reales ANTES de desactivar los QA, o la tienda se queda sin acceso. |
 | ⬜ | **Contraseñas: cambio propio + reset por admin** | No existe en la app. ❓ **Verificar primero si la Edge Function `create-user` está desplegada** en prod (no se ve desde la BD; revisar en Supabase → Edge Functions). |
 | ⬜ | **Textos legales de los comprobantes del taller** | Placeholders `LEGAL_RECEPCION` y `LEGAL_GARANTIA` en `src/components/repairs/RepairReceipts.tsx` ("[Texto legal pendiente de definir.]"). Los define el cliente. |
-| 🔍 | **Soporte de impresora térmica 58mm (Goojprt PT-260)** | En análisis (2026-09-28). Todo el sistema imprime a 80mm: `@page`/ancho en `src/lib/receiptPrint.ts` y ancho/padding/divisores repetidos en los 4 recibos. Propuesta: ancho de recibo como config de tienda (58/80), primitivas de recibo compartidas y rediagramado de las líneas largas (cuadre, taller, separados). Incluye quitar el "G-MURA" fijo del encabezado de venta/separado/cuadre y crear el comprobante de devolución (hoy imprime la pantalla entera). |
+| 🧪 | **Impresora PT-260 Label Maker: etiquetas (y recibos 58mm)** | **En prueba con el cliente** (mergeado a develop; la prueba la hace el cliente con su impresora y su lector, guía: `docs/GUIA-ETIQUETAS-CLIENTE.md`). La impresora es la versión de **etiquetas** (rollo de 40mm, driver TSC "TSC DA200"), no de recibos. **Etiquetas:** una por página del tamaño exacto (troquelado por defecto; continuo con margen de corte), 40×30 por defecto (40×40, 40×50, personalizado), nombre + precio grande + código CODE128 con barras en puntos enteros a 203 dpi (12 dígitos: 25,3mm en 36 útiles), marcas de borde en la prueba, botón Etiquetas también para productos de variante única (antes no se podían etiquetar). **Recibos 58mm:** hecho, para una futura impresora de recibos. **Pendiente: resultado de la prueba del cliente** (alto del rollo, sensor de gap, driver, lectura al primer intento). Guion técnico: `docs/PRUEBA-IMPRESORA-58MM.md`. |
 | ⬜ | **Manual de operación actualizado (inventario y taller)** | Existe `docs/QA-MANUAL.md` (v1.0, julio 2026, manual de *pruebas*), anterior al rediseño de serializados (plantilla + unidad, precio en unidad/sugerido, "Crear equipo y primera unidad"). |
 
 ## FASE 1 — INTEGRIDAD
@@ -63,4 +63,5 @@ Deudas numeradas (#2, #3…) = las de [`FORKED_FROM.md`](FORKED_FROM.md).
 | ⬜ | **Higiene: rotar la credencial de G-Mura** | La línea `GMURA_DB_URL` ya salió de `.env.backup` de G-Pulso, pero la contraseña estuvo en disco en este repo desde junio: rotarla en el proyecto de G-Mura. |
 | ⬜ | **Higiene: sacar `backups/_ajenos-gmura/`** | Sigue ahí: `gmura-prod_20260728_1554_NO-ES-GPULSO.dump` (dump de OTRO cliente) + `LEEME.md`. Moverlo fuera de esta máquina/repo según corresponda. |
 | ⬜ | **Higiene: quitar la regla de `run-ro`** cuando no se use | Regla `allow` de solo lectura a prod en el `settings.json` de usuario (`~/.claude/gpulso-prod-ro/run-ro.sh`), activa desde el 2026-09-28. |
+| ⬜ | **Higiene: puertos del lab local** | `supabase/config.toml` de G-Pulso usa 5432x, los mismos del stack local de **G-Mura**: con ambos levantados, `.env.local` (127.0.0.1:54321) conecta la app de G-Pulso a la base de G-Mura. Hoy el lab corre en 5434x con una config fuera del repo (`~/.gpulso-lab`). Fijar un rango propio en el repo y actualizar `LAB.md` y `.env.local`. |
 | ✅ | Higiene: `.claude/settings.local.json` fuera del repo | Hecho el 2026-09-28 (`git rm --cached` + `.gitignore`); no contenía secretos. |

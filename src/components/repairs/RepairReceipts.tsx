@@ -1,22 +1,32 @@
 import { fmtCOP } from '@/lib/formatters'
 import { PAYMENT_METHODS } from '@/lib/paymentMethods'
-import { useReceiptPrintStyle } from '@/lib/receiptPrint'
+import { fmtReceiptDateTime } from '@/lib/receiptFormat'
 import {
   CHECKLIST_DANOS,
   CHECKLIST_VERIFICACIONES,
 } from '@/lib/repairs'
 import type { PaymentMethod, RepairChecklist } from '@/types/database.types'
+import {
+  Divider,
+  Line,
+  PrintedAt,
+  ReceiptHeader,
+  ReceiptPrintContainer,
+  ReceiptShell,
+  Section,
+  SectionTitle,
+  SmallText,
+} from '@/components/receipts/ReceiptParts'
+import { useReceiptInk } from '@/components/receipts/receiptContext'
 
-// Comprobantes térmicos 80mm del taller (Fase 3 / Bloque C). Mismo patrón de
-// impresión aislada que SaleReceipt/CashShiftReceipt (useReceiptPrintStyle).
+// Comprobantes térmicos del taller (Fase 3 / Bloque C). Mismo patrón de
+// impresión aislada que el resto de comprobantes (ReceiptParts), al ancho de
+// papel de la tienda (58/80mm).
 
 const RECEP_CONTAINER_ID = 'gpulso-repair-reception-print'
 const RECEP_STYLE_ID = 'gpulso-repair-reception-print-style'
 const DELIV_CONTAINER_ID = 'gpulso-repair-delivery-print'
 const DELIV_STYLE_ID = 'gpulso-repair-delivery-print-style'
-
-const DIVIDER = '═══════════════════════════════'
-const SUBDIV = '───────────────────────────────'
 
 // PLACEHOLDERS legales (el texto real lo definirá el cliente).
 const LEGAL_RECEPCION =
@@ -60,36 +70,7 @@ interface WithStore {
   printedAt: Date
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function fmtDateTime(iso: string | Date): string {
-  const d = iso instanceof Date ? iso : new Date(iso)
-  return new Intl.DateTimeFormat('es-CO', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: 'America/Bogota',
-  }).format(d)
-}
-
-const wrapStyle: React.CSSProperties = {
-  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-  fontSize: 11,
-  lineHeight: 1.4,
-  color: '#1a1a1a',
-  background: '#fff',
-  padding: '4mm',
-  width: '80mm',
-  boxSizing: 'border-box',
-}
-const muted: React.CSSProperties = { color: '#525252' }
-
-function Line({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: 'flex', justifyContent: 'space-between' }}>{children}</div>
-}
+// ── Bloques ───────────────────────────────────────────────────────────────────
 
 function ChecklistBlock({
   title,
@@ -102,10 +83,11 @@ function ChecklistBlock({
   values: Record<string, boolean> | undefined
   color: string
 }) {
+  const { muted } = useReceiptInk()
   const marked = items.filter((it) => values?.[it.key])
   return (
     <div style={{ margin: '4px 0' }}>
-      <div style={{ fontWeight: 700, color }}>{title}</div>
+      <SectionTitle color={color}>{title}</SectionTitle>
       {marked.length === 0 ? (
         <div style={muted}>— ninguno</div>
       ) : (
@@ -115,17 +97,32 @@ function ChecklistBlock({
   )
 }
 
+/**
+ * Equipo + IMEI. El IMEI va en su PROPIO renglón y en grande: es el dato con
+ * el que se reclama el equipo en el mostrador (y "IMEI/Serial" + 15 dígitos no
+ * cabe en un renglón de 58mm).
+ */
 function EquipoBlock({ equipo }: { equipo: RepairReceiptEquipo }) {
+  const { muted } = useReceiptInk()
   return (
     <div style={{ margin: '6px 0' }}>
       <div style={{ fontWeight: 700 }}>
         {equipo.marca} {equipo.modelo}
       </div>
-      {equipo.color && <Line><span style={muted}>Color</span><span>{equipo.color}</span></Line>}
-      <Line>
-        <span style={muted}>IMEI/Serial</span>
-        <span style={{ fontWeight: 700 }}>{equipo.imei_serial || '—'}</span>
-      </Line>
+      {equipo.color && <Line label="Color" value={equipo.color} />}
+      <div style={{ ...muted, marginTop: 2 }}>IMEI / Serial</div>
+      <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 0.5, wordBreak: 'break-all' }}>
+        {equipo.imei_serial || '—'}
+      </div>
+    </div>
+  )
+}
+
+function TextBlock({ title, text }: { title: string; text: string }) {
+  return (
+    <div style={{ margin: '4px 0' }}>
+      <SectionTitle>{title}</SectionTitle>
+      <div>{text}</div>
     </div>
   )
 }
@@ -140,56 +137,37 @@ export function RepairReceptionReceipt({
   data: RepairReceptionData
 } & WithStore) {
   return (
-    <div style={wrapStyle}>
-      <div style={{ textAlign: 'center', marginBottom: 6 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 1 }}>{storeName || 'Taller'}</div>
-        <div style={{ fontSize: 11, ...muted }}>Comprobante de recepción</div>
-        <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>
-          RECEPCIÓN #{data.order_number}
-        </div>
-      </div>
+    <ReceiptShell>
+      <ReceiptHeader
+        storeName={storeName}
+        caption="Comprobante de recepción"
+        docTitle={`RECEPCIÓN #${data.order_number}`}
+      />
 
-      <div style={muted}>{DIVIDER}</div>
+      <Divider strong />
 
-      <div style={{ margin: '6px 0' }}>
-        <Line><span style={muted}>Fecha</span><span>{fmtDateTime(data.created_at)}</span></Line>
-        <Line><span style={muted}>Cliente</span><span style={{ fontWeight: 700 }}>{data.customer_name}</span></Line>
-        {data.customer_phone && (
-          <Line><span style={muted}>Teléfono</span><span>{data.customer_phone}</span></Line>
-        )}
-      </div>
+      <Section>
+        <Line label="Fecha" value={fmtReceiptDateTime(data.created_at)} />
+        <Line label="Cliente" value={data.customer_name} valueStyle={{ fontWeight: 700 }} />
+        {data.customer_phone && <Line label="Teléfono" value={data.customer_phone} />}
+      </Section>
 
-      <div style={muted}>{SUBDIV}</div>
+      <Divider />
       <EquipoBlock equipo={data} />
 
-      <div style={muted}>{SUBDIV}</div>
-      <div style={{ margin: '4px 0' }}>
-        <div style={{ fontWeight: 700 }}>Falla reportada</div>
-        <div>{data.falla_reportada}</div>
-      </div>
+      <Divider />
+      <TextBlock title="Falla reportada" text={data.falla_reportada} />
 
       <ChecklistBlock title="Daños al recibir" items={CHECKLIST_DANOS} values={data.checklist.danos} color="#b45309" />
       <ChecklistBlock title="Verificaciones" items={CHECKLIST_VERIFICACIONES} values={data.checklist.verificaciones} color="#047857" />
 
-      {data.accesorios && (
-        <div style={{ margin: '4px 0' }}>
-          <div style={{ fontWeight: 700 }}>Accesorios</div>
-          <div>{data.accesorios}</div>
-        </div>
-      )}
-      {data.observaciones && (
-        <div style={{ margin: '4px 0' }}>
-          <div style={{ fontWeight: 700 }}>Observaciones</div>
-          <div>{data.observaciones}</div>
-        </div>
-      )}
+      {data.accesorios && <TextBlock title="Accesorios" text={data.accesorios} />}
+      {data.observaciones && <TextBlock title="Observaciones" text={data.observaciones} />}
 
-      <div style={muted}>{DIVIDER}</div>
-      <div style={{ fontSize: 9, ...muted, marginTop: 4 }}>{LEGAL_RECEPCION}</div>
-      <div style={{ textAlign: 'center', fontSize: 9, ...muted, marginTop: 6 }}>
-        Impreso {fmtDateTime(printedAt)}
-      </div>
-    </div>
+      <Divider strong />
+      <SmallText style={{ marginTop: 4 }}>{LEGAL_RECEPCION}</SmallText>
+      <PrintedAt at={printedAt} />
+    </ReceiptShell>
   )
 }
 
@@ -208,65 +186,56 @@ export function RepairDeliveryReceipt({
       ? data.cash_received - data.precio
       : 0
   return (
-    <div style={wrapStyle}>
-      <div style={{ textAlign: 'center', marginBottom: 6 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 1 }}>{storeName || 'Taller'}</div>
-        <div style={{ fontSize: 11, ...muted }}>Comprobante de entrega</div>
-        <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>
-          ENTREGA #{data.order_number}
-        </div>
-      </div>
+    <ReceiptShell>
+      <ReceiptHeader
+        storeName={storeName}
+        caption="Comprobante de entrega"
+        docTitle={`ENTREGA #${data.order_number}`}
+      />
 
-      <div style={muted}>{DIVIDER}</div>
+      <Divider strong />
 
-      <div style={{ margin: '6px 0' }}>
-        <Line><span style={muted}>Fecha</span><span>{fmtDateTime(data.delivered_at)}</span></Line>
-        <Line><span style={muted}>Cliente</span><span style={{ fontWeight: 700 }}>{data.customer_name}</span></Line>
-      </div>
+      <Section>
+        <Line label="Fecha" value={fmtReceiptDateTime(data.delivered_at)} />
+        <Line label="Cliente" value={data.customer_name} valueStyle={{ fontWeight: 700 }} />
+      </Section>
 
-      <div style={muted}>{SUBDIV}</div>
+      <Divider />
       <EquipoBlock equipo={data} />
 
-      <div style={muted}>{SUBDIV}</div>
-      <div style={{ margin: '6px 0' }}>
-        <Line>
-          <span style={{ fontWeight: 700 }}>TOTAL</span>
-          <span style={{ fontWeight: 700 }}>{fmtCOP(data.precio)}</span>
-        </Line>
-        <Line><span style={muted}>Método</span><span>{methodLabel}</span></Line>
+      <Divider />
+      <Section>
+        <Line strong label="TOTAL" value={fmtCOP(data.precio)} />
+        <Line label="Método" value={methodLabel} />
         {data.payment_method === 'cash' && data.cash_received != null && (
           <>
-            <Line><span style={muted}>Recibido</span><span>{fmtCOP(data.cash_received)}</span></Line>
-            <Line><span style={muted}>Cambio</span><span>{fmtCOP(change)}</span></Line>
+            <Line label="Recibido" value={fmtCOP(data.cash_received)} />
+            <Line label="Cambio" value={fmtCOP(change)} />
           </>
         )}
-      </div>
+      </Section>
 
-      <div style={muted}>{DIVIDER}</div>
-      <div style={{ fontSize: 9, ...muted, marginTop: 4 }}>{LEGAL_GARANTIA}</div>
-      <div style={{ textAlign: 'center', fontSize: 9, ...muted, marginTop: 6 }}>
-        Impreso {fmtDateTime(printedAt)}
-      </div>
-    </div>
+      <Divider strong />
+      <SmallText style={{ marginTop: 4 }}>{LEGAL_GARANTIA}</SmallText>
+      <PrintedAt at={printedAt} />
+    </ReceiptShell>
   )
 }
 
 // ── Contenedores de impresión (ocultos en pantalla, visibles al imprimir) ─────
 
 export function RepairReceptionReceiptPrint(props: { data: RepairReceptionData } & WithStore) {
-  useReceiptPrintStyle(RECEP_STYLE_ID, RECEP_CONTAINER_ID)
   return (
-    <div id={RECEP_CONTAINER_ID} style={{ display: 'none' }}>
+    <ReceiptPrintContainer containerId={RECEP_CONTAINER_ID} styleId={RECEP_STYLE_ID}>
       <RepairReceptionReceipt {...props} />
-    </div>
+    </ReceiptPrintContainer>
   )
 }
 
 export function RepairDeliveryReceiptPrint(props: { data: RepairDeliveryData } & WithStore) {
-  useReceiptPrintStyle(DELIV_STYLE_ID, DELIV_CONTAINER_ID)
   return (
-    <div id={DELIV_CONTAINER_ID} style={{ display: 'none' }}>
+    <ReceiptPrintContainer containerId={DELIV_CONTAINER_ID} styleId={DELIV_STYLE_ID}>
       <RepairDeliveryReceipt {...props} />
-    </div>
+    </ReceiptPrintContainer>
   )
 }

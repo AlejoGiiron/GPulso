@@ -1,13 +1,22 @@
 import { fmtCOP } from '@/lib/formatters'
 import { PAYMENT_METHODS } from '@/lib/paymentMethods'
-import { useReceiptPrintStyle } from '@/lib/receiptPrint'
-import { receiptHeaderNames } from '@/lib/receiptHeader'
-import { useBusinessName } from '@/hooks/useOrg'
+import { fmtReceiptDateTime, fmtReceiptTime } from '@/lib/receiptFormat'
 import type {
   CashShift,
   CashExpense,
   PaymentMethod,
 } from '@/types/database.types'
+import {
+  Divider,
+  Line,
+  PrintedAt,
+  ReceiptHeader,
+  ReceiptPrintContainer,
+  ReceiptShell,
+  Section,
+  SectionTitle,
+} from '@/components/receipts/ReceiptParts'
+import { useReceiptInk } from '@/components/receipts/receiptContext'
 
 const SHIFT_PRINT_CONTAINER_ID = 'gpulso-shift-receipt-print'
 const SHIFT_PRINT_STYLE_ID = 'gpulso-shift-receipt-print-style'
@@ -69,28 +78,6 @@ export interface CashShiftReceiptProps {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function fmtDateTime(iso: string | Date): string {
-  const d = iso instanceof Date ? iso : new Date(iso)
-  return new Intl.DateTimeFormat('es-CO', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: 'America/Bogota',
-  }).format(d)
-}
-
-function fmtHHmm(iso: string): string {
-  return new Intl.DateTimeFormat('es-CO', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: 'America/Bogota',
-  }).format(new Date(iso))
-}
-
 function fmtDuration(opened: string, closed: string | Date): string {
   const a = new Date(opened).getTime()
   const b = (closed instanceof Date ? closed : new Date(closed)).getTime()
@@ -101,13 +88,40 @@ function fmtDuration(opened: string, closed: string | Date): string {
   return `${h}h ${m}m`
 }
 
-// ── Subcomponentes visuales ───────────────────────────────────────────────────
-
-const DIVIDER = '═══════════════════════════════'
-const SUBDIV = '───────────────────────────────'
-
-function Line({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: 'flex', justifyContent: 'space-between' }}>{children}</div>
+/**
+ * Fila de detalle con hora ("[19:16] #12 Transferencia: $110.000"). En 80mm va
+ * en un renglón; en 58mm no cabe (~34 caracteres) y pasa a dos: hora y
+ * referencia arriba, método y monto abajo.
+ */
+function DetailRow({
+  createdAt,
+  lead,
+  method,
+  amount,
+}: {
+  createdAt: string
+  lead: string
+  method?: string
+  amount: number
+}) {
+  const { layout, muted } = useReceiptInk()
+  const time = `[${fmtReceiptTime(createdAt)}]`
+  if (!layout.compact) {
+    return (
+      <Line
+        label={`${time} ${lead}${method ? ` ${method}` : ''}:`}
+        value={fmtCOP(amount)}
+      />
+    )
+  }
+  return (
+    <div>
+      <div style={muted}>
+        {time} {lead}
+      </div>
+      <Line indent label={method ?? ''} value={fmtCOP(amount)} />
+    </div>
+  )
 }
 
 // ── Componente principal ──────────────────────────────────────────────────────
@@ -129,6 +143,7 @@ export function CashShiftReceipt(props: CashShiftReceiptProps) {
     layawayPayments,
     layawayPaymentsTotal,
   } = props
+  const { muted, color, fs } = useReceiptInk()
   const lpTotal = layawayPaymentsTotal ?? 0
   const lpRows = layawayPayments ?? []
   // Abonos de FIADO: mismo tratamiento que los de separado (línea resumen +
@@ -164,137 +179,77 @@ export function CashShiftReceipt(props: CashShiftReceiptProps) {
     badgeText = 'FALTANTE'
     badgeColor = '#dc2626'
   }
-
-  const header = receiptHeaderNames(useBusinessName(), storeName)
-  const sectionStyle: React.CSSProperties = { margin: '6px 0' }
-  const monoLight: React.CSSProperties = { color: '#525252' }
+  const badgeInk = color(badgeColor)
 
   return (
-    <div
-      style={{
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-        fontSize: 11,
-        lineHeight: 1.4,
-        color: '#1a1a1a',
-        background: '#fff',
-        padding: '4mm',
-        width: '80mm',
-        boxSizing: 'border-box',
-      }}
-    >
-      {/* Encabezado */}
-      <div style={{ textAlign: 'center', marginBottom: 6 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 1 }}>
-          {header.title}
-        </div>
-        {header.subtitle && (
-          <div style={{ fontSize: 11, ...monoLight }}>{header.subtitle}</div>
-        )}
-        <div style={{ fontSize: 12, fontWeight: 600, marginTop: 2 }}>
-          Cuadre de caja
-        </div>
-      </div>
+    <ReceiptShell>
+      <ReceiptHeader storeName={storeName} docTitle="Cuadre de caja" />
 
-      <div style={{ ...monoLight }}>{DIVIDER}</div>
+      <Divider strong />
 
       {/* Metadatos del turno */}
-      <div style={sectionStyle}>
-        <Line>
-          <span style={monoLight}>Cajero:</span>
-          <span style={{ fontWeight: 600 }}>{userName}</span>
-        </Line>
-        <Line>
-          <span style={monoLight}>Apertura:</span>
-          <span>{fmtDateTime(shift.opened_at)}</span>
-        </Line>
-        <Line>
-          <span style={monoLight}>Cierre:</span>
-          <span>{fmtDateTime(closedAt)}</span>
-        </Line>
-        <Line>
-          <span style={monoLight}>Duración:</span>
-          <span>{duration}</span>
-        </Line>
-      </div>
+      <Section>
+        <Line label="Cajero:" value={userName} valueStyle={{ fontWeight: 600 }} />
+        <Line label="Apertura:" value={fmtReceiptDateTime(shift.opened_at)} />
+        <Line label="Cierre:" value={fmtReceiptDateTime(closedAt)} />
+        <Line label="Duración:" value={duration} />
+      </Section>
 
-      <div style={monoLight}>{DIVIDER}</div>
+      <Divider strong />
 
       {/* Ventas por método (incluye abonos de separados) */}
-      <div style={sectionStyle}>
-        <div style={{ fontWeight: 700, marginBottom: 2 }}>VENTAS POR MÉTODO</div>
+      <Section>
+        <SectionTitle>VENTAS POR MÉTODO</SectionTitle>
         {salesByMethod.length === 0 ? (
-          <div style={{ ...monoLight, fontStyle: 'italic' }}>
-            Sin ventas registradas
-          </div>
+          <div style={{ ...muted, fontStyle: 'italic' }}>Sin ventas registradas</div>
         ) : (
           salesByMethod.map((row) => (
-            <Line key={row.method}>
-              <span style={monoLight}>
-                {PAYMENT_METHODS[row.method].label}:
-              </span>
-              <span>
-                {fmtCOP(row.total)}{' '}
-                <span style={monoLight}>({row.count})</span>
-              </span>
-            </Line>
+            <Line
+              key={row.method}
+              label={`${PAYMENT_METHODS[row.method].label}:`}
+              value={
+                <>
+                  {fmtCOP(row.total)} <span style={muted}>({row.count})</span>
+                </>
+              }
+            />
           ))
         )}
-        <div style={monoLight}>{SUBDIV}</div>
+        <Divider />
         {(lpTotal > 0 || cpTotal > 0) && (
           <>
-            <Line>
-              <span style={monoLight}>Ventas directas:</span>
-              {/* Excluye separados Y fiados → atribución correcta (antes los
-                  fiados quedaban escondidos acá). */}
-              <span>{fmtCOP(totalSales - lpTotal - cpTotal)}</span>
-            </Line>
-            {lpTotal > 0 && (
-              <Line>
-                <span style={monoLight}>Abonos de separados:</span>
-                <span>{fmtCOP(lpTotal)}</span>
-              </Line>
-            )}
-            {cpTotal > 0 && (
-              <Line>
-                <span style={monoLight}>Abonos de fiados:</span>
-                <span>{fmtCOP(cpTotal)}</span>
-              </Line>
-            )}
+            {/* Excluye separados Y fiados → atribución correcta (antes los
+                fiados quedaban escondidos acá). */}
+            <Line label="Ventas directas:" value={fmtCOP(totalSales - lpTotal - cpTotal)} />
+            {lpTotal > 0 && <Line label="Abonos de separados:" value={fmtCOP(lpTotal)} />}
+            {cpTotal > 0 && <Line label="Abonos de fiados:" value={fmtCOP(cpTotal)} />}
           </>
         )}
-        <Line>
-          <span style={{ fontWeight: 700 }}>Total ventas:</span>
-          <span style={{ fontWeight: 700 }}>{fmtCOP(totalSales)}</span>
-        </Line>
-        <Line>
-          <span style={monoLight}>Transacciones:</span>
-          <span>{orderCount + lpRows.length + cpRows.length}</span>
-        </Line>
-      </div>
+        <Line strong label="Total ventas:" value={fmtCOP(totalSales)} />
+        <Line
+          label="Transacciones:"
+          value={orderCount + lpRows.length + cpRows.length}
+        />
+      </Section>
 
       {/* Abonos de separados (detalle por abono) */}
       {lpRows.length > 0 && (
         <>
-          <div style={monoLight}>{DIVIDER}</div>
-          <div style={sectionStyle}>
-            <div style={{ fontWeight: 700, marginBottom: 2 }}>
-              ABONOS DE SEPARADOS
-            </div>
+          <Divider strong />
+          <Section>
+            <SectionTitle>ABONOS DE SEPARADOS</SectionTitle>
             {lpRows.map((p) => (
-              <Line key={p.id}>
-                <span style={monoLight}>
-                  [{fmtHHmm(p.created_at)}] #{p.layaway_number}{' '}
-                  {PAYMENT_METHODS[p.payment_method].label}:
-                </span>
-                <span>{fmtCOP(Number(p.amount))}</span>
-              </Line>
+              <DetailRow
+                key={p.id}
+                createdAt={p.created_at}
+                lead={`#${p.layaway_number}`}
+                method={PAYMENT_METHODS[p.payment_method].label}
+                amount={Number(p.amount)}
+              />
             ))}
-            <div style={monoLight}>{SUBDIV}</div>
-            <Line>
-              <span style={{ fontWeight: 700 }}>Total abonos:</span>
-              <span style={{ fontWeight: 700 }}>{fmtCOP(lpTotal)}</span>
-            </Line>
-          </div>
+            <Divider />
+            <Line strong label="Total abonos:" value={fmtCOP(lpTotal)} />
+          </Section>
         </>
       )}
 
@@ -303,176 +258,133 @@ export function CashShiftReceipt(props: CashShiftReceiptProps) {
           aparece como varias líneas con su método, igual que en separados. */}
       {cpRows.length > 0 && (
         <>
-          <div style={monoLight}>{DIVIDER}</div>
-          <div style={sectionStyle}>
-            <div style={{ fontWeight: 700, marginBottom: 2 }}>
-              ABONOS DE FIADOS
-            </div>
+          <Divider strong />
+          <Section>
+            <SectionTitle>ABONOS DE FIADOS</SectionTitle>
             {cpRows.map((p) => (
-              <Line key={p.id}>
-                <span style={monoLight}>
-                  [{fmtHHmm(p.created_at)}] #{p.order_number}{' '}
-                  {PAYMENT_METHODS[p.payment_method].label}:
-                </span>
-                <span>{fmtCOP(Number(p.amount))}</span>
-              </Line>
+              <DetailRow
+                key={p.id}
+                createdAt={p.created_at}
+                lead={`#${p.order_number}`}
+                method={PAYMENT_METHODS[p.payment_method].label}
+                amount={Number(p.amount)}
+              />
             ))}
-            <div style={monoLight}>{SUBDIV}</div>
-            <Line>
-              <span style={{ fontWeight: 700 }}>Total abonos:</span>
-              <span style={{ fontWeight: 700 }}>{fmtCOP(cpTotal)}</span>
-            </Line>
-          </div>
+            <Divider />
+            <Line strong label="Total abonos:" value={fmtCOP(cpTotal)} />
+          </Section>
         </>
       )}
 
       {/* Devoluciones (ingresos y egresos por devolución/cambio, aparte) */}
       {hasReturns && (
         <>
-          <div style={monoLight}>{DIVIDER}</div>
-          <div style={sectionStyle}>
-            <div style={{ fontWeight: 700, marginBottom: 2 }}>DEVOLUCIONES</div>
-            <Line>
-              <span style={monoLight}>+ Ingresos (cobro dif):</span>
-              <span>{fmtCOP(returnsIncome)}</span>
-            </Line>
-            <Line>
-              <span style={monoLight}>- Reembolsos:</span>
-              <span>-{fmtCOP(returnsExpense)}</span>
-            </Line>
-            <div style={monoLight}>{SUBDIV}</div>
-            <Line>
-              <span style={{ fontWeight: 700 }}>Neto devoluciones:</span>
-              <span style={{ fontWeight: 700 }}>
-                {returnsIncome - returnsExpense >= 0
+          <Divider strong />
+          <Section>
+            <SectionTitle>DEVOLUCIONES</SectionTitle>
+            <Line label="+ Ingresos (cobro dif):" value={fmtCOP(returnsIncome)} />
+            <Line label="- Reembolsos:" value={`-${fmtCOP(returnsExpense)}`} />
+            <Divider />
+            <Line
+              strong
+              label="Neto devoluciones:"
+              value={
+                returnsIncome - returnsExpense >= 0
                   ? `+${fmtCOP(returnsIncome - returnsExpense)}`
-                  : fmtCOP(returnsIncome - returnsExpense)}
-              </span>
-            </Line>
-          </div>
+                  : fmtCOP(returnsIncome - returnsExpense)
+              }
+            />
+          </Section>
         </>
       )}
 
       {/* Comisiones por crédito en efectivo (Fase 4; ya dentro de cashSales) */}
       {commissionsIncome > 0 && (
         <>
-          <div style={monoLight}>{DIVIDER}</div>
-          <div style={sectionStyle}>
-            <div style={{ fontWeight: 700, marginBottom: 2 }}>
-              COMISIONES DE CRÉDITO
-            </div>
-            <Line>
-              <span style={monoLight}>+ Ingreso efectivo:</span>
-              <span>{fmtCOP(commissionsIncome)}</span>
-            </Line>
-            <div style={{ ...monoLight, fontSize: 10, fontStyle: 'italic' }}>
+          <Divider strong />
+          <Section>
+            <SectionTitle>COMISIONES DE CRÉDITO</SectionTitle>
+            <Line label="+ Ingreso efectivo:" value={fmtCOP(commissionsIncome)} />
+            <div style={{ ...muted, fontSize: fs(10), fontStyle: 'italic' }}>
               Incluido en ventas efec. del cuadre
             </div>
-          </div>
+          </Section>
         </>
       )}
 
       {/* Egresos (regulares; los reembolsos se muestran en Devoluciones) */}
       {regularExpenses.length > 0 && (
         <>
-          <div style={monoLight}>{DIVIDER}</div>
-          <div style={sectionStyle}>
-            <div style={{ fontWeight: 700, marginBottom: 2 }}>EGRESOS</div>
+          <Divider strong />
+          <Section>
+            <SectionTitle>EGRESOS</SectionTitle>
             {regularExpenses.map((e) => (
-              <Line key={e.id}>
-                <span style={monoLight}>
-                  [{fmtHHmm(e.created_at)}] {e.reason}:
-                </span>
-                <span>{fmtCOP(Number(e.amount))}</span>
-              </Line>
+              <DetailRow
+                key={e.id}
+                createdAt={e.created_at}
+                lead={e.reason}
+                amount={Number(e.amount)}
+              />
             ))}
-            <div style={monoLight}>{SUBDIV}</div>
-            <Line>
-              <span style={{ fontWeight: 700 }}>Total egresos:</span>
-              <span style={{ fontWeight: 700 }}>
-                {fmtCOP(regularExpensesTotal)}
-              </span>
-            </Line>
-          </div>
+            <Divider />
+            <Line strong label="Total egresos:" value={fmtCOP(regularExpensesTotal)} />
+          </Section>
         </>
       )}
 
-      <div style={monoLight}>{DIVIDER}</div>
+      <Divider strong />
 
       {/* Cuadre de efectivo */}
-      <div style={sectionStyle}>
-        <div style={{ fontWeight: 700, marginBottom: 2 }}>CUADRE DE EFECTIVO</div>
-        <Line>
-          <span style={monoLight}>Apertura:</span>
-          <span>{fmtCOP(shift.opening_amount)}</span>
-        </Line>
-        <Line>
-          <span style={monoLight}>+ Ventas efec:</span>
-          <span>{fmtCOP(props.cashSales)}</span>
-        </Line>
-        {totalExpenses > 0 && (
-          <Line>
-            <span style={monoLight}>- Egresos:</span>
-            <span>-{fmtCOP(totalExpenses)}</span>
-          </Line>
-        )}
-        <div style={monoLight}>{SUBDIV}</div>
-        <Line>
-          <span style={{ fontWeight: 700 }}>Esperado:</span>
-          <span style={{ fontWeight: 700 }}>{fmtCOP(expectedCash)}</span>
-        </Line>
+      <Section>
+        <SectionTitle>CUADRE DE EFECTIVO</SectionTitle>
+        <Line label="Apertura:" value={fmtCOP(shift.opening_amount)} />
+        <Line label="+ Ventas efec:" value={fmtCOP(props.cashSales)} />
+        {totalExpenses > 0 && <Line label="- Egresos:" value={`-${fmtCOP(totalExpenses)}`} />}
+        <Divider />
+        <Line strong label="Esperado:" value={fmtCOP(expectedCash)} />
         {overdraft > 0 && (
-          <Line>
-            <span style={{ ...monoLight, color: '#dc2626' }}>Sobregiro:</span>
-            <span style={{ color: '#dc2626' }}>-{fmtCOP(overdraft)}</span>
-          </Line>
+          <Line
+            label={<span style={{ color: color('#dc2626') }}>Sobregiro:</span>}
+            value={`-${fmtCOP(overdraft)}`}
+            valueStyle={{ color: color('#dc2626') }}
+          />
         )}
-        <Line>
-          <span style={monoLight}>Contado:</span>
-          <span>{fmtCOP(countedCash)}</span>
-        </Line>
-        <div style={monoLight}>{SUBDIV}</div>
-        <Line>
-          <span style={{ fontWeight: 700 }}>Diferencia:</span>
-          <span style={{ fontWeight: 700, color: badgeColor }}>
-            {difference >= 0 ? `+${fmtCOP(difference)}` : fmtCOP(difference)}
-          </span>
-        </Line>
+        <Line label="Contado:" value={fmtCOP(countedCash)} />
+        <Divider />
+        <Line
+          strong
+          label="Diferencia:"
+          value={difference >= 0 ? `+${fmtCOP(difference)}` : fmtCOP(difference)}
+          valueStyle={{ color: badgeInk }}
+        />
         <div
           style={{
             textAlign: 'center',
             marginTop: 4,
             fontWeight: 700,
             letterSpacing: 1,
-            color: badgeColor,
-            border: `1px dashed ${badgeColor}`,
+            color: badgeInk,
+            border: `1px dashed ${badgeInk}`,
             padding: '2px 0',
           }}
         >
           {badgeText}
         </div>
-      </div>
+      </Section>
 
-      <div style={monoLight}>{DIVIDER}</div>
+      <Divider strong />
 
-      <div style={{ textAlign: 'center', ...monoLight, marginTop: 4 }}>
-        Impreso: {fmtDateTime(printedAt)}
-      </div>
-    </div>
+      <PrintedAt at={printedAt} />
+    </ReceiptShell>
   )
 }
 
 // ── Contenedor para impresión (oculto en pantalla) ────────────────────────────
 
 export function CashShiftReceiptPrint(props: CashShiftReceiptProps) {
-  useReceiptPrintStyle(SHIFT_PRINT_STYLE_ID, SHIFT_PRINT_CONTAINER_ID)
   return (
-    <div
-      id={SHIFT_PRINT_CONTAINER_ID}
-      style={{ display: 'none' }}
-      aria-hidden="true"
-    >
+    <ReceiptPrintContainer containerId={SHIFT_PRINT_CONTAINER_ID} styleId={SHIFT_PRINT_STYLE_ID}>
       <CashShiftReceipt {...props} />
-    </div>
+    </ReceiptPrintContainer>
   )
 }

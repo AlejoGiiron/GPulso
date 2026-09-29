@@ -1,15 +1,21 @@
 import { fmtCOP } from '@/lib/formatters'
 import { PAYMENT_METHODS } from '@/lib/paymentMethods'
-import { useReceiptPrintStyle } from '@/lib/receiptPrint'
-import { receiptHeaderNames } from '@/lib/receiptHeader'
-import { useBusinessName } from '@/hooks/useOrg'
+import { fmtReceiptDateTime } from '@/lib/receiptFormat'
 import type { PaymentMethod } from '@/types/database.types'
+import {
+  Divider,
+  Line,
+  PrintedAt,
+  ReceiptHeader,
+  ReceiptPrintContainer,
+  ReceiptShell,
+  Section,
+  SectionTitle,
+} from '@/components/receipts/ReceiptParts'
+import { useReceiptInk } from '@/components/receipts/receiptContext'
 
 const SALE_PRINT_CONTAINER_ID = 'gpulso-sale-receipt-print'
 const SALE_PRINT_STYLE_ID = 'gpulso-sale-receipt-print-style'
-
-const DIVIDER = '═══════════════════════════════'
-const SUBDIV = '───────────────────────────────'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -67,37 +73,10 @@ export interface SaleReceiptProps {
   printedAt: Date
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function fmtDateTime(iso: string | Date): string {
-  const d = iso instanceof Date ? iso : new Date(iso)
-  return new Intl.DateTimeFormat('es-CO', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: 'America/Bogota',
-  }).format(d)
-}
-
-// ── Subcomponentes visuales ───────────────────────────────────────────────────
-
-function Line({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-      {children}
-    </div>
-  )
-}
-
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export function SaleReceipt({ sale, storeName, printedAt }: SaleReceiptProps) {
-  const header = receiptHeaderNames(useBusinessName(), storeName)
-  const monoLight: React.CSSProperties = { color: '#525252' }
-  const sectionStyle: React.CSSProperties = { margin: '6px 0' }
+  const { muted, fs } = useReceiptInk()
   // Venta mixta = más de una línea de pago. El vuelto se calcula sobre la
   // PORCIÓN efectivo (en simple, esa porción es el total).
   const isMixed = (sale.payments?.length ?? 0) > 1
@@ -109,64 +88,39 @@ export function SaleReceipt({ sale, storeName, printedAt }: SaleReceiptProps) {
       : 0
 
   return (
-    <div
-      style={{
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-        fontSize: 11,
-        lineHeight: 1.4,
-        color: '#1a1a1a',
-        background: '#fff',
-        padding: '4mm',
-        width: '80mm',
-        boxSizing: 'border-box',
-      }}
-    >
-      <div style={{ textAlign: 'center', marginBottom: 6 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 1 }}>
-          {header.title}
-        </div>
-        {header.subtitle && (
-          <div style={{ fontSize: 11, ...monoLight }}>{header.subtitle}</div>
-        )}
-        <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>
-          {sale.credit ? 'FIADO' : 'VENTA'} #{sale.order_number}
-        </div>
-      </div>
+    <ReceiptShell>
+      <ReceiptHeader
+        storeName={storeName}
+        docTitle={`${sale.credit ? 'FIADO' : 'VENTA'} #${sale.order_number}`}
+      />
 
-      <div style={monoLight}>{DIVIDER}</div>
+      <Divider strong />
 
-      <div style={sectionStyle}>
-        <Line>
-          <span style={monoLight}>Fecha:</span>
-          <span>{fmtDateTime(sale.created_at)}</span>
-        </Line>
+      <Section>
+        <Line label="Fecha:" value={fmtReceiptDateTime(sale.created_at)} />
         {sale.customer && (
           <>
-            <Line>
-              <span style={monoLight}>Cliente:</span>
-              <span style={{ fontWeight: 600 }}>{sale.customer.full_name}</span>
-            </Line>
-            {sale.customer.phone && (
-              <Line>
-                <span style={monoLight}>Tel:</span>
-                <span>{sale.customer.phone}</span>
-              </Line>
-            )}
+            <Line
+              label="Cliente:"
+              value={sale.customer.full_name}
+              valueStyle={{ fontWeight: 600 }}
+            />
+            {sale.customer.phone && <Line label="Tel:" value={sale.customer.phone} />}
           </>
         )}
-      </div>
+      </Section>
 
-      <div style={monoLight}>{DIVIDER}</div>
+      <Divider strong />
 
-      <div style={sectionStyle}>
-        <div style={{ fontWeight: 700, marginBottom: 2 }}>ÍTEMS</div>
+      <Section>
+        <SectionTitle>ÍTEMS</SectionTitle>
         {sale.items.map((it) => (
           <div key={it.serial ?? it.variant_id} style={{ marginBottom: 2 }}>
             {it.brand && (
               <div
                 style={{
-                  ...monoLight,
-                  fontSize: 9,
+                  ...muted,
+                  fontSize: fs(9),
                   textTransform: 'uppercase',
                   letterSpacing: 0.5,
                 }}
@@ -176,178 +130,132 @@ export function SaleReceipt({ sale, storeName, printedAt }: SaleReceiptProps) {
             )}
             <div>{it.product_name}</div>
             {(it.size || it.color) && (
-              <div style={monoLight}>
+              <div style={muted}>
                 {[it.size ? `V:${it.size}` : null, it.color ? `C:${it.color}` : null]
                   .filter(Boolean)
                   .join(' ')}
               </div>
             )}
             {/* Serializado: etiqueta de variante libre + IMEI/serial. */}
-            {it.variant_label && <div style={monoLight}>{it.variant_label}</div>}
-            {it.serial && <div style={monoLight}>IMEI: {it.serial}</div>}
+            {it.variant_label && <div style={muted}>{it.variant_label}</div>}
+            {it.serial && <div style={muted}>IMEI: {it.serial}</div>}
             {it.list_price > it.unit_price && (
-              <div style={{ ...monoLight, fontSize: 9 }}>
+              <div style={{ ...muted, fontSize: fs(9) }}>
                 Antes:{' '}
                 <span style={{ textDecoration: 'line-through' }}>
                   {fmtCOP(it.list_price)}
                 </span>
               </div>
             )}
-            <Line>
-              <span style={monoLight}>
-                {' '}
-                {it.qty} × {fmtCOP(it.unit_price)}
-              </span>
-              <span>{fmtCOP(it.qty * it.unit_price)}</span>
-            </Line>
+            <Line
+              indent
+              label={`${it.qty} × ${fmtCOP(it.unit_price)}`}
+              value={fmtCOP(it.qty * it.unit_price)}
+            />
           </div>
         ))}
-      </div>
+      </Section>
 
-      <div style={monoLight}>{DIVIDER}</div>
+      <Divider strong />
 
-      <div style={sectionStyle}>
-        <Line>
-          <span style={monoLight}>Subtotal:</span>
-          <span>{fmtCOP(sale.subtotal)}</span>
-        </Line>
-        {sale.discount > 0 && (
-          <Line>
-            <span style={monoLight}>Descuento:</span>
-            <span>-{fmtCOP(sale.discount)}</span>
-          </Line>
-        )}
+      <Section>
+        <Line label="Subtotal:" value={fmtCOP(sale.subtotal)} />
+        {sale.discount > 0 && <Line label="Descuento:" value={`-${fmtCOP(sale.discount)}`} />}
         {sale.surcharge > 0 && (
-          <Line>
-            <span style={monoLight}>Recargo Addi:</span>
-            <span>+{fmtCOP(sale.surcharge)}</span>
-          </Line>
+          <Line label="Recargo Addi:" value={`+${fmtCOP(sale.surcharge)}`} />
         )}
-        <div style={monoLight}>{SUBDIV}</div>
-        <Line>
-          <span style={{ fontWeight: 700 }}>Total:</span>
-          <span style={{ fontWeight: 700, fontSize: 13 }}>
-            {fmtCOP(sale.total)}
-          </span>
-        </Line>
+        <Divider />
+        <Line strong label="Total:" value={fmtCOP(sale.total)} valueStyle={{ fontSize: 13 }} />
         {!sale.credit && (
           <>
             {isMixed ? (
               <>
-                <div style={{ ...monoLight, marginTop: 2 }}>Pago (mixto):</div>
+                <div style={{ ...muted, marginTop: 2 }}>Pago (mixto):</div>
                 {sale.payments!.map((p) => (
-                  <Line key={p.method}>
-                    <span style={monoLight}>
-                      {' '}
-                      {PAYMENT_METHODS[p.method].label}:
-                    </span>
-                    <span>{fmtCOP(p.amount)}</span>
-                  </Line>
+                  <Line
+                    key={p.method}
+                    indent
+                    label={`${PAYMENT_METHODS[p.method].label}:`}
+                    value={fmtCOP(p.amount)}
+                  />
                 ))}
               </>
             ) : (
-              <Line>
-                <span style={monoLight}>Pago:</span>
-                <span>{PAYMENT_METHODS[sale.payment_method].label}</span>
-              </Line>
+              <Line label="Pago:" value={PAYMENT_METHODS[sale.payment_method].label} />
             )}
             {sale.cash_received != null && (
-              <Line>
-                <span style={monoLight}>Recibido:</span>
-                <span>{fmtCOP(sale.cash_received)}</span>
-              </Line>
+              <Line label="Recibido:" value={fmtCOP(sale.cash_received)} />
             )}
-            {change > 0 && (
-              <Line>
-                <span style={monoLight}>Cambio:</span>
-                <span>{fmtCOP(change)}</span>
-              </Line>
-            )}
+            {change > 0 && <Line label="Cambio:" value={fmtCOP(change)} />}
           </>
         )}
 
         {sale.credit && (
           <>
-            <Line>
-              <span style={monoLight}>Venta a crédito:</span>
-              <span>FIADO</span>
-            </Line>
+            <Line label="Venta a crédito:" value="FIADO" />
             {(sale.credit.payments?.length ?? 0) > 1 ? (
               <>
-                <Line>
-                  <span style={monoLight}>Abono inicial (mixto):</span>
-                  <span>{fmtCOP(sale.credit.paid)}</span>
-                </Line>
+                <Line label="Abono inicial (mixto):" value={fmtCOP(sale.credit.paid)} />
                 {sale.credit.payments!.map((p) => (
-                  <Line key={p.method}>
-                    <span style={monoLight}>
-                      {' '}
-                      {PAYMENT_METHODS[p.method].label}:
-                    </span>
-                    <span style={monoLight}>{fmtCOP(p.amount)}</span>
-                  </Line>
+                  <Line
+                    key={p.method}
+                    indent
+                    mutedValue
+                    label={`${PAYMENT_METHODS[p.method].label}:`}
+                    value={fmtCOP(p.amount)}
+                  />
                 ))}
               </>
             ) : (
-              <Line>
-                <span style={monoLight}>Abono inicial:</span>
-                <span>
-                  {fmtCOP(sale.credit.paid)}
-                  {sale.credit.payment_method
+              <Line
+                label="Abono inicial:"
+                value={`${fmtCOP(sale.credit.paid)}${
+                  sale.credit.payment_method
                     ? ` (${PAYMENT_METHODS[sale.credit.payment_method].label})`
-                    : ''}
-                </span>
-              </Line>
+                    : ''
+                }`}
+              />
             )}
-            <div style={monoLight}>{SUBDIV}</div>
-            <Line>
-              <span style={{ fontWeight: 700 }}>SALDO A DEBER:</span>
-              <span style={{ fontWeight: 700, fontSize: 13 }}>
-                {fmtCOP(sale.credit.balance)}
-              </span>
-            </Line>
+            <Divider />
+            <Line
+              strong
+              label="SALDO A DEBER:"
+              value={fmtCOP(sale.credit.balance)}
+              valueStyle={{ fontSize: 13 }}
+            />
           </>
         )}
-      </div>
+      </Section>
 
-      <div style={monoLight}>{DIVIDER}</div>
+      <Divider strong />
 
       {sale.credit ? (
         <div style={{ textAlign: 'center', marginTop: 6 }}>
-          <div style={{ fontWeight: 700 }}>
-            DEBE: {fmtCOP(sale.credit.balance)}
-          </div>
-          <div style={{ ...monoLight, marginTop: 2 }}>
+          <div style={{ fontWeight: 700 }}>DEBE: {fmtCOP(sale.credit.balance)}</div>
+          <div style={{ ...muted, marginTop: 2 }}>
             Conserva este recibo. Gracias por tu compra.
           </div>
         </div>
       ) : (
         <div style={{ textAlign: 'center', marginTop: 6 }}>
           <div style={{ fontWeight: 600 }}>¡Gracias por tu compra!</div>
-          <div style={{ ...monoLight, marginTop: 2 }}>
+          <div style={{ ...muted, marginTop: 2 }}>
             Conserva este recibo para devoluciones.
           </div>
         </div>
       )}
 
-      <div style={{ textAlign: 'center', ...monoLight, marginTop: 6 }}>
-        Impreso: {fmtDateTime(printedAt)}
-      </div>
-    </div>
+      <PrintedAt at={printedAt} />
+    </ReceiptShell>
   )
 }
 
 // ── Contenedor para impresión (oculto en pantalla) ────────────────────────────
 
 export function SaleReceiptPrint(props: SaleReceiptProps) {
-  useReceiptPrintStyle(SALE_PRINT_STYLE_ID, SALE_PRINT_CONTAINER_ID)
   return (
-    <div
-      id={SALE_PRINT_CONTAINER_ID}
-      style={{ display: 'none' }}
-      aria-hidden="true"
-    >
+    <ReceiptPrintContainer containerId={SALE_PRINT_CONTAINER_ID} styleId={SALE_PRINT_STYLE_ID}>
       <SaleReceipt {...props} />
-    </div>
+    </ReceiptPrintContainer>
   )
 }
