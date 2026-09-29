@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Search, Plus, Package, Edit2, Layers } from 'lucide-react'
+import { Search, Plus, Package, Edit2, Layers, Printer } from 'lucide-react'
 import { useProducts, useCategories } from '@/hooks/useProducts'
 import { useVariants } from '@/hooks/useVariants'
 import ProductModal from '@/components/products/ProductModal'
 import AddUnitModal from '@/components/inventory/AddUnitModal'
 import type { SerializedTemplate } from '@/hooks/useEquipment'
 import VariantsPanel from '@/components/products/VariantsPanel'
+import LabelPrintModal from '@/components/products/LabelPrintModal'
 import { fmtCOP } from '@/lib/formatters'
 import { getColorHex, sortSizes, stockState, priceRange } from '@/lib/products'
 import { isUniqueSizeType } from '@/lib/sizeTypes'
@@ -45,9 +46,10 @@ interface ProductHeroProps {
   variants: Variant[]
   onEdit: () => void
   onManageVariants: () => void
+  onPrintLabels: () => void
 }
 
-function ProductHero({ product, variants, onEdit, onManageVariants }: ProductHeroProps) {
+function ProductHero({ product, variants, onEdit, onManageVariants, onPrintLabels }: ProductHeroProps) {
   const active = variants.filter((v) => v.is_active)
   const totalStock = active.reduce((s, v) => s + v.stock_qty, 0)
   const oos = active.filter((v) => v.stock_qty === 0).length
@@ -139,6 +141,16 @@ function ProductHero({ product, variants, onEdit, onManageVariants }: ProductHer
           >
             <Edit2 size={13} />
             Editar
+          </button>
+          {/* Etiquetas: también para productos de variante única (la mayoría del
+              catálogo), que no tienen panel de variantes. */}
+          <button
+            onClick={onPrintLabels}
+            disabled={active.length === 0}
+            className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+          >
+            <Printer size={13} />
+            Etiquetas
           </button>
           {!isUnique && (
             <button
@@ -400,6 +412,7 @@ export default function ProductsPage() {
   const [showNewProduct, setShowNewProduct] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [variantsPanelProduct, setVariantsPanelProduct] = useState<Product | null>(null)
+  const [showLabels, setShowLabels] = useState(false)
   // Puerta 3 desde el dedup de la puerta 1: agregar unidad a una plantilla existente.
   const [addUnitTarget, setAddUnitTarget] = useState<SerializedTemplate | null>(null)
 
@@ -592,6 +605,7 @@ export default function ProductsPage() {
                 variants={variants}
                 onEdit={() => setEditingProduct(selectedProduct)}
                 onManageVariants={() => setVariantsPanelProduct(selectedProduct)}
+                onPrintLabels={() => setShowLabels(true)}
               />
 
               {isLoadingVariants ? (
@@ -628,6 +642,15 @@ export default function ProductsPage() {
             setEditingProduct(null)
             setAddUnitTarget(t)
           }}
+        />
+      )}
+
+      {showLabels && selectedProduct && (
+        <LabelPrintModal
+          productName={selectedProduct.name}
+          brand={selectedProduct.brand}
+          variants={variants.filter((v) => v.is_active)}
+          onClose={() => setShowLabels(false)}
         />
       )}
 
