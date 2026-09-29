@@ -75,6 +75,16 @@ export function useResolvedOrgConfig(): OrgConfig {
 }
 
 /**
+ * Nombre del negocio (organizations.name) para encabezados de comprobantes.
+ * Cadena vacía mientras carga: el recibo cae al nombre de la tienda. Reemplaza
+ * el "G-MURA" fijo heredado del fork.
+ */
+export function useBusinessName(): string {
+  const { data: org } = useOrgConfig()
+  return org?.name?.trim() ?? ''
+}
+
+/**
  * Mutación fetch-merge-update sobre organizations.config (mismo patrón que
  * updateStoreConfig, pero a nivel de organización). La RLS de la 031
  * (organizations_update_config) garantiza que solo pasa con config.gestionar
