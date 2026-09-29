@@ -123,7 +123,6 @@ export default function RepairsPage() {
           repair={deliverCard}
           customerName={deliverCard.customer_name}
           onClose={() => setDeliverCard(null)}
-          onDelivered={() => setDeliverCard(null)}
         />
       )}
     </div>

@@ -90,6 +90,9 @@ export function RepairDetailModal({ repairId, onClose }: { repairId: string; onC
 
   const [showPassword, setShowPassword] = useState(false)
   const [editingPrice, setEditingPrice] = useState(false)
+  // Entregada desde este detalle: el modal de entrega queda abierto mostrando el
+  // comprobante; al cerrarlo se cierra también el detalle.
+  const [delivered, setDelivered] = useState(false)
   const [priceInput, setPriceInput] = useState('')
   const [showAddPart, setShowAddPart] = useState(false)
   const [showDeliver, setShowDeliver] = useState(false)
@@ -306,8 +309,11 @@ export function RepairDetailModal({ repairId, onClose }: { repairId: string; onC
         <DeliverModal
           repair={repair}
           customerName={repair.customer_name}
-          onClose={() => setShowDeliver(false)}
-          onDelivered={onClose}
+          onClose={() => {
+            setShowDeliver(false)
+            if (delivered) onClose()
+          }}
+          onDelivered={() => setDelivered(true)}
         />
       )}
     </ModalShell>
