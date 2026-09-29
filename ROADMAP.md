@@ -7,7 +7,7 @@ servido), no el de memoria o de docs anteriores.
 
 Deudas numeradas (#2, #3…) = las de [`FORKED_FROM.md`](FORKED_FROM.md).
 
-**Leyenda:** ✅ hecho · 🟡 parcial / mitigado · ⬜ pendiente · 🔍 en análisis · ❓ sin verificar
+**Leyenda:** ✅ hecho · 🟡 parcial / mitigado · ⬜ pendiente · 🚧 en construcción · 🔍 en análisis · ❓ sin verificar
 
 ## Punto de partida verificado (2026-09-28)
 
@@ -32,7 +32,7 @@ Deudas numeradas (#2, #3…) = las de [`FORKED_FROM.md`](FORKED_FROM.md).
 | ⬜ | **Usuarios reales de CelFashion; desactivar los QA** | Hoy hay 4 perfiles activos: el Dueño (login `alejogiiron@gmail.com`) y 3 QA (`qa.admin`, `qa.vendedor`, `qa.tecnico`). **La tienda operó julio–agosto con `qa.admin`**: crear las cuentas reales ANTES de desactivar los QA, o la tienda se queda sin acceso. |
 | ⬜ | **Contraseñas: cambio propio + reset por admin** | No existe en la app. ❓ **Verificar primero si la Edge Function `create-user` está desplegada** en prod (no se ve desde la BD; revisar en Supabase → Edge Functions). |
 | ⬜ | **Textos legales de los comprobantes del taller** | Placeholders `LEGAL_RECEPCION` y `LEGAL_GARANTIA` en `src/components/repairs/RepairReceipts.tsx` ("[Texto legal pendiente de definir.]"). Los define el cliente. |
-| 🟡 | **Soporte de impresora térmica 58mm (Goojprt PT-260)** | Implementado en `feature/receipts-58mm` (sin mergear): ancho de recibo por tienda (Configuración → Recibos, 58/80), piezas de recibo compartidas, rediagramado compacto y en negro, comprobante de devolución nuevo, página de prueba. Verificado en lab con PDFs de impresión. **Pendiente: prueba física** (`docs/PRUEBA-IMPRESORA-58MM.md`). Hecho aparte en develop: "G-MURA" → nombre del negocio. Etiquetas: fuera, dependen del papel. |
+| 🚧 | **Impresora PT-260 Label Maker: etiquetas (y recibos 58mm)** | En construcción en `feature/receipts-58mm` (sin mergear). La impresora es la versión de **etiquetas** (rollo de 40mm, driver TSC "TSC DA200"), no de recibos. **Etiquetas:** una por página del tamaño exacto (troquelado por defecto; continuo con margen de corte), 40×30 por defecto (40×40, 40×50, personalizado), nombre + precio grande + código CODE128 con barras en puntos enteros a 203 dpi (12 dígitos: 25,3mm en 36 útiles), marcas de borde en la prueba, botón Etiquetas también para productos de variante única (antes no se podían etiquetar). **Recibos 58mm:** hecho, para una futura impresora de recibos. **Pendiente: prueba física** (`docs/PRUEBA-IMPRESORA-58MM.md`): alto del rollo, sensor de gap, driver y lectura con el lector del mostrador. |
 | ⬜ | **Manual de operación actualizado (inventario y taller)** | Existe `docs/QA-MANUAL.md` (v1.0, julio 2026, manual de *pruebas*), anterior al rediseño de serializados (plantilla + unidad, precio en unidad/sugerido, "Crear equipo y primera unidad"). |
 
 ## FASE 1 — INTEGRIDAD

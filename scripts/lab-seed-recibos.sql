@@ -1,6 +1,6 @@
 -- ╔══════════════════════════════════════════════════════════════════════════╗
--- ║  lab-seed-recibos.sql — datos de ejemplo para probar los COMPROBANTES     ║
--- ║  (ticket de venta, separado, cuadre, taller y devolución) en el LAB.      ║
+-- ║  lab-seed-recibos.sql — datos de ejemplo para probar COMPROBANTES y       ║
+-- ║  ETIQUETAS (venta, separado, cuadre, taller, devolución, etiquetas) LAB.  ║
 -- ║                                                                            ║
 -- ║  SOLO LAB. Aborta si no corre por el socket local del contenedor de       ║
 -- ║  Supabase (en prod la conexión es por red → inet_server_addr() no es NULL).║
@@ -19,6 +19,8 @@
 -- ║   · separado con abono MIXTO + abono histórico → reimprimible              ║
 -- ║   · egreso con motivo largo en el turno de hoy                             ║
 -- ║   · reparación LISTA con IMEI y checklist → para imprimir la entrega       ║
+-- ║   · 4 productos para ETIQUETAS (peor caso: nombre largo, precio alto,      ║
+-- ║     EAN-13, sin código y un código que no cabe en 40mm)                    ║
 -- ║  Al cerrar el turno desde la app se imprime el cuadre con todo lo anterior.║
 -- ╚══════════════════════════════════════════════════════════════════════════╝
 
@@ -142,6 +144,32 @@ SELECT c.org_id, c.store_id,
        'Cambio de display, flex de carga y limpieza por humedad',
        'listo', 180000, c.admin_id
   FROM seed_ctx c;
+
+-- 9. Productos para ETIQUETAS (peor caso): nombres largos, precios altos, EAN-13
+--    de fábrica, uno sin código (se genera al imprimir) y uno con un código
+--    alfanumérico que NO cabe en 40mm (la app debe avisar, no imprimir).
+SELECT set_config('request.jwt.claims',
+                  json_build_object('sub', admin_id, 'role', 'authenticated')::text, true)
+  FROM seed_ctx;
+SET LOCAL ROLE authenticated;
+
+WITH c AS (SELECT public.get_my_store_id() AS store_id),  -- como authenticated: seed_ctx es de postgres
+src (name, brand, price, barcode) AS (VALUES
+  ('Cargador inalámbrico MagSafe 15W carga rápida original', 'Apple', 1250000::numeric, '771234567890'),
+  ('iPhone 15 Pro Max 256GB Titanio Natural reacondicionado', 'Apple', 12999000::numeric, '7702004003508'),
+  ('Audífonos Bluetooth deportivos con cancelación de ruido', 'JBL', 189900::numeric, NULL),
+  ('Forro antichoque transparente', 'Genérico', 25000::numeric, 'CEL-A15-128-NEG')
+),
+p AS (
+  INSERT INTO public.products (name, brand, description, store_id, is_serialized, is_active)
+  SELECT src.name, src.brand, 'lab-seed-recibos: etiquetas', c.store_id, false, true FROM src, c
+  RETURNING id, name
+)
+INSERT INTO public.variants (product_id, store_id, price, cost_price, stock_qty, min_stock, barcode, is_active)
+SELECT p.id, c.store_id, src.price, round(src.price * 0.6), 5, 0, src.barcode, true
+  FROM p JOIN src ON src.name = p.name CROSS JOIN c;
+
+RESET ROLE;
 
 COMMIT;
 
