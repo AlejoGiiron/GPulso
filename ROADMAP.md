@@ -7,7 +7,7 @@ servido), no el de memoria o de docs anteriores.
 
 Deudas numeradas (#2, #3…) = las de [`FORKED_FROM.md`](FORKED_FROM.md).
 
-**Leyenda:** ✅ hecho · 🟡 parcial / mitigado · ⬜ pendiente · ❓ sin verificar
+**Leyenda:** ✅ hecho · 🟡 parcial / mitigado · ⬜ pendiente · 🔍 en análisis · ❓ sin verificar
 
 ## Punto de partida verificado (2026-09-28)
 
@@ -32,6 +32,7 @@ Deudas numeradas (#2, #3…) = las de [`FORKED_FROM.md`](FORKED_FROM.md).
 | ⬜ | **Usuarios reales de CelFashion; desactivar los QA** | Hoy hay 4 perfiles activos: el Dueño (login `alejogiiron@gmail.com`) y 3 QA (`qa.admin`, `qa.vendedor`, `qa.tecnico`). **La tienda operó julio–agosto con `qa.admin`**: crear las cuentas reales ANTES de desactivar los QA, o la tienda se queda sin acceso. |
 | ⬜ | **Contraseñas: cambio propio + reset por admin** | No existe en la app. ❓ **Verificar primero si la Edge Function `create-user` está desplegada** en prod (no se ve desde la BD; revisar en Supabase → Edge Functions). |
 | ⬜ | **Textos legales de los comprobantes del taller** | Placeholders `LEGAL_RECEPCION` y `LEGAL_GARANTIA` en `src/components/repairs/RepairReceipts.tsx` ("[Texto legal pendiente de definir.]"). Los define el cliente. |
+| 🔍 | **Soporte de impresora térmica 58mm (Goojprt PT-260)** | En análisis (2026-09-28). Todo el sistema imprime a 80mm: `@page`/ancho en `src/lib/receiptPrint.ts` y ancho/padding/divisores repetidos en los 4 recibos. Propuesta: ancho de recibo como config de tienda (58/80), primitivas de recibo compartidas y rediagramado de las líneas largas (cuadre, taller, separados). Incluye quitar el "G-MURA" fijo del encabezado de venta/separado/cuadre y crear el comprobante de devolución (hoy imprime la pantalla entera). |
 | ⬜ | **Manual de operación actualizado (inventario y taller)** | Existe `docs/QA-MANUAL.md` (v1.0, julio 2026, manual de *pruebas*), anterior al rediseño de serializados (plantilla + unidad, precio en unidad/sugerido, "Crear equipo y primera unidad"). |
 
 ## FASE 1 — INTEGRIDAD
