@@ -50,9 +50,11 @@ import {
   type ExchangeLine,
 } from '@/lib/exchangeCart'
 import { returnMovesCash } from '@/lib/shiftGuard'
-import { useResolvedConfig } from '@/hooks/useConfig'
+import { useResolvedConfig, useStoreConfig } from '@/hooks/useConfig'
 import { useRequireShift } from '@/hooks/useRequireShift'
 import { ShiftRequiredNotice } from '@/components/cash/ShiftRequiredNotice'
+import { ReturnReceipt, ReturnReceiptPrint } from '@/components/returns/ReturnReceipt'
+import { buildReturnReceiptData } from '@/lib/returnReceipt'
 import type { PaymentMethod, ReturnType, Return } from '@/types/database.types'
 
 // ── Helpers de cálculo (Fase 1/2) ─────────────────────────────────────────────
@@ -1248,117 +1250,83 @@ function ReturnTicketModal({
   exchangeItems,
   onClose,
 }: TicketProps) {
-  const selectedItems = order.items.filter((i) => (returnQtys[i.variant_id] ?? 0) > 0)
-  const refundTotal = selectedItems.reduce(
-    (sum, i) => sum + i.unit_price * (returnQtys[i.variant_id] ?? 0),
-    0,
-  )
+  const { data: store } = useStoreConfig()
+  const printedAtRef = useRef(new Date())
   const summary = exchangeSummary(order, returnQtys, exchangeItems)
-  const priceDiff = summary.difference
+  const receipt = buildReturnReceiptData({
+    kind: returnType,
+    returnId: returnRecord.id,
+    createdAt: returnRecord.created_at,
+    order,
+    returnQtys,
+    exchangeItems,
+    exchange: summary,
+    methodLabel: METHOD_LABEL[refundMethod],
+  })
+  const storeName = store?.name ?? ''
+
+  function handlePrint() {
+    try {
+      window.print()
+    } catch {
+      toast.error('No se pudo abrir el diálogo de impresión')
+    }
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.5)] p-4 backdrop-blur-sm">
-      <div className="w-full max-w-xs rounded-2xl bg-white p-6 shadow-[0_20px_60px_rgba(0,0,0,0.3)]">
-        <div className="mb-4 text-center">
-          <p className="text-base font-bold text-[#1a1a1a]">G-Pulso</p>
-          <p className="text-xs text-[#737373]">
-            {new Date(returnRecord.created_at).toLocaleString('es-CO', {
-              timeZone: 'America/Bogota',
-              dateStyle: 'short',
-              timeStyle: 'short',
-            })}
-          </p>
-          <p className="mt-1 text-xs text-[#a8a29e]">
-            {returnType === 'return' ? 'Devolución' : 'Cambio'} #
-            {returnRecord.id.slice(-6).toUpperCase()}
-          </p>
-          <p className="text-[11px] text-[#a8a29e]">
-            Ref. orden #{order.order_number}
-          </p>
-        </div>
-
-        <div className="mb-3 border-t border-dashed border-[#ebe9e6] pt-3">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[#737373]">
-            Ítems devueltos
-          </p>
-          {selectedItems.map((i) => (
-            <div key={i.id} className="mb-1 flex justify-between text-xs">
-              <span className="text-[#525252]">
-                {i.brand ? (
-                  <span className="font-semibold uppercase text-[#a8a29e]">{i.brand} </span>
-                ) : null}
-                {i.product_name}
-                {i.size ? ` T.${i.size}` : ''}
-                {i.color ? ` ${i.color}` : ''} × {returnQtys[i.variant_id]}
-              </span>
-              <span className="ml-2 shrink-0 font-mono text-[#1a1a1a]">
-                {fmtCOP(i.unit_price * (returnQtys[i.variant_id] ?? 0))}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {returnType === 'exchange' && (
-          <div className="mb-3 border-t border-dashed border-[#ebe9e6] pt-3">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[#737373]">
-              Ítems nuevos
-            </p>
-            {exchangeItems.map((e) => (
-              <div key={e.variant_id} className="mb-1 flex justify-between text-xs">
-                <span className="text-[#525252]">
-                  {e.product_name}
-                  {e.size ? ` T.${e.size}` : ''}
-                  {e.color ? ` ${e.color}` : ''} × {e.qty}
-                </span>
-                <span className="ml-2 shrink-0 font-mono text-[#1a1a1a]">
-                  {fmtCOP(e.list_price * e.qty)}
-                </span>
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.5)] p-4 backdrop-blur-sm">
+        <div className="flex max-h-[90vh] w-full max-w-sm flex-col rounded-2xl bg-white shadow-[0_20px_60px_rgba(0,0,0,0.3)]">
+          <div className="flex items-center justify-between border-b border-[#f5f4f1] px-5 py-4">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100">
+                <CheckCircle size={17} className="text-emerald-700" />
               </div>
-            ))}
-          </div>
-        )}
-
-        <div className="space-y-1 border-t border-dashed border-[#ebe9e6] pt-3 text-xs">
-          {returnType === 'return' && (
-            <div className="flex justify-between font-bold text-[#1a1a1a]">
-              <span>Reembolso</span>
-              <span className="font-mono">{fmtCOP(refundTotal)}</span>
+              <div>
+                <p className="text-[15px] font-semibold text-[#1a1a1a]">
+                  {returnType === 'return' ? 'Devolución registrada' : 'Cambio registrado'}
+                </p>
+                <p className="text-[11px] text-[#737373]">
+                  #{receipt.reference} · Ref. venta #{order.order_number}
+                </p>
+              </div>
             </div>
-          )}
-          {returnType === 'exchange' && priceDiff !== 0 && (
-            <div
-              className={`flex justify-between font-bold ${priceDiff > 0 ? 'text-cyan-700' : 'text-green-700'}`}
+            <button
+              onClick={onClose}
+              className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-[#f5f4f1] hover:bg-[#ebe9e6]"
             >
-              <span>{priceDiff > 0 ? 'Cobra cliente' : 'Devuelve tienda'}</span>
-              <span className="font-mono">
-                {fmtCOP(priceDiff > 0 ? summary.orderTotal : summary.refundDue)}
-              </span>
-            </div>
-          )}
-          <div className="flex justify-between text-[#525252]">
-            <span>{returnType === 'return' ? 'Método reembolso' : 'Método pago'}</span>
-            <span>{METHOD_LABEL[refundMethod]}</span>
+              <X size={14} className="text-[#525252]" />
+            </button>
           </div>
-        </div>
 
-        <p className="mt-4 text-center text-[11px] text-[#a8a29e]">Gracias por su preferencia</p>
+          <div className="flex-1 overflow-y-auto bg-[#fafaf9] px-5 py-4">
+            <p className="mb-2.5 text-[10.5px] font-semibold uppercase tracking-[.06em] text-[#737373]">
+              Vista previa del comprobante
+            </p>
+            <div className="mx-auto w-fit rounded-xl border border-[#ebe9e6] bg-white shadow-sm">
+              <ReturnReceipt data={receipt} storeName={storeName} printedAt={printedAtRef.current} />
+            </div>
+          </div>
 
-        <div className="mt-5 flex gap-2">
-          <button
-            onClick={() => window.print()}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#ebe9e6] py-2.5 text-sm font-medium text-[#525252] hover:bg-[#f5f4f1]"
-          >
-            <Printer size={14} /> Imprimir
-          </button>
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-xl bg-cyan-600 py-2.5 text-sm font-semibold text-white hover:bg-cyan-700"
-          >
-            Nueva devolución
-          </button>
+          <div className="flex gap-2 border-t border-[#f5f4f1] px-5 py-4">
+            <button
+              onClick={handlePrint}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#ebe9e6] py-2.5 text-sm font-medium text-[#525252] hover:bg-[#f5f4f1]"
+            >
+              <Printer size={14} /> Imprimir
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 rounded-xl bg-cyan-600 py-2.5 text-sm font-semibold text-white hover:bg-cyan-700"
+            >
+              Nueva devolución
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      <ReturnReceiptPrint data={receipt} storeName={storeName} printedAt={printedAtRef.current} />
+    </>
   )
 }
 
