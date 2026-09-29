@@ -1,131 +1,60 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Printer, Plus, Trash2, AlertTriangle } from 'lucide-react'
-import JsBarcode from 'jsbarcode'
 import toast from 'react-hot-toast'
-import { fmtCOP } from '@/lib/formatters'
 import { useStoreConfig, useResolvedConfig } from '@/hooks/useConfig'
 import { useConfigMutations } from '@/hooks/useConfigMutations'
+import { newLabelSizeId } from '@/lib/labelSizes'
 import {
-  deriveLabelStyle,
-  newLabelSizeId,
-  WARN_WIDTH,
-  MIN_WIDTH,
-} from '@/lib/labelSizes'
+  DEFAULT_CONTINUOUS_GAP_MM,
+  LABEL_PRESETS,
+  MAX_LABEL_GAP_MM,
+  SAMPLE_CODE_OWN,
+  labelSizeIssues,
+  type LabelMedia,
+} from '@/lib/labelLayout'
+import {
+  LabelCard,
+  LabelPagePreview,
+  LabelPrintSheet,
+  type LabelContent,
+} from '@/components/labels/LabelParts'
 import type { LabelSize, LabelFields } from '@/types/config.types'
 
-const SAMPLE_CODE = '7890123456789'
-const SAMPLE_BRAND = 'Marca'
-// Alto mínimo sensato (mm) por coherencia con el ancho escaneable.
-const MIN_HEIGHT = 10
+const TEST_PRINT_CONTAINER_ID = 'gpulso-label-test-print'
+const TEST_PRINT_STYLE_ID = 'gpulso-label-test-print-style'
+/** Prueba de centrado (1) y de alineación (10 seguidas: el desfase se acumula). */
+const TEST_COUNTS = [1, 10] as const
 
-// ─── Label Preview ────────────────────────────────────────────────────────────
-// Usa el MISMO helper de escalado que la impresión (deriveLabelStyle), de modo
-// que la vista previa refleja exactamente cómo saldrá la etiqueta.
-
-function LabelPreview({ size, fields }: { size: LabelSize; fields: LabelFields }) {
-  const ref = useRef<SVGSVGElement>(null)
-  const s = deriveLabelStyle(size)
-
-  useEffect(() => {
-    if (!ref.current) return
-    try {
-      JsBarcode(ref.current, SAMPLE_CODE, {
-        format: 'CODE128',
-        width: s.barcodeWidth,
-        height: s.barcodeHeight,
-        displayValue: false,
-        margin: 0,
-      })
-    } catch {
-      // código inválido
-    }
-  }, [s.barcodeWidth, s.barcodeHeight])
-
-  return (
-    <div
-      style={{
-        width: s.width,
-        height: s.height,
-        border: s.border,
-        padding: s.padding,
-        boxSizing: 'border-box',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        background: '#fff',
-        fontFamily: 'system-ui, sans-serif',
-      }}
-    >
-      <div>
-        <p
-          style={{
-            fontSize: s.brandFs,
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-            color: '#888',
-            lineHeight: 1,
-            margin: 0,
-          }}
-        >
-          {SAMPLE_BRAND}
-        </p>
-        {fields.name && (
-          <p style={{ fontSize: s.nameFs, fontWeight: 700, lineHeight: 1.1, margin: 0 }}>
-            Producto ejemplo
-          </p>
-        )}
-      </div>
-      {fields.size_color && (
-        <p style={{ fontSize: s.detailFs, color: '#555', lineHeight: 1, margin: 0 }}>
-          T.M · Negro
-        </p>
-      )}
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center' }}>
-        <svg ref={ref} style={{ width: '100%' }} />
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        {fields.sku && (
-          <p style={{ fontSize: s.skuFs, fontFamily: 'monospace', color: '#666', margin: 0 }}>
-            SKU-001
-          </p>
-        )}
-        {fields.price && (
-          <p style={{ fontSize: s.priceFs, fontWeight: 700, margin: 0 }}>
-            {fmtCOP(45000)}
-          </p>
-        )}
-      </div>
-    </div>
-  )
+// Peor caso para la vista previa: nombre largo y precio alto.
+const SAMPLE: LabelContent = {
+  name: 'Cargador inalámbrico MagSafe 15W carga rápida original',
+  brand: 'Apple',
+  variantText: '128GB · Negro',
+  sku: 'SKU-001',
+  price: 1_250_000,
+  code: SAMPLE_CODE_OWN,
 }
+
+const FIELD_OPTIONS: { key: keyof LabelFields; label: string; hint?: string }[] = [
+  { key: 'name', label: 'Nombre del producto' },
+  { key: 'price', label: 'Precio', hint: 'en grande' },
+  { key: 'size_color', label: 'Variante' },
+  { key: 'brand', label: 'Marca' },
+  { key: 'sku', label: 'SKU' },
+]
 
 // ─── Size manager ───────────────────────────────────────────────────────────
-
-// Devuelve el aviso de escaneabilidad por ancho, o null si el ancho es seguro.
-function widthIssue(width: number): { level: 'block' | 'warn'; msg: string } | null {
-  if (width < MIN_WIDTH)
-    return {
-      level: 'block',
-      msg: `Ancho mínimo ${MIN_WIDTH}mm para que el código sea escaneable`,
-    }
-  if (width < WARN_WIDTH)
-    return {
-      level: 'warn',
-      msg: `A menos de ${WARN_WIDTH}mm el código puede ser difícil de escanear`,
-    }
-  return null
-}
 
 function LabelSizesManager({
   sizes,
   defaultId,
+  maxWidthMm,
   onChange,
   onDefaultChange,
 }: {
   sizes: LabelSize[]
   defaultId: string
+  maxWidthMm: number
   onChange: (s: LabelSize[]) => void
   onDefaultChange: (id: string) => void
 }) {
@@ -135,11 +64,15 @@ function LabelSizesManager({
     onChange(sizes.map((s, i) => (i === idx ? { ...s, ...patch } : s)))
   }
 
-  function addSize() {
-    onChange([
-      ...sizes,
-      { id: newLabelSizeId(), name: 'Nuevo tamaño', width_mm: 38, height_mm: 25 },
-    ])
+  function addSize(width_mm: number, height_mm: number, name: string) {
+    const existing = sizes.find((s) => s.width_mm === width_mm && s.height_mm === height_mm)
+    if (existing) {
+      onDefaultChange(existing.id)
+      return
+    }
+    const id = newLabelSizeId()
+    onChange([...sizes, { id, name, width_mm, height_mm }])
+    onDefaultChange(id)
   }
 
   function removeSize(idx: number) {
@@ -156,18 +89,37 @@ function LabelSizesManager({
   return (
     <div>
       <p className="mb-2 text-[11px] font-semibold uppercase tracking-[.05em] text-[#737373]">
-        Tamaños de etiqueta
+        Tamaño de etiqueta
       </p>
       <p className="mb-3 text-[11px] text-[#a8a29e]">
-        Define los tamaños disponibles (ancho × alto en mm). Marca uno como
-        predeterminado: será el que se use al imprimir. El contenido escala
-        proporcionalmente al tamaño.
+        Ancho × alto en mm. Si el paquete no lo dice, mide el tramo que avanza la
+        impresora con el botón de avance (ver guion de prueba). El marcado es el que
+        se usa al imprimir.
       </p>
+
+      <div className="mb-3 flex flex-wrap gap-2">
+        {LABEL_PRESETS.map((p) => (
+          <button
+            key={p.key}
+            type="button"
+            onClick={() => addSize(p.width_mm, p.height_mm, p.name)}
+            className="h-8 rounded-lg border border-[#ebe9e6] bg-white px-3 text-xs font-semibold text-[#525252] hover:border-cyan-300 hover:bg-cyan-50"
+          >
+            {p.name}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => addSize(40, 30, 'Personalizado')}
+          className="flex h-8 items-center gap-1 rounded-lg border-[1.5px] border-dashed border-[#d6d3d1] px-3 text-xs font-medium text-cyan-600 hover:border-cyan-300 hover:bg-cyan-50"
+        >
+          <Plus size={12} /> Personalizado
+        </button>
+      </div>
 
       <div className="space-y-2">
         {sizes.map((s, idx) => {
-          const issue = widthIssue(s.width_mm)
-          const heightIssue = s.height_mm < MIN_HEIGHT
+          const issues = labelSizeIssues(s, maxWidthMm)
           const isDefault = s.id === defaultId
           return (
             <div
@@ -182,7 +134,7 @@ function LabelSizesManager({
                   name="label-default-size"
                   checked={isDefault}
                   onChange={() => onDefaultChange(s.id)}
-                  title="Marcar como predeterminado"
+                  title="Usar este tamaño al imprimir"
                   className="accent-cyan-500"
                 />
                 <input
@@ -196,9 +148,8 @@ function LabelSizesManager({
                     type="number"
                     min={1}
                     value={s.width_mm}
-                    onChange={(e) =>
-                      update(idx, { width_mm: parseInt(e.target.value, 10) || 0 })
-                    }
+                    aria-label="Ancho (mm)"
+                    onChange={(e) => update(idx, { width_mm: parseInt(e.target.value, 10) || 0 })}
                     className="h-9 w-16 rounded-lg border border-[#ebe9e6] px-2 text-right text-sm tabular-nums outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
                   />
                   <span>×</span>
@@ -206,9 +157,8 @@ function LabelSizesManager({
                     type="number"
                     min={1}
                     value={s.height_mm}
-                    onChange={(e) =>
-                      update(idx, { height_mm: parseInt(e.target.value, 10) || 0 })
-                    }
+                    aria-label="Alto (mm)"
+                    onChange={(e) => update(idx, { height_mm: parseInt(e.target.value, 10) || 0 })}
                     className="h-9 w-16 rounded-lg border border-[#ebe9e6] px-2 text-right text-sm tabular-nums outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
                   />
                   <span className="text-xs text-[#a8a29e]">mm</span>
@@ -233,11 +183,7 @@ function LabelSizesManager({
                   <button
                     onClick={() => setConfirmDeleteId(s.id)}
                     disabled={sizes.length <= 1}
-                    title={
-                      sizes.length <= 1
-                        ? 'Debe quedar al menos un tamaño'
-                        : 'Eliminar tamaño'
-                    }
+                    title={sizes.length <= 1 ? 'Debe quedar al menos un tamaño' : 'Eliminar tamaño'}
                     className="grid h-8 w-8 place-items-center rounded-md text-slate-300 hover:bg-red-50 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Trash2 size={13} />
@@ -245,35 +191,21 @@ function LabelSizesManager({
                 )}
               </div>
 
-              {/* Avisos de escaneabilidad */}
-              {issue && (
+              {issues.map((issue) => (
                 <div
-                  className={`mt-2 flex items-center gap-1.5 pl-6 text-[11px] ${
+                  key={issue.msg}
+                  className={`mt-1.5 flex items-center gap-1.5 pl-6 text-[11px] ${
                     issue.level === 'block' ? 'text-red-500' : 'text-amber-600'
                   }`}
                 >
                   <AlertTriangle size={12} />
                   {issue.msg}
                 </div>
-              )}
-              {heightIssue && (
-                <div className="mt-1.5 flex items-center gap-1.5 pl-6 text-[11px] text-red-500">
-                  <AlertTriangle size={12} />
-                  Alto mínimo {MIN_HEIGHT}mm
-                </div>
-              )}
+              ))}
             </div>
           )
         })}
       </div>
-
-      <button
-        onClick={addSize}
-        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-dashed border-[#d6d3d1] py-2.5 text-sm font-medium text-cyan-500 hover:border-cyan-300 hover:bg-cyan-50"
-      >
-        <Plus size={14} />
-        Agregar tamaño
-      </button>
     </div>
   )
 }
@@ -287,19 +219,21 @@ export default function EtiquetasSection() {
 
   const [sizes, setSizes] = useState<LabelSize[]>([])
   const [defaultId, setDefaultId] = useState('')
-  const [fields, setFields] = useState<LabelFields>({
-    sku: true,
-    name: true,
-    size_color: true,
-    price: true,
-  })
+  const [fields, setFields] = useState<LabelFields>(config.label_fields)
+  const [media, setMedia] = useState<LabelMedia>(config.label_media)
+  const [gapMm, setGapMm] = useState(config.label_gap_mm)
+  const [maxWidthMm, setMaxWidthMm] = useState(config.label_max_width_mm)
   const [saving, setSaving] = useState(false)
+  const [testCount, setTestCount] = useState<number>(1)
 
   useEffect(() => {
     if (!store) return
     setSizes(config.label_sizes)
     setDefaultId(config.label_default_size_id)
     setFields(config.label_fields)
+    setMedia(config.label_media)
+    setGapMm(config.label_gap_mm)
+    setMaxWidthMm(config.label_max_width_mm)
   }, [store, config])
 
   function toggleField(key: keyof LabelFields) {
@@ -307,6 +241,25 @@ export default function EtiquetasSection() {
   }
 
   const previewSize = sizes.find((s) => s.id === defaultId) ?? sizes[0]
+  const previewBlocked = previewSize
+    ? labelSizeIssues(previewSize, maxWidthMm).some((i) => i.level === 'block')
+    : true
+
+  function handlePrintTest(count: number) {
+    if (previewBlocked) {
+      toast.error('Corrige el tamaño antes de imprimir la prueba')
+      return
+    }
+    setTestCount(count)
+    // Esperar al render de la hoja con N etiquetas antes de abrir el diálogo.
+    requestAnimationFrame(() => {
+      try {
+        window.print()
+      } catch {
+        toast.error('No se pudo abrir el diálogo de impresión')
+      }
+    })
+  }
 
   async function handleSave() {
     const cleaned = sizes.map((s) => ({ ...s, name: s.name.trim() }))
@@ -324,28 +277,33 @@ export default function EtiquetasSection() {
       toast.error('Hay nombres de tamaño duplicados')
       return
     }
+    if (!Number.isFinite(maxWidthMm) || maxWidthMm < 20 || maxWidthMm > 120) {
+      toast.error('Ancho máximo imprimible entre 20 y 120 mm')
+      return
+    }
     for (const s of cleaned) {
-      if (s.width_mm < MIN_WIDTH) {
-        toast.error(
-          `"${s.name}": ancho mínimo ${MIN_WIDTH}mm para que el código sea escaneable`,
-        )
-        return
-      }
-      if (s.height_mm < MIN_HEIGHT) {
-        toast.error(`"${s.name}": alto mínimo ${MIN_HEIGHT}mm`)
+      const block = labelSizeIssues(s, maxWidthMm).find((i) => i.level === 'block')
+      if (block) {
+        toast.error(`"${s.name}": ${block.msg}`)
         return
       }
     }
+    if (!fields.name && !fields.price) {
+      toast.error('La etiqueta necesita al menos el nombre o el precio')
+      return
+    }
     // Garantizar que el predeterminado exista entre los tamaños.
-    const validDefault = cleaned.some((s) => s.id === defaultId)
-      ? defaultId
-      : cleaned[0].id
+    const validDefault = cleaned.some((s) => s.id === defaultId) ? defaultId : cleaned[0].id
 
     setSaving(true)
     try {
       await updateStoreConfig.mutateAsync({
         label_sizes: cleaned,
         label_default_size_id: validDefault,
+        label_fields: fields,
+        label_media: media,
+        label_gap_mm: Math.min(MAX_LABEL_GAP_MM, Math.max(0, gapMm)),
+        label_max_width_mm: maxWidthMm,
       })
       toast.success('Configuración de etiquetas guardada')
     } catch {
@@ -376,16 +334,83 @@ export default function EtiquetasSection() {
         </div>
         <div>
           <h2 className="text-sm font-semibold text-[#1a1a1a]">Etiquetas de precio</h2>
-          <p className="text-xs text-[#737373]">Tamaños, campos y vista previa</p>
+          <p className="text-xs text-[#737373]">
+            Impresora de etiquetas, tamaño, campos y vista previa a tamaño real
+          </p>
         </div>
       </div>
 
       <div className="divide-y divide-[#f5f4f1]">
+        {/* Impresora */}
+        <div className="px-5 py-5">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[.05em] text-[#737373]">
+            Impresora de etiquetas
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Tipo de rollo">
+            {(
+              [
+                { key: 'die_cut', title: 'Rollo troquelado', detail: 'Etiquetas separadas; la impresora detecta el espacio entre ellas. Una etiqueta por hoja, tamaño exacto.' },
+                { key: 'continuous', title: 'Rollo continuo', detail: 'Papel adhesivo sin separaciones: se deja un margen de corte entre etiquetas.' },
+              ] as { key: LabelMedia; title: string; detail: string }[]
+            ).map((opt) => {
+              const active = media === opt.key
+              return (
+                <button
+                  key={opt.key}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => {
+                    setMedia(opt.key)
+                    if (opt.key === 'continuous' && gapMm === 0) setGapMm(DEFAULT_CONTINUOUS_GAP_MM)
+                  }}
+                  className={`rounded-xl border px-4 py-3 text-left transition ${
+                    active ? 'border-cyan-400 bg-[#ecfeff] ring-2 ring-cyan-100' : 'border-[#ebe9e6] hover:bg-[#fafaf9]'
+                  }`}
+                >
+                  <span className="block text-sm font-semibold text-[#1a1a1a]">{opt.title}</span>
+                  <span className="block text-xs text-[#737373]">{opt.detail}</span>
+                </button>
+              )
+            })}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-[#525252]">
+            {media === 'continuous' && (
+              <label className="flex items-center gap-2">
+                Margen de corte
+                <input
+                  type="number"
+                  min={0}
+                  max={MAX_LABEL_GAP_MM}
+                  step={0.5}
+                  value={gapMm}
+                  onChange={(e) => setGapMm(parseFloat(e.target.value) || 0)}
+                  className="h-9 w-16 rounded-lg border border-[#ebe9e6] px-2 text-right tabular-nums outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
+                />
+                <span className="text-xs text-[#a8a29e]">mm</span>
+              </label>
+            )}
+            <label className="flex items-center gap-2">
+              Ancho máximo imprimible
+              <input
+                type="number"
+                min={20}
+                max={120}
+                value={maxWidthMm}
+                onChange={(e) => setMaxWidthMm(parseInt(e.target.value, 10) || 0)}
+                className="h-9 w-16 rounded-lg border border-[#ebe9e6] px-2 text-right tabular-nums outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
+              />
+              <span className="text-xs text-[#a8a29e]">mm (PT-260 Label Maker: 48)</span>
+            </label>
+          </div>
+        </div>
+
         {/* Sizes */}
         <div className="px-5 py-5">
           <LabelSizesManager
             sizes={sizes}
             defaultId={defaultId}
+            maxWidthMm={maxWidthMm}
             onChange={setSizes}
             onDefaultChange={setDefaultId}
           />
@@ -394,29 +419,19 @@ export default function EtiquetasSection() {
         {/* Fields */}
         <div className="px-5 py-5">
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-[.05em] text-[#737373]">
-            Campos a mostrar
+            Campos a imprimir
           </p>
           <div className="space-y-2">
-            {/* Barcode: always active */}
             <label className="flex cursor-not-allowed items-center gap-3 rounded-lg border border-[#ebe9e6] bg-[#f8f7f5] px-4 py-3 opacity-70">
               <input type="checkbox" checked disabled className="accent-cyan-500" />
               <span className="text-sm font-medium text-[#1a1a1a]">Código de barras</span>
-              <span className="ml-auto text-[11px] text-[#a8a29e]">siempre activo</span>
+              <span className="ml-auto text-[11px] text-[#a8a29e]">siempre: lo lee el lector</span>
             </label>
-            {(
-              [
-                { key: 'name', label: 'Nombre del producto' },
-                { key: 'size_color', label: 'Variante y color' },
-                { key: 'sku', label: 'SKU' },
-                { key: 'price', label: 'Precio' },
-              ] as { key: keyof LabelFields; label: string }[]
-            ).map(({ key, label }) => (
+            {FIELD_OPTIONS.map(({ key, label, hint }) => (
               <label
                 key={key}
                 className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
-                  fields[key]
-                    ? 'border-cyan-300 bg-cyan-50'
-                    : 'border-[#ebe9e6] bg-white hover:bg-slate-50'
+                  fields[key] ? 'border-cyan-300 bg-cyan-50' : 'border-[#ebe9e6] bg-white hover:bg-slate-50'
                 }`}
               >
                 <input
@@ -426,6 +441,7 @@ export default function EtiquetasSection() {
                   className="accent-cyan-500"
                 />
                 <span className="text-sm font-medium text-[#1a1a1a]">{label}</span>
+                {hint && <span className="ml-auto text-[11px] text-[#a8a29e]">{hint}</span>}
               </label>
             ))}
           </div>
@@ -434,17 +450,54 @@ export default function EtiquetasSection() {
         {/* Preview */}
         <div className="px-5 py-5">
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-[.05em] text-[#737373]">
-            Vista previa
+            Vista previa · tamaño real
           </p>
-          <div className="flex flex-col items-center justify-center rounded-xl border border-[#ebe9e6] bg-[#fafaf9] py-8">
-            {previewSize && <LabelPreview size={previewSize} fields={fields} />}
+          <div className="flex flex-col items-center justify-center rounded-xl border border-[#ebe9e6] bg-[#f1f0ee] py-8">
+            {previewSize && (
+              <LabelPagePreview size={previewSize} media={media} gapMm={gapMm}>
+                <LabelCard size={previewSize} fields={fields} content={SAMPLE} calibration />
+              </LabelPagePreview>
+            )}
             {previewSize && (
               <p className="mt-3 text-[11px] text-[#a8a29e]">
-                {previewSize.name} · {previewSize.width_mm} × {previewSize.height_mm} mm
-                {' · escala real'}
+                {previewSize.width_mm} × {previewSize.height_mm} mm ·{' '}
+                {media === 'die_cut' ? 'troquelado' : `continuo, corte ${gapMm}mm`} · peor caso:
+                nombre largo y precio alto · las marcas de borde solo salen en la prueba
               </p>
             )}
+            <div className="mt-4 flex gap-2">
+              {TEST_COUNTS.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => handlePrintTest(n)}
+                  className="inline-flex h-8 items-center gap-2 rounded-lg border border-[#ebe9e6] bg-white px-3 text-xs font-medium text-[#525252] hover:bg-[#f5f4f1]"
+                >
+                  <Printer size={13} />
+                  {n === 1 ? 'Imprimir 1 de prueba (centrado)' : `Imprimir ${n} seguidas (alineación)`}
+                </button>
+              ))}
+            </div>
           </div>
+          {previewSize && (
+            <LabelPrintSheet
+              containerId={TEST_PRINT_CONTAINER_ID}
+              styleId={TEST_PRINT_STYLE_ID}
+              size={previewSize}
+              media={media}
+              gapMm={gapMm}
+            >
+              {Array.from({ length: testCount }, (_, i) => (
+                <LabelCard
+                  key={i}
+                  size={previewSize}
+                  fields={fields}
+                  calibration
+                  content={{ ...SAMPLE, name: `Prueba ${i + 1}/${testCount} · ${SAMPLE.name}` }}
+                />
+              ))}
+            </LabelPrintSheet>
+          )}
         </div>
       </div>
 

@@ -1,15 +1,19 @@
 import type { ReceiptWidthMm } from '@/lib/receiptLayout'
+import type { LabelMedia } from '@/lib/labelLayout'
 
 export interface StoreColorConfig {
   name: string
   hex: string
 }
 
+// Campos opcionales de la etiqueta. El código de barras va SIEMPRE (es lo que
+// lee el lector del mostrador). Default: nombre + precio (+ código).
 export interface LabelFields {
-  sku: boolean
   name: boolean
-  size_color: boolean
   price: boolean
+  size_color: boolean
+  brand: boolean
+  sku: boolean
 }
 
 /**
@@ -97,4 +101,13 @@ export interface StoreConfig {
   // 58 (ej. Goojprt PT-260, 48mm imprimibles). Define @page, el ancho de la
   // vista previa y la diagramación compacta. Ver src/lib/receiptLayout.ts.
   receipt_width_mm: ReceiptWidthMm
+  // ── Impresora de etiquetas (ver src/lib/labelLayout.ts) ─────────────────────
+  // Rollo troquelado (la impresora detecta el espacio entre etiquetas; hoja =
+  // tamaño exacto) o continuo (hoja = alto + margen de corte).
+  label_media: LabelMedia
+  // Margen de corte entre etiquetas en rollo continuo (mm, 0..10).
+  label_gap_mm: number
+  // Ancho máximo IMPRIMIBLE de la impresora de etiquetas (mm). Valida los
+  // tamaños en Configuración. PT-260 Label Maker: 48 (ficha del vendedor).
+  label_max_width_mm: number
 }

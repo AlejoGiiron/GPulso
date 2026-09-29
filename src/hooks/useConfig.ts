@@ -9,6 +9,13 @@ import { migrateLegacyPaymentMethods } from '@/lib/paymentMethods'
 import { DEFAULT_SIZE_TYPES } from '@/lib/sizeTypes'
 import { DEFAULT_LABEL_SIZES, DEFAULT_LABEL_SIZE_ID, findLabelSize } from '@/lib/labelSizes'
 import { DEFAULT_RECEIPT_WIDTH, isReceiptWidth } from '@/lib/receiptLayout'
+import {
+  DEFAULT_CONTINUOUS_GAP_MM,
+  DEFAULT_LABEL_MAX_WIDTH_MM,
+  DEFAULT_LABEL_MEDIA,
+  MAX_LABEL_GAP_MM,
+  isLabelMedia,
+} from '@/lib/labelLayout'
 
 export const DEFAULT_CONFIG: StoreConfig = {
   timezone: 'America/Bogota',
@@ -36,7 +43,7 @@ export const DEFAULT_CONFIG: StoreConfig = {
   payment_qr_url: null,
   label_sizes: DEFAULT_LABEL_SIZES,
   label_default_size_id: DEFAULT_LABEL_SIZE_ID,
-  label_fields: { sku: true, name: true, size_color: true, price: true },
+  label_fields: { name: true, price: true, size_color: false, brand: false, sku: false },
   layaway_initial_payment_mode: 'none',
   layaway_initial_payment_value: 0,
   layaway_default_days: 90,
@@ -48,6 +55,9 @@ export const DEFAULT_CONFIG: StoreConfig = {
   commission_default_amount: 100000,
   commission_worker_share: 0.5,
   receipt_width_mm: DEFAULT_RECEIPT_WIDTH,
+  label_media: DEFAULT_LABEL_MEDIA,
+  label_gap_mm: DEFAULT_CONTINUOUS_GAP_MM,
+  label_max_width_mm: DEFAULT_LABEL_MAX_WIDTH_MM,
 }
 
 export function resolveConfig(raw: Record<string, unknown> | null | undefined): StoreConfig {
@@ -97,6 +107,18 @@ export function resolveConfig(raw: Record<string, unknown> | null | undefined): 
     receipt_width_mm: isReceiptWidth(r.receipt_width_mm)
       ? r.receipt_width_mm
       : DEFAULT_CONFIG.receipt_width_mm,
+    label_media: isLabelMedia(r.label_media) ? r.label_media : DEFAULT_CONFIG.label_media,
+    label_gap_mm:
+      typeof r.label_gap_mm === 'number' && Number.isFinite(r.label_gap_mm)
+        ? Math.min(MAX_LABEL_GAP_MM, Math.max(0, r.label_gap_mm))
+        : DEFAULT_CONFIG.label_gap_mm,
+    // Entre 20 y 120mm; fuera de eso es un dato corrupto → default.
+    label_max_width_mm:
+      typeof r.label_max_width_mm === 'number' &&
+      r.label_max_width_mm >= 20 &&
+      r.label_max_width_mm <= 120
+        ? r.label_max_width_mm
+        : DEFAULT_CONFIG.label_max_width_mm,
   }
 }
 
