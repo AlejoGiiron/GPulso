@@ -46,9 +46,11 @@ atacan en este proyecto.
    Candidata a portear a G-Mura (create_order es autocontenida; la rama de
    unidades es condicional).
 
-3. **Tipado de Supabase decorativo** (~400 casts `as unknown as ...`).
+3. **Tipado de Supabase decorativo** (casts `as unknown as ...`).
    `src/types/database.types.ts` está hecho a mano y no infiere relaciones
    embebidas, obligando a castear en cada query con join.
+   Conteo real al 2026-09-28: **140** `as unknown as` en `src/` (la cifra
+   anterior de ~400 era una estimación).
    **Pendiente:** `supabase gen types typescript` + limpieza de casts.
 
 4. **Imputación de turnos duplicada.**
@@ -80,9 +82,18 @@ atacan en este proyecto.
    status` plano (no RPC). La regla "no marcar 'listo' sin precio" vive **solo en
    cliente**: la mutación relee `repair_orders.precio` de la BD y valida antes de
    escribir (fix `fix/repair-ready-price-validation`), pero es saltable por API
-   directa (poner `status='listo'` con `precio` null). **Pendiente:** mover la
-   regla a una RPC/trigger cuando se endurezca el taller (fuera del alcance del
-   hotfix).
+   directa (poner `status='listo'` con `precio` null).
+   **RESUELTA** (repo y prod): migración `20260728_1630_repair_status_rpc_only`
+   — `status` pasa a ser RPC-only: `advance_repair_status()` (SECURITY DEFINER:
+   permiso + tienda + transición válida + precio para 'listo'; rechaza
+   'entregado', que solo se alcanza por `deliver_repair`), privilegios por
+   columna (`authenticated` ya no escribe `status` / `delivered_*` / `order_id`),
+   trigger `trg_guard_repair_status_write` y CHECK
+   `repair_orders_precio_required_when_ready`. `useRepairMutations` llama a la
+   RPC. **Verificado en prod el 2026-09-28** (solo lectura): la función existe
+   como SECURITY DEFINER, `has_column_privilege('authenticated',
+   'repair_orders','status','UPDATE') = f`, CHECK presente y los 5 triggers de
+   `repair_orders` habilitados.
 
 ## Migraciones específicas de G-Pulso (NO portables a G-Mura)
 

@@ -25,6 +25,11 @@ reset**.
 > archivos presentes en `backups/`: el registro heredado llevaba el historial de
 > **G-Mura**, no el de G-Pulso, y estos backups nunca quedaron anotados. Sin
 > checksum porque se calculó después del hecho; los nuevos sí lo traen.
+>
+> ℹ️ La fila del 2026-07-29 (`pre-serialized`, previo al despliegue del rediseño
+> de serializados 053→056) se agregó a mano el 2026-09-28: el dump existía en
+> `backups/` pero su fila nunca llegó al registro commiteado. Fecha = mtime del
+> archivo; tamaño y SHA-256 calculados sobre el `.dump` presente.
 
 ## Historial
 
@@ -39,3 +44,5 @@ reset**.
 | 2026-07-28 16:13 | `gpulso-prod-verificado` | `gpulso_20260728_1612_gpulso-prod-verificado.dump` | 502KB | `c5521b0b39a5` |
 | 2026-07-28 21:03 | `pre-repair-status-rpc` | `gpulso_20260728_2102_pre-repair-status-rpc.dump` | 505KB | `0021d3ea83ae` |
 | 2026-07-28 21:11 | `pre-reset-arranque-cliente` | `gpulso_20260728_2111_pre-reset-arranque-cliente.dump` | 512KB | `74f1422a0996` |
+| 2026-07-29 16:27 | `pre-serialized` | `gpulso_20260729_1626_pre-serialized.dump` | 508KB | `9e988f209f9c` |
+| 2026-09-28 19:08 | `pre-reset-reactivacion` | `gpulso_20260928_1907_pre-reset-reactivacion.dump` | 630KB | `c242974d0dc4` |

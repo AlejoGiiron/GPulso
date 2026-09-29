@@ -66,3 +66,5 @@ coverage/
 # Borradores y pruebas locales (no versionar)
 gmura-mejoras.html
 pruebas/
+# Claude Code — configuración local por desarrollador (no versionar)
+.claude/settings.local.json
