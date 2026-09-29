@@ -1,6 +1,8 @@
 import { fmtCOP } from '@/lib/formatters'
 import { PAYMENT_METHODS } from '@/lib/paymentMethods'
 import { useReceiptPrintStyle } from '@/lib/receiptPrint'
+import { receiptHeaderNames } from '@/lib/receiptHeader'
+import { useBusinessName } from '@/hooks/useOrg'
 import type {
   CashShift,
   CashExpense,
@@ -163,6 +165,7 @@ export function CashShiftReceipt(props: CashShiftReceiptProps) {
     badgeColor = '#dc2626'
   }
 
+  const header = receiptHeaderNames(useBusinessName(), storeName)
   const sectionStyle: React.CSSProperties = { margin: '6px 0' }
   const monoLight: React.CSSProperties = { color: '#525252' }
 
@@ -182,9 +185,11 @@ export function CashShiftReceipt(props: CashShiftReceiptProps) {
       {/* Encabezado */}
       <div style={{ textAlign: 'center', marginBottom: 6 }}>
         <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 1 }}>
-          G-MURA
+          {header.title}
         </div>
-        <div style={{ fontSize: 11, ...monoLight }}>{storeName}</div>
+        {header.subtitle && (
+          <div style={{ fontSize: 11, ...monoLight }}>{header.subtitle}</div>
+        )}
         <div style={{ fontSize: 12, fontWeight: 600, marginTop: 2 }}>
           Cuadre de caja
         </div>

@@ -1,6 +1,8 @@
 import { fmtCOP } from '@/lib/formatters'
 import { PAYMENT_METHODS } from '@/lib/paymentMethods'
 import { useReceiptPrintStyle } from '@/lib/receiptPrint'
+import { receiptHeaderNames } from '@/lib/receiptHeader'
+import { useBusinessName } from '@/hooks/useOrg'
 import type { PaymentMethod } from '@/types/database.types'
 
 const SALE_PRINT_CONTAINER_ID = 'gpulso-sale-receipt-print'
@@ -93,6 +95,7 @@ function Line({ children }: { children: React.ReactNode }) {
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export function SaleReceipt({ sale, storeName, printedAt }: SaleReceiptProps) {
+  const header = receiptHeaderNames(useBusinessName(), storeName)
   const monoLight: React.CSSProperties = { color: '#525252' }
   const sectionStyle: React.CSSProperties = { margin: '6px 0' }
   // Venta mixta = más de una línea de pago. El vuelto se calcula sobre la
@@ -120,9 +123,11 @@ export function SaleReceipt({ sale, storeName, printedAt }: SaleReceiptProps) {
     >
       <div style={{ textAlign: 'center', marginBottom: 6 }}>
         <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 1 }}>
-          G-MURA
+          {header.title}
         </div>
-        <div style={{ fontSize: 11, ...monoLight }}>{storeName}</div>
+        {header.subtitle && (
+          <div style={{ fontSize: 11, ...monoLight }}>{header.subtitle}</div>
+        )}
         <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>
           {sale.credit ? 'FIADO' : 'VENTA'} #{sale.order_number}
         </div>

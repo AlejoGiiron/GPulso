@@ -1,7 +1,8 @@
 import { fmtCOP } from '@/lib/formatters'
 import { PAYMENT_METHODS } from '@/lib/paymentMethods'
 import { useReceiptPrintStyle } from '@/lib/receiptPrint'
-import { DEFAULT_ORG_CONFIG } from '@/hooks/useOrg'
+import { receiptHeaderNames } from '@/lib/receiptHeader'
+import { DEFAULT_ORG_CONFIG, useBusinessName } from '@/hooks/useOrg'
 import type { LayawayDetail } from '@/hooks/useLayaways'
 
 const LAYAWAY_PRINT_CONTAINER_ID = 'gpulso-layaway-receipt-print'
@@ -59,6 +60,7 @@ export function LayawayReceipt({
   printedAt,
   terms,
 }: LayawayReceiptProps) {
+  const header = receiptHeaderNames(useBusinessName(), storeName)
   const monoLight: React.CSSProperties = { color: '#525252' }
   const sectionStyle: React.CSSProperties = { margin: '6px 0' }
   const balance = layaway.balance_pending
@@ -98,9 +100,11 @@ export function LayawayReceipt({
       {/* Encabezado */}
       <div style={{ textAlign: 'center', marginBottom: 6 }}>
         <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 1 }}>
-          G-MURA
+          {header.title}
         </div>
-        <div style={{ fontSize: 11, ...monoLight }}>{storeName}</div>
+        {header.subtitle && (
+          <div style={{ fontSize: 11, ...monoLight }}>{header.subtitle}</div>
+        )}
         <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>
           SEPARADO #{layaway.layaway_number}
         </div>
