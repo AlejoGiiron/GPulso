@@ -1,3 +1,5 @@
+import type { ReceiptWidthMm } from '@/lib/receiptLayout'
+
 export interface StoreColorConfig {
   name: string
   hex: string
@@ -91,4 +93,8 @@ export interface StoreConfig {
   layaway_discount_mode: LayawayDiscountMode
   // @deprecated — ver layaway_discount_mode.
   layaway_discount_value: number
+  // Ancho del papel de la impresora térmica de recibos (mm): 80 (histórico) o
+  // 58 (ej. Goojprt PT-260, 48mm imprimibles). Define @page, el ancho de la
+  // vista previa y la diagramación compacta. Ver src/lib/receiptLayout.ts.
+  receipt_width_mm: ReceiptWidthMm
 }

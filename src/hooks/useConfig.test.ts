@@ -58,3 +58,20 @@ describe('resolveConfig — migración de tamaños de etiqueta', () => {
     expect(c.label_default_size_id).toBe('ls_abc12345')
   })
 })
+
+describe('resolveConfig — ancho de recibo (receipt_width_mm)', () => {
+  it('sin configurar → 80mm (comportamiento histórico)', () => {
+    expect(resolveConfig({}).receipt_width_mm).toBe(80)
+    expect(resolveConfig(null).receipt_width_mm).toBe(80)
+  })
+
+  it('respeta 58 y 80', () => {
+    expect(resolveConfig({ receipt_width_mm: 58 }).receipt_width_mm).toBe(58)
+    expect(resolveConfig({ receipt_width_mm: 80 }).receipt_width_mm).toBe(80)
+  })
+
+  it('un valor inválido guardado en el jsonb cae a 80', () => {
+    expect(resolveConfig({ receipt_width_mm: '58' }).receipt_width_mm).toBe(80)
+    expect(resolveConfig({ receipt_width_mm: 72 }).receipt_width_mm).toBe(80)
+  })
+})

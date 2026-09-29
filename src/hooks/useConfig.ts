@@ -8,6 +8,7 @@ import type { StoreConfig } from '@/types/config.types'
 import { migrateLegacyPaymentMethods } from '@/lib/paymentMethods'
 import { DEFAULT_SIZE_TYPES } from '@/lib/sizeTypes'
 import { DEFAULT_LABEL_SIZES, DEFAULT_LABEL_SIZE_ID, findLabelSize } from '@/lib/labelSizes'
+import { DEFAULT_RECEIPT_WIDTH, isReceiptWidth } from '@/lib/receiptLayout'
 
 export const DEFAULT_CONFIG: StoreConfig = {
   timezone: 'America/Bogota',
@@ -46,6 +47,7 @@ export const DEFAULT_CONFIG: StoreConfig = {
   // Comisiones por crédito: $100.000 total, reparto 50/50 (editable en Config).
   commission_default_amount: 100000,
   commission_worker_share: 0.5,
+  receipt_width_mm: DEFAULT_RECEIPT_WIDTH,
 }
 
 export function resolveConfig(raw: Record<string, unknown> | null | undefined): StoreConfig {
@@ -91,6 +93,10 @@ export function resolveConfig(raw: Record<string, unknown> | null | undefined): 
     label_fields: r.label_fields
       ? { ...DEFAULT_CONFIG.label_fields, ...r.label_fields }
       : DEFAULT_CONFIG.label_fields,
+    // Solo 58 u 80; cualquier otro valor (o ausente) imprime como siempre, a 80.
+    receipt_width_mm: isReceiptWidth(r.receipt_width_mm)
+      ? r.receipt_width_mm
+      : DEFAULT_CONFIG.receipt_width_mm,
   }
 }
 

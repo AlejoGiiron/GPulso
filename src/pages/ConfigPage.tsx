@@ -8,6 +8,7 @@ import {
   CreditCard,
   Bookmark,
   Printer,
+  Receipt,
   type LucideIcon,
 } from 'lucide-react'
 import StoreSection from '@/components/config/StoreSection'
@@ -17,6 +18,7 @@ import RolesSection from '@/components/config/RolesSection'
 import ProductsSection from '@/components/config/ProductsSection'
 import CajaSection from '@/components/config/CajaSection'
 import SeparadosSection from '@/components/config/SeparadosSection'
+import RecibosSection from '@/components/config/RecibosSection'
 import EtiquetasSection from '@/components/config/EtiquetasSection'
 import CategoriesManager from '@/components/config/CategoriesManager'
 import { usePermissions } from '@/hooks/usePermissions'
@@ -29,6 +31,7 @@ type SectionId =
   | 'productos'
   | 'caja'
   | 'separados'
+  | 'recibos'
   | 'etiquetas'
 
 const SECTIONS: {
@@ -45,6 +48,7 @@ const SECTIONS: {
   { id: 'productos', label: 'Productos', Icon: Tag },
   { id: 'caja', label: 'Caja', Icon: CreditCard },
   { id: 'separados', label: 'Separados', Icon: Bookmark },
+  { id: 'recibos', label: 'Recibos', Icon: Receipt },
   { id: 'etiquetas', label: 'Etiquetas', Icon: Printer },
 ]
 
@@ -122,6 +126,7 @@ export default function ConfigPage() {
           )}
           {active === 'caja' && <CajaSection />}
           {active === 'separados' && <SeparadosSection />}
+          {active === 'recibos' && <RecibosSection />}
           {active === 'etiquetas' && <EtiquetasSection />}
         </div>
       </div>
