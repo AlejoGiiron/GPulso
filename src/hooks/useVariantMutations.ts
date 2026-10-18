@@ -38,6 +38,8 @@ export function useVariantMutations(productId: string) {
   function invalidate() {
     void queryClient.invalidateQueries({ queryKey: ['variants', productId] })
     void queryClient.invalidateQueries({ queryKey: ['products', storeId] })
+    // El POS cachea su catálogo aparte: sin esto un precio editado no se ve al vender.
+    void queryClient.invalidateQueries({ queryKey: ['pos-products'] })
   }
 
   const create = useMutation({
