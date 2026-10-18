@@ -3,6 +3,8 @@ import { X, Package } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useCategories } from '@/hooks/useProducts'
 import { useProductMutations } from '@/hooks/useProductMutations'
+import { useVariants } from '@/hooks/useVariants'
+import { useVariantMutations } from '@/hooks/useVariantMutations'
 import { useConfigMutations } from '@/hooks/useConfigMutations'
 import { useResolvedConfig } from '@/hooks/useConfig'
 import {
@@ -36,6 +38,8 @@ export default function ProductModal({ product, initialName, onAddUnitToExisting
   const sizeTypes = config.size_types
   const brands = config.brands
   const { updateStoreConfig } = useConfigMutations()
+  const { data: productVariants = [] } = useVariants(product?.id ?? '')
+  const { update: updateVariant } = useVariantMutations(product?.id ?? '')
 
   const [name, setName] = useState(product?.name ?? initialName ?? '')
   const [brand, setBrand] = useState(product?.brand ?? '')
@@ -60,6 +64,20 @@ export default function ProductModal({ product, initialName, onAddUnitToExisting
   // Crear un EQUIPO serializado (plantilla + primera unidad, atómico vía RPC).
   const isSerializedCreate = !product && isSerialized
   const isSimpleCreate = !product && isUnique && !isSerialized
+
+  // Editar un producto Única no serializado: su precio vive en la variante
+  // invisible y se edita aquí mismo (no tiene panel de variantes). Un
+  // serializado toma el precio de la unidad / precio sugerido, no de la variante.
+  const simpleVariant =
+    product && isUniqueSizeType(product.size_type) && !product.is_serialized
+      ? (productVariants.find((v) => v.is_active) ?? null)
+      : null
+  // null = sin tocar → se muestra el valor guardado de la variante.
+  const [editPrice, setEditPrice] = useState<string | null>(null)
+  const [editCost, setEditCost] = useState<string | null>(null)
+  const editPriceValue = editPrice ?? (simpleVariant ? String(Math.round(simpleVariant.price)) : '')
+  const editCostValue =
+    editCost ?? (simpleVariant?.cost_price != null ? String(Math.round(simpleVariant.cost_price)) : '')
 
   // Búsqueda previa de plantillas serializadas (dedup): al escribir el nombre,
   // ofrecerlas antes de crear una nueva.
@@ -126,7 +144,20 @@ export default function ProductModal({ product, initialName, onAddUnitToExisting
 
       let saved: Product
       if (isEdit) {
+        const editPriceNum = Math.round(parseFloat(editPriceValue) || 0)
+        if (simpleVariant && editPriceNum <= 0) {
+          toast.error('Ingresa un precio de venta válido')
+          setSubmitting(false)
+          return
+        }
         saved = await update.mutateAsync({ id: product.id, ...payload })
+        if (simpleVariant && (editPrice !== null || editCost !== null)) {
+          await updateVariant.mutateAsync({
+            id: simpleVariant.id,
+            price: editPriceNum,
+            cost_price: editCostValue ? Math.round(parseFloat(editCostValue)) : null,
+          })
+        }
       } else if (isSerializedCreate) {
         // Puerta 1: plantilla + primera unidad, atómico vía RPC.
         const suggestedNum = Math.round(parseFloat(suggested) || 0)
@@ -495,6 +526,41 @@ export default function ProductModal({ product, initialName, onAddUnitToExisting
             </div>
           )}
 
+          {/* Editar Única: precio y costo de la variante invisible */}
+          {simpleVariant && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                  Precio de venta *
+                </label>
+                <input
+                  inputMode="numeric"
+                  value={editPriceValue}
+                  onChange={(e) => setEditPrice(e.target.value.replace(/[^\d]/g, ''))}
+                  placeholder="0"
+                  className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm tabular-nums outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
+                />
+                {editPriceValue && (
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    {fmtCOP(parseFloat(editPriceValue) || 0)}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                  Costo (opcional)
+                </label>
+                <input
+                  inputMode="numeric"
+                  value={editCostValue}
+                  onChange={(e) => setEditCost(e.target.value.replace(/[^\d]/g, ''))}
+                  placeholder="0"
+                  className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm tabular-nums outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Description */}
           <div>
             <label className="mb-1.5 block text-xs font-medium text-slate-600">Descripción</label>
@@ -522,6 +588,7 @@ export default function ProductModal({ product, initialName, onAddUnitToExisting
                 submitting ||
                 !name.trim() ||
                 (isSimpleCreate && !price) ||
+                (simpleVariant !== null && !editPriceValue) ||
                 (isSerializedCreate && (!suggested || !serial.trim()))
               }
               className="h-11 flex-[2] rounded-lg bg-cyan-500 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(6,182,212,0.35)] hover:bg-cyan-600 disabled:opacity-50"

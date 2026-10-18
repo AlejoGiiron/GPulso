@@ -6,7 +6,6 @@ import ProductModal from '@/components/products/ProductModal'
 import AddUnitModal from '@/components/inventory/AddUnitModal'
 import type { SerializedTemplate } from '@/hooks/useEquipment'
 import VariantsPanel from '@/components/products/VariantsPanel'
-import EditPriceModal from '@/components/products/EditPriceModal'
 import LabelPrintModal from '@/components/products/LabelPrintModal'
 import { fmtCOP } from '@/lib/formatters'
 import { getColorHex, sortSizes, stockState, priceRange } from '@/lib/products'
@@ -302,12 +301,9 @@ interface VariantsTableProps {
   variants: Variant[]
   onManageVariants: () => void
   isUnique?: boolean
-  // Solo productos Única no serializados: su precio vive en la variante. Un
-  // serializado toma el precio de la unidad / precio sugerido, no de aquí.
-  onEditPrice?: () => void
 }
 
-function VariantsTable({ variants, onManageVariants, isUnique = false, onEditPrice }: VariantsTableProps) {
+function VariantsTable({ variants, onManageVariants, isUnique = false }: VariantsTableProps) {
   const active = variants.filter((v) => v.is_active)
   // C4: en Única, la variante es invisible → sin columnas Variante/Color ni
   // "Nueva variante". Se muestra precio/stock del producto como unidad.
@@ -326,15 +322,6 @@ function VariantsTable({ variants, onManageVariants, isUnique = false, onEditPri
             <p className="text-xs text-slate-400">{active.length} variante{active.length !== 1 ? 's' : ''} activa{active.length !== 1 ? 's' : ''}</p>
           )}
         </div>
-        {isUnique && onEditPrice && active.length > 0 && (
-          <button
-            onClick={onEditPrice}
-            className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 hover:bg-slate-50"
-          >
-            <Edit2 size={12} />
-            Editar precio
-          </button>
-        )}
         {!isUnique && (
           <button
             onClick={onManageVariants}
@@ -425,7 +412,6 @@ export default function ProductsPage() {
   const [showNewProduct, setShowNewProduct] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [variantsPanelProduct, setVariantsPanelProduct] = useState<Product | null>(null)
-  const [priceVariant, setPriceVariant] = useState<Variant | null>(null)
   const [showLabels, setShowLabels] = useState(false)
   // Puerta 3 desde el dedup de la puerta 1: agregar unidad a una plantilla existente.
   const [addUnitTarget, setAddUnitTarget] = useState<SerializedTemplate | null>(null)
@@ -633,11 +619,6 @@ export default function ProductsPage() {
                     variants={variants}
                     onManageVariants={() => setVariantsPanelProduct(selectedProduct)}
                     isUnique={isUniqueSizeType(selectedProduct.size_type)}
-                    onEditPrice={
-                      selectedProduct.is_serialized
-                        ? undefined
-                        : () => setPriceVariant(variants.find((v) => v.is_active) ?? null)
-                    }
                   />
                 </>
               )}
@@ -678,14 +659,6 @@ export default function ProductsPage() {
           variantId={addUnitTarget.variant_id}
           productName={addUnitTarget.name}
           onClose={() => setAddUnitTarget(null)}
-        />
-      )}
-
-      {priceVariant && selectedProduct && (
-        <EditPriceModal
-          productName={selectedProduct.name}
-          variant={priceVariant}
-          onClose={() => setPriceVariant(null)}
         />
       )}
 
