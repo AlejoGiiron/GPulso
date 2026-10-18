@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { priceRange } from './products'
+import { canSaveVariant, isInvisibleVariant, priceRange } from './products'
 
 const v = (price: number, is_active = true) => ({ price, is_active })
 
@@ -36,5 +36,35 @@ describe('priceRange', () => {
       min: 40_000,
       max: 60_000,
     })
+  })
+})
+
+describe('canSaveVariant', () => {
+  const attrs = (size: string | null, color: string | null) => ({ size, color })
+
+  it('variante nueva sin talla ni color → no se puede guardar', () => {
+    expect(canSaveVariant(attrs('', ''), null)).toBe(false)
+  })
+
+  it('variante nueva con talla o color → se puede guardar', () => {
+    expect(canSaveVariant(attrs('128GB', ''), null)).toBe(true)
+    expect(canSaveVariant(attrs('', 'Negro'), null)).toBe(true)
+  })
+
+  it('editar la variante invisible de un producto simple → se puede guardar sin atributos', () => {
+    expect(canSaveVariant(attrs('', ''), attrs(null, null))).toBe(true)
+    expect(canSaveVariant(attrs('', '  '), attrs('', ''))).toBe(true)
+  })
+
+  it('editar una variante con atributos y vaciarlos → no se puede guardar', () => {
+    expect(canSaveVariant(attrs('', ''), attrs('M', 'Azul'))).toBe(false)
+  })
+})
+
+describe('isInvisibleVariant', () => {
+  it('null, vacío o solo espacios cuentan como invisible', () => {
+    expect(isInvisibleVariant({ size: null, color: null })).toBe(true)
+    expect(isInvisibleVariant({ size: ' ', color: '' })).toBe(true)
+    expect(isInvisibleVariant({ size: 'L', color: null })).toBe(false)
   })
 })

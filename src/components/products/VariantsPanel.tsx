@@ -4,7 +4,7 @@ import { useVariants } from '@/hooks/useVariants'
 import { useVariantMutations } from '@/hooks/useVariantMutations'
 import LabelPrintModal from '@/components/products/LabelPrintModal'
 import { fmtCOP } from '@/lib/formatters'
-import { generateBarcode, getColorHex } from '@/lib/products'
+import { canSaveVariant, generateBarcode, getColorHex, isInvisibleVariant } from '@/lib/products'
 import { useResolvedConfig } from '@/hooks/useConfig'
 import { findSizeType, isCustomSizeType } from '@/lib/sizeTypes'
 import type { Product, Variant } from '@/types/database.types'
@@ -74,6 +74,11 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [labelVariants, setLabelVariants] = useState<Variant[] | null>(null)
 
+  const editingVariant = editingId ? (variants.find((v) => v.id === editingId) ?? null) : null
+  // Variante única de un producto simple: el select ofrece "Sin variante" para
+  // no mostrar una talla del catálogo que la variante no tiene.
+  const editingInvisible = editingVariant !== null && isInvisibleVariant(editingVariant)
+
   // Si el size del form actual no está en el catálogo (ej: variante vieja
   // de otro size_type), lo incluimos como opción para preservarlo al editar.
   const sizeOptions = useMemo(() => {
@@ -106,7 +111,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
   }
 
   async function handleSubmit() {
-    if (!form.color.trim() && !form.size) {
+    if (!canSaveVariant(form, editingVariant)) {
       toast.error('Ingresa al menos variante o color')
       return
     }
@@ -240,6 +245,7 @@ export default function VariantsPanel({ product, onClose }: VariantsPanelProps) 
                           onChange={(e) => setField('size', e.target.value)}
                           className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm outline-none focus:border-cyan-400"
                         >
+                          {editingInvisible && <option value="">Sin variante</option>}
                           {sizeOptions.map((s) => (
                             <option key={s} value={s}>
                               {s}

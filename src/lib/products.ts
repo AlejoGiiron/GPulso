@@ -60,3 +60,19 @@ export function priceRange(
   if (prices.length === 0) return null
   return { min: Math.min(...prices), max: Math.max(...prices) }
 }
+
+type VariantAttrs = { size: string | null; color: string | null }
+
+// Variante "invisible": talla y color vacíos. Es la variante única que crea el
+// alta de producto simple (accesorios, servicios) y la UI no la muestra.
+export function isInvisibleVariant(v: VariantAttrs): boolean {
+  return !v.size?.trim() && !v.color?.trim()
+}
+
+// Una variante nueva exige talla o color. Al EDITAR la variante invisible de un
+// producto simple no: es justo la vía para cambiarle precio/código/costo, y
+// exigirle atributos dejaba esos productos sin forma de editar su precio.
+export function canSaveVariant(form: VariantAttrs, editing: VariantAttrs | null): boolean {
+  if (!isInvisibleVariant(form)) return true
+  return editing !== null && isInvisibleVariant(editing)
+}
